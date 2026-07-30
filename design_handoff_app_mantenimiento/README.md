@@ -13,7 +13,7 @@ estado, se saca foto y se escribe la observación, y al final se genera el repor
 Los archivos HTML incluidos son **referencias de diseño**, no código de producción.
 Muestran el aspecto y el comportamiento previstos. La tarea es **recrear estos
 diseños en el entorno de la app real** (React / Next.js recomendado, ver
-`GUIA_PASO_A_PASO.md`) usando los patrones y librerías de ese proyecto, no copiar
+[`GUIA_PASO_A_PASO.md`](GUIA_PASO_A_PASO.md)) usando los patrones y librerías de ese proyecto, no copiar
 el HTML tal cual.
 
 ## Fidelidad
@@ -203,7 +203,7 @@ hairline; las tarjetas llevan cuatro marcas de registro "+" en las esquinas.
 
 ## Archivos incluidos
 
-- `App Mantenimiento.dc.html` — el prototipo completo (abrir en el navegador).
-- `styles.css` — tokens y clases del sistema visual base.
-- `support.js` — runtime que necesita el prototipo para correr.
-- `GUIA_PASO_A_PASO.md` — cómo construir la app real vos mismo, paso a paso.
+- [`App Mantenimiento.dc.html`](App%20Mantenimiento.dc.html) — el prototipo completo (abrir en el navegador).
+- [`styles.css`](styles.css) — tokens y clases del sistema visual base.
+- [`support.js`](support.js) — runtime que necesita el prototipo para correr.
+- [`GUIA_PASO_A_PASO.md`](GUIA_PASO_A_PASO.md) — cómo construir la app real vos mismo, paso a paso.
