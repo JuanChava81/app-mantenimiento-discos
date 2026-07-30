@@ -1,7 +1,8 @@
 -- Esquema: app de control de mantenimiento (Disco / Devoto)
 -- Correr esto una sola vez en el SQL Editor de Supabase (Project > SQL Editor > New query)
--- para un proyecto nuevo. Si ya corriste una version anterior de este archivo
--- (con las 40 sucursales de ejemplo), usá supabase/migrate_v2_locations.sql en su lugar.
+-- para un proyecto nuevo. Si ya corriste una version anterior de este archivo:
+--  - con las 40 sucursales de ejemplo: usá supabase/migrate_v2_locations.sql
+--  - con el modelo equipment/visits/inspections viejo: usá supabase/migrate_v3_equipment_state.sql
 
 create table if not exists locations (
   id uuid primary key default gen_random_uuid(),
@@ -12,67 +13,55 @@ create table if not exists locations (
   months int[] not null default '{}'  -- meses de visita planificados (1-12)
 );
 
-create table if not exists equipment (
-  id uuid primary key default gen_random_uuid(),
+-- Un registro por equipo con su estado actual (fotos, audio, checklist,
+-- mediciones). El historial de visitas anteriores queda para una etapa
+-- futura; por ahora esto es lo que hace que todos los dispositivos vean
+-- lo mismo.
+create table if not exists equipment_state (
+  id text primary key,               -- mismo id que usa la app, ej. "<location_uuid>-ac-1"
   location_id uuid references locations(id) on delete cascade,
-  category text not null,         -- ac | gas | ups | gen | sub
-  subtype text,                   -- Split | Rooftop | Chiller | Manejadora | ...
-  code text not null,             -- AC-014
-  number int,
-  active boolean default true
+  category text not null,            -- ac | gas | ups | gen | sub
+  subtype text,
+  number int not null,
+  code text not null,                -- AC-001
+  active boolean not null default true,
+  status text not null default 'pendiente',  -- ok | falla | pendiente
+  comment text not null default '',
+  checks jsonb not null default '{}',
+  fields jsonb not null default '{}',
+  photos text[] not null default '{}',       -- URLs públicas del bucket "photos"
+  audios jsonb not null default '[]',        -- [{id, url, durationSecs, recordedAt}]
+  updated_at timestamptz not null default now()
 );
 
-create table if not exists visits (
-  id uuid primary key default gen_random_uuid(),
-  location_id uuid references locations(id) on delete cascade,
-  visit_date date not null,
-  technician_id uuid,
-  status text default 'en_progreso',
-  created_at timestamptz default now()
-);
-
-create table if not exists inspections (
-  id uuid primary key default gen_random_uuid(),
-  visit_id uuid references visits(id) on delete cascade,
-  equipment_id uuid references equipment(id) on delete cascade,
-  status text default 'pendiente', -- ok | falla | pendiente
-  comment text,
-  checks jsonb default '{}',       -- ej. {"filtro":"OK","desague":"No OK"}
-  fields jsonb default '{}',       -- ej. {"combustible":"55","voltaje":"220"}
-  updated_at timestamptz default now()
-);
-
-create table if not exists photos (
-  id uuid primary key default gen_random_uuid(),
-  inspection_id uuid references inspections(id) on delete cascade,
-  storage_path text not null,
-  taken_at timestamptz default now()
-);
-
-create table if not exists audios (
-  id uuid primary key default gen_random_uuid(),
-  inspection_id uuid references inspections(id) on delete cascade,
-  storage_path text not null,
-  duration_secs numeric,
-  recorded_at timestamptz default now()
-);
-
--- Row Level Security: por ahora dejamos lectura pública (sin login todavía,
--- eso es la etapa 4 de GUIA_PASO_A_PASO.md). Cuando se agregue login, esto
--- se reemplaza por políticas atadas al usuario autenticado.
+-- Row Level Security: por ahora dejamos lectura y escritura públicas (sin
+-- login todavía, eso es la etapa "Usuarios" de GUIA_PASO_A_PASO.md). Cuando
+-- se agregue login, esto se reemplaza por políticas atadas al técnico
+-- autenticado.
 alter table locations enable row level security;
-alter table equipment enable row level security;
-alter table visits enable row level security;
-alter table inspections enable row level security;
-alter table photos enable row level security;
-alter table audios enable row level security;
+alter table equipment_state enable row level security;
 
 create policy "Lectura pública de locations" on locations for select using (true);
-create policy "Lectura pública de equipment" on equipment for select using (true);
-create policy "Lectura pública de visits" on visits for select using (true);
-create policy "Lectura pública de inspections" on inspections for select using (true);
-create policy "Lectura pública de photos" on photos for select using (true);
-create policy "Lectura pública de audios" on audios for select using (true);
+create policy "Lectura pública de equipment_state" on equipment_state for select using (true);
+create policy "Escritura pública de equipment_state" on equipment_state for insert with check (true);
+create policy "Actualización pública de equipment_state" on equipment_state for update using (true) with check (true);
+
+-- Buckets de Storage para fotos y notas de voz, públicos para lectura.
+insert into storage.buckets (id, name, public)
+values ('photos', 'photos', true)
+on conflict (id) do nothing;
+
+insert into storage.buckets (id, name, public)
+values ('audios', 'audios', true)
+on conflict (id) do nothing;
+
+create policy "Lectura pública de fotos" on storage.objects for select using (bucket_id = 'photos');
+create policy "Subida pública de fotos" on storage.objects for insert with check (bucket_id = 'photos');
+create policy "Borrado público de fotos" on storage.objects for delete using (bucket_id = 'photos');
+
+create policy "Lectura pública de audios" on storage.objects for select using (bucket_id = 'audios');
+create policy "Subida pública de audios" on storage.objects for insert with check (bucket_id = 'audios');
+create policy "Borrado público de audios" on storage.objects for delete using (bucket_id = 'audios');
 
 -- Seed: las 52 sucursales reales (28 Disco + 24 Devoto).
 -- OJO: los meses de todos los locales salvo Julio salen de la grilla "Plan con

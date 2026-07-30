@@ -1,9 +1,12 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { CATEGORIES, categoryById } from "@/lib/categories";
+import { fetchAllEquipmentState, saveEquipmentState } from "@/lib/equipment-state";
 import { generateEquipmentFor } from "@/lib/mock-data";
 import { MONTH_NAMES } from "@/lib/real-locations";
+import { supabaseConfigured } from "@/lib/supabase";
+import { uploadToStorage } from "@/lib/storage";
 import { AudioNote, CategoryId, Chain, Equipment, EquipmentData, EquipmentStatus, Location } from "@/lib/types";
 import { StatusChip } from "./StatusChip";
 import { ProgressBar } from "./ProgressBar";
@@ -62,6 +65,27 @@ export default function MantenimientoApp({
   const [toast, setToast] = useState<string | null>(null);
   const [historyFor, setHistoryFor] = useState<string | null>(null);
   const nextEquipmentSeq = useRef(1);
+
+  // Trae el estado real (fotos, audios, checklist, estado) guardado en
+  // Supabase para que todos los dispositivos vean lo mismo. Si todavía no
+  // hay nada guardado para un equipo, se queda con el dato de ejemplo hasta
+  // que alguien lo edite (ahí se guarda por primera vez).
+  useEffect(() => {
+    if (dataSource !== "supabase") return;
+    let cancelled = false;
+    fetchAllEquipmentState().then((remote) => {
+      if (cancelled || !remote) return;
+      setEquipment((local) => {
+        const byId = new Map(local.map((e) => [e.id, e]));
+        for (const e of remote.equipment) byId.set(e.id, e);
+        return Array.from(byId.values());
+      });
+      setData((local) => ({ ...local, ...remote.data }));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [dataSource]);
 
   const view = stack[stack.length - 1];
 
@@ -122,25 +146,40 @@ export default function MantenimientoApp({
     for (const c of cat.checks) checks[c.id] = c.options[0];
     const fields: Record<string, string> = {};
     for (const f of cat.fields) fields[f.id] = "";
+    const newData: EquipmentData = { status: "pendiente", comment: "", photos: [], audios: [], checks, fields, updatedAt: nowLabel() };
     setEquipment((eq) => [...eq, newEq]);
-    setData((d) => ({
-      ...d,
-      [id]: { status: "pendiente", comment: "", photos: [], audios: [], checks, fields, updatedAt: nowLabel() },
-    }));
+    setData((d) => ({ ...d, [id]: newData }));
+    saveEquipmentState(newEq, newData);
     push({ screen: "equipment", locationId, categoryId, equipmentId: id });
   }
 
   function deleteEquipment(eqId: string, after?: () => void) {
-    setEquipment((eq) => eq.map((e) => (e.id === eqId ? { ...e, active: false } : e)));
+    setEquipment((eq) => {
+      const updated = eq.map((e) => (e.id === eqId ? { ...e, active: false } : e));
+      const target = updated.find((e) => e.id === eqId);
+      if (target && data[eqId]) saveEquipmentState(target, data[eqId]);
+      return updated;
+    });
     showToast("Equipo eliminado");
     after?.();
   }
 
   function updateEquipmentData(eqId: string, patch: Partial<EquipmentData>) {
-    setData((d) => ({
-      ...d,
-      [eqId]: { ...d[eqId], ...patch, updatedAt: nowLabel() },
-    }));
+    setData((d) => {
+      const updated = { ...d[eqId], ...patch, updatedAt: nowLabel() };
+      const eq = equipment.find((e) => e.id === eqId);
+      if (eq) saveEquipmentState(eq, updated);
+      return { ...d, [eqId]: updated };
+    });
+  }
+
+  function updateEquipmentMeta(eqId: string, patch: Partial<Equipment>) {
+    setEquipment((list) => {
+      const updated = list.map((e) => (e.id === eqId ? { ...e, ...patch } : e));
+      const eq = updated.find((e) => e.id === eqId);
+      if (eq && data[eqId]) saveEquipmentState(eq, data[eqId]);
+      return updated;
+    });
   }
 
   const currentMonth = new Date().getMonth() + 1;
@@ -242,19 +281,9 @@ export default function MantenimientoApp({
             onBack={back}
             onDelete={() => deleteEquipment(eq.id, back)}
             onOpenHistory={() => setHistoryFor(eq.id)}
-            onChangeType={(subtype) =>
-              setEquipment((list) =>
-                list.map((e) => (e.id === eq.id ? { ...e, subtype } : e))
-              )
-            }
+            onChangeType={(subtype) => updateEquipmentMeta(eq.id, { subtype })}
             onChangeNumber={(n) =>
-              setEquipment((list) =>
-                list.map((e) =>
-                  e.id === eq.id
-                    ? { ...e, number: n, code: `${cat.prefix}-${String(n).padStart(3, "0")}` }
-                    : e
-                )
-              )
+              updateEquipmentMeta(eq.id, { number: n, code: `${cat.prefix}-${String(n).padStart(3, "0")}` })
             }
             onChangeComment={(comment) => updateEquipmentData(eq.id, { comment })}
             onChangeStatus={(status) => updateEquipmentData(eq.id, { status })}
@@ -688,12 +717,24 @@ function EquipmentScreen({
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
 
-  function handlePhotoFiles(files: FileList | null, input: HTMLInputElement | null) {
+  async function handlePhotoFiles(files: FileList | null, input: HTMLInputElement | null) {
     if (!files || files.length === 0) return;
-    const urls = Array.from(files).map((f) => URL.createObjectURL(f));
-    onAddPhotos(urls);
+    const fileArray = Array.from(files);
     // Reset para poder volver a tomar/elegir sin recargar la página.
     if (input) input.value = "";
+
+    if (supabaseConfigured) {
+      const urls = await Promise.all(
+        fileArray.map(async (f) => {
+          const ext = f.type.includes("png") ? "png" : "jpg";
+          const uploaded = await uploadToStorage("photos", equipmentItem.id, f, ext);
+          return uploaded ?? URL.createObjectURL(f);
+        })
+      );
+      onAddPhotos(urls);
+    } else {
+      onAddPhotos(fileArray.map((f) => URL.createObjectURL(f)));
+    }
   }
 
   return (
@@ -864,7 +905,7 @@ function EquipmentScreen({
             />
           </label>
 
-          <AudioRecorder audios={eqData.audios} onAdd={onAddAudio} onRemove={onRemoveAudio} />
+          <AudioRecorder audios={eqData.audios} equipmentId={equipmentItem.id} onAdd={onAddAudio} onRemove={onRemoveAudio} />
 
           <div className="seg">
             {(["ok", "falla", "pendiente"] as EquipmentStatus[]).map((st) => (
