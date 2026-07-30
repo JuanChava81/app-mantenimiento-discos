@@ -71,7 +71,7 @@ button, input, textarea {
 .header-hero {
   background: var(--color-accent-900);
   color: #ffffff;
-  padding: var(--space-5) var(--space-4);
+  padding: calc(var(--space-5) + env(safe-area-inset-top)) var(--space-4) var(--space-5);
 }
 
 .kicker {
