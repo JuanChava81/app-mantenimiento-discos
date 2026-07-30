@@ -3,13 +3,17 @@
 import { useMemo, useRef, useState } from "react";
 import { CATEGORIES, categoryById } from "@/lib/categories";
 import { generateEquipmentFor } from "@/lib/mock-data";
-import { CategoryId, Chain, Equipment, EquipmentData, EquipmentStatus, Location } from "@/lib/types";
+import { MONTH_NAMES } from "@/lib/real-locations";
+import { AudioNote, CategoryId, Chain, Equipment, EquipmentData, EquipmentStatus, Location } from "@/lib/types";
 import { StatusChip } from "./StatusChip";
 import { ProgressBar } from "./ProgressBar";
+import { CameraCapture } from "./CameraCapture";
+import { AudioRecorder } from "./AudioRecorder";
 import {
   ArrowLeftIcon,
   CameraIcon,
   ClockIcon,
+  MicIcon,
   PlusIcon,
   SearchIcon,
   TrashIcon,
@@ -21,11 +25,6 @@ type View =
   | { screen: "category"; locationId: string; categoryId: CategoryId }
   | { screen: "equipment"; locationId: string; categoryId: CategoryId; equipmentId: string }
   | { screen: "summary"; locationId: string };
-
-const MONTHS = [
-  "enero", "febrero", "marzo", "abril", "mayo", "junio",
-  "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre",
-];
 
 function todayISO() {
   const d = new Date();
@@ -60,6 +59,7 @@ export default function MantenimientoApp({
   const [visitDates, setVisitDates] = useState<Record<string, string>>({});
   const [search, setSearch] = useState("");
   const [chainFilter, setChainFilter] = useState<"Todos" | Chain>("Todos");
+  const [monthFilter, setMonthFilter] = useState<"Este mes" | "Todos">("Este mes");
   const [toast, setToast] = useState<string | null>(null);
   const [historyFor, setHistoryFor] = useState<string | null>(null);
   const nextEquipmentSeq = useRef(1);
@@ -119,10 +119,14 @@ export default function MantenimientoApp({
       code: `${cat.prefix}-${String(nextNumber).padStart(3, "0")}`,
       active: true,
     };
+    const checks: Record<string, string> = {};
+    for (const c of cat.checks) checks[c.id] = c.options[0];
+    const fields: Record<string, string> = {};
+    for (const f of cat.fields) fields[f.id] = "";
     setEquipment((eq) => [...eq, newEq]);
     setData((d) => ({
       ...d,
-      [id]: { status: "pendiente", comment: "", photoUrl: null, updatedAt: nowLabel() },
+      [id]: { status: "pendiente", comment: "", photos: [], audios: [], checks, fields, updatedAt: nowLabel() },
     }));
     push({ screen: "equipment", locationId, categoryId, equipmentId: id });
   }
@@ -140,22 +144,25 @@ export default function MantenimientoApp({
     }));
   }
 
+  const currentMonth = new Date().getMonth() + 1;
+
   const filteredLocations = useMemo(() => {
     return locations.filter((loc) => {
       if (chainFilter !== "Todos" && loc.chain !== chainFilter) return false;
+      if (monthFilter === "Este mes" && !loc.months.includes(currentMonth)) return false;
       if (!search.trim()) return true;
       const q = search.trim().toLowerCase();
       return (
         loc.name.toLowerCase().includes(q) ||
         loc.address.toLowerCase().includes(q) ||
-        String(loc.number).includes(q)
+        loc.suc.toLowerCase().includes(q)
       );
     });
-  }, [locations, search, chainFilter]);
+  }, [locations, search, chainFilter, monthFilter, currentMonth]);
 
-  const completedThisMonth = locations.filter((l) => visitDates[l.id]).length;
-  const now = new Date();
-  const visitLabel = `Visita de ${MONTHS[now.getMonth()]} ${now.getFullYear()}`;
+  const planificados = locations.filter((l) => l.months.includes(currentMonth));
+  const completedThisMonth = planificados.filter((l) => visitDates[l.id]).length;
+  const monthLabel = MONTH_NAMES[currentMonth - 1];
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: "var(--color-bg)" }}>
@@ -167,9 +174,11 @@ export default function MantenimientoApp({
           setSearch={setSearch}
           chainFilter={chainFilter}
           setChainFilter={setChainFilter}
-          visitLabel={visitLabel}
+          monthFilter={monthFilter}
+          setMonthFilter={setMonthFilter}
+          monthLabel={monthLabel}
           completedThisMonth={completedThisMonth}
-          totalLocations={locations.length}
+          totalPlanificados={planificados.length}
           countsFor={countsFor}
           equipmentForLocation={equipmentForLocation}
           onOpen={(id) => push({ screen: "location", locationId: id })}
@@ -250,7 +259,20 @@ export default function MantenimientoApp({
             }
             onChangeComment={(comment) => updateEquipmentData(eq.id, { comment })}
             onChangeStatus={(status) => updateEquipmentData(eq.id, { status })}
-            onChangePhoto={(photoUrl) => updateEquipmentData(eq.id, { photoUrl })}
+            onAddPhotos={(photos) => updateEquipmentData(eq.id, { photos: [...eqData.photos, ...photos] })}
+            onRemovePhoto={(idx) =>
+              updateEquipmentData(eq.id, { photos: eqData.photos.filter((_, i) => i !== idx) })
+            }
+            onChangeCheck={(checkId, value) =>
+              updateEquipmentData(eq.id, { checks: { ...eqData.checks, [checkId]: value } })
+            }
+            onChangeField={(fieldId, value) =>
+              updateEquipmentData(eq.id, { fields: { ...eqData.fields, [fieldId]: value } })
+            }
+            onAddAudio={(audio) => updateEquipmentData(eq.id, { audios: [...eqData.audios, audio] })}
+            onRemoveAudio={(id) =>
+              updateEquipmentData(eq.id, { audios: eqData.audios.filter((a) => a.id !== id) })
+            }
           />
         );
       })()}
@@ -280,7 +302,7 @@ export default function MantenimientoApp({
                 },
               ])
             }
-            onExport={() => showToast("Fotos exportadas (simulado)")}
+            onExport={() => showToast("Fotos y audios exportados (simulado)")}
             onGeneratePdf={() => showToast("Reporte PDF generado (simulado)")}
           />
         );
@@ -302,7 +324,7 @@ export default function MantenimientoApp({
   );
 }
 
-// ---------- Screen 1: Locales ----------
+// ---------- Screen 1: Plan de visitas ----------
 
 function LocationsScreen({
   locations,
@@ -311,9 +333,11 @@ function LocationsScreen({
   setSearch,
   chainFilter,
   setChainFilter,
-  visitLabel,
+  monthFilter,
+  setMonthFilter,
+  monthLabel,
   completedThisMonth,
-  totalLocations,
+  totalPlanificados,
   countsFor,
   equipmentForLocation,
   onOpen,
@@ -324,9 +348,11 @@ function LocationsScreen({
   setSearch: (v: string) => void;
   chainFilter: "Todos" | Chain;
   setChainFilter: (v: "Todos" | Chain) => void;
-  visitLabel: string;
+  monthFilter: "Este mes" | "Todos";
+  setMonthFilter: (v: "Este mes" | "Todos") => void;
+  monthLabel: string;
   completedThisMonth: number;
-  totalLocations: number;
+  totalPlanificados: number;
   countsFor: (list: Equipment[]) => { ok: number; falla: number; pendiente: number; total: number };
   equipmentForLocation: (id: string) => Equipment[];
   onOpen: (id: string) => void;
@@ -335,10 +361,10 @@ function LocationsScreen({
     <>
       <header className="header-hero">
         <div className="kicker">CONTROL DE MANTENIMIENTO · URUGUAY</div>
-        <h1 style={{ fontSize: 32, marginTop: 4 }}>Locales</h1>
+        <h1 style={{ fontSize: 31, marginTop: 4 }}>Plan de visitas</h1>
         <div className="flex justify-between mt-2" style={{ fontSize: 12, opacity: 0.8 }}>
-          <span>{visitLabel}</span>
-          <span>{completedThisMonth}/{totalLocations} completados</span>
+          <span>{monthLabel}</span>
+          <span>{completedThisMonth}/{totalPlanificados} completados</span>
         </div>
       </header>
 
@@ -354,10 +380,22 @@ function LocationsScreen({
           <input
             className="field-input"
             style={{ paddingLeft: 32 }}
-            placeholder="Buscar por nombre, dirección o número"
+            placeholder="Buscar por sucursal, nombre o dirección"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
+        </div>
+
+        <div className="seg" style={{ maxWidth: 240 }}>
+          {(["Este mes", "Todos"] as const).map((opt) => (
+            <button
+              key={opt}
+              className={`seg-opt ${monthFilter === opt ? "active" : ""}`}
+              onClick={() => setMonthFilter(opt)}
+            >
+              {opt}
+            </button>
+          ))}
         </div>
 
         <div className="seg" style={{ maxWidth: 320 }}>
@@ -372,40 +410,48 @@ function LocationsScreen({
           ))}
         </div>
 
+        {locations.length === 0 && (
+          <p style={{ fontSize: 13, opacity: 0.6, textAlign: "center", padding: "24px 0" }}>
+            No hay locales para este filtro.
+          </p>
+        )}
+
         <div className="hairline" style={{ borderLeft: "none", borderRight: "none", borderBottom: "none" }}>
           {locations.map((loc) => {
             const list = equipmentForLocation(loc.id);
             const counts = countsFor(list);
+            const revisados = counts.ok + counts.falla;
             const status =
               counts.total === 0
                 ? "Pendiente"
-                : counts.ok + counts.falla === counts.total
-                ? "Completo"
-                : counts.ok + counts.falla > 0
+                : revisados === counts.total
+                ? counts.falla > 0
+                  ? `${counts.falla} no OK`
+                  : "Completo"
+                : revisados > 0
                 ? "En progreso"
                 : "Pendiente";
-            const initials = loc.chain === "Disco" ? "DI" : "DE";
             return (
               <button
                 key={loc.id}
                 onClick={() => onOpen(loc.id)}
                 className="w-full flex items-center gap-3 hairline-b text-left"
-                style={{ minHeight: 56, padding: "8px 4px" }}
+                style={{ minHeight: 58, padding: "8px 4px" }}
               >
                 <span
                   className="flex items-center justify-center shrink-0"
                   style={{
-                    width: 34,
-                    height: 34,
+                    width: 40,
+                    height: 40,
                     border: "1.5px solid var(--color-accent-600)",
                     background: loc.chain === "Disco" ? "var(--color-accent-600)" : "transparent",
                     color: loc.chain === "Disco" ? "#fff" : "var(--color-accent-700)",
                     fontFamily: "var(--font-heading)",
                     fontWeight: 600,
-                    fontSize: 13,
+                    fontSize: 12,
                   }}
                 >
-                  {initials}
+                  {loc.suc}
                 </span>
                 <span className="flex-1 min-w-0">
                   <span style={{ fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: 16 }} className="block truncate">
@@ -414,12 +460,12 @@ function LocationsScreen({
                   <span style={{ fontSize: 11.5, opacity: 0.55 }} className="block truncate">
                     {loc.address}
                   </span>
-                  <ProgressBar value={counts.ok + counts.falla} max={counts.total || 1} widthPx={120} />
+                  <ProgressBar value={revisados} max={counts.total || 1} widthPx={110} />
                 </span>
                 <span className="flex flex-col items-end gap-1 shrink-0">
                   <span className="chip chip-pendiente">{status}</span>
                   <span style={{ fontSize: 11, opacity: 0.6 }}>
-                    {counts.ok + counts.falla}/{counts.total}
+                    {revisados}/{counts.total} revisados
                   </span>
                 </span>
               </button>
@@ -454,12 +500,14 @@ function LocationScreen({
   onOpenCategory: (catId: CategoryId) => void;
   onSummary: () => void;
 }) {
+  const plannedMonths = location.months.map((m) => MONTH_NAMES[m - 1].slice(0, 3)).join(" · ");
   return (
     <>
-      <TopBar title={location.name} onBack={onBack} />
+      <TopBar title={location.name} kicker={`${location.suc} · ${location.chain}`} onBack={onBack} />
       <div className="p-4 flex flex-col gap-4">
         <div>
-          <span className="tag-outline">{location.chain}</span>
+          <span className="tag-outline">{location.chain}</span>{" "}
+          <span className="tag-outline">{location.suc}</span>
           <div style={{ fontSize: 13, opacity: 0.7, marginTop: 4 }}>{location.address}</div>
           <ProgressBar value={counts.ok + counts.falla} max={counts.total || 1} height={6} />
           <div style={{ fontSize: 12, opacity: 0.7, marginTop: 4 }}>
@@ -467,16 +515,24 @@ function LocationScreen({
           </div>
         </div>
 
-        <label className="flex flex-col gap-1" style={{ fontSize: 12 }}>
-          Fecha de visita
-          <input
-            type="date"
-            className="field-input"
-            style={{ maxWidth: 200 }}
-            value={visitDate}
-            onChange={(e) => onVisitDateChange(e.target.value)}
-          />
-        </label>
+        <div className="flex gap-4 flex-wrap">
+          <label className="flex flex-col gap-1" style={{ fontSize: 12 }}>
+            Fecha de visita
+            <input
+              type="date"
+              className="field-input"
+              style={{ maxWidth: 200 }}
+              value={visitDate}
+              onChange={(e) => onVisitDateChange(e.target.value)}
+            />
+          </label>
+          <div className="flex flex-col gap-1" style={{ fontSize: 12 }}>
+            Visitas planificadas
+            <div className="field-input" style={{ display: "flex", alignItems: "center", maxWidth: 200, opacity: 0.7 }}>
+              {plannedMonths}
+            </div>
+          </div>
+        </div>
 
         <div className="grid grid-cols-2 gap-3">
           {CATEGORIES.map((cat) => {
@@ -499,7 +555,7 @@ function LocationScreen({
                   {c.ok + c.falla}/{c.total} revisados
                 </span>
                 <ProgressBar value={c.ok + c.falla} max={c.total || 1} />
-                {c.falla > 0 && <span className="chip chip-falla">{c.falla} con falla</span>}
+                {c.falla > 0 && <span className="chip chip-falla">{c.falla} no OK</span>}
               </button>
             );
           })}
@@ -536,19 +592,25 @@ function CategoryScreen({
 }) {
   return (
     <>
-      <TopBar title={`${location.name} · ${category.name}`} onBack={onBack} />
+      <TopBar title={category.name} kicker={`${location.suc} · ${location.name}`} onBack={onBack} />
       <div className="p-4 flex flex-col gap-3">
         <h6>Equipos relevados</h6>
         <div>
           {list.map((eq) => {
             const eqData = data[eq.id];
+            const firstPhoto = eqData?.photos[0];
             return (
               <div key={eq.id} className="flex items-center gap-3 hairline-b" style={{ minHeight: 56, padding: "8px 4px" }}>
                 <span
-                  className="flex items-center justify-center shrink-0"
-                  style={{ width: 44, height: 44, background: "var(--color-surface)" }}
+                  className="flex items-center justify-center shrink-0 overflow-hidden"
+                  style={{ width: 46, height: 46, background: "var(--color-surface)" }}
                 >
-                  <CameraIcon size={18} className="opacity-35" />
+                  {firstPhoto ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={firstPhoto} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <CameraIcon size={18} className="opacity-35" />
+                  )}
                 </span>
                 <button className="flex-1 min-w-0 text-left" onClick={() => onOpenEquipment(eq.id)}>
                   <span style={{ fontSize: 10, textTransform: "uppercase" }} className="block opacity-60">
@@ -556,6 +618,14 @@ function CategoryScreen({
                   </span>
                   <span style={{ fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: 16 }} className="block">
                     {eq.code}
+                  </span>
+                  <span className="flex items-center gap-2" style={{ fontSize: 11, opacity: 0.6 }}>
+                    <span>{eqData?.photos.length ?? 0} fotos</span>
+                    {(eqData?.audios.length ?? 0) > 0 && (
+                      <span className="flex items-center gap-1">
+                        <MicIcon size={11} /> audio
+                      </span>
+                    )}
                   </span>
                 </button>
                 <StatusChip status={eqData?.status ?? "pendiente"} />
@@ -592,7 +662,12 @@ function EquipmentScreen({
   onChangeNumber,
   onChangeComment,
   onChangeStatus,
-  onChangePhoto,
+  onAddPhotos,
+  onRemovePhoto,
+  onChangeCheck,
+  onChangeField,
+  onAddAudio,
+  onRemoveAudio,
 }: {
   category: ReturnType<typeof categoryById>;
   equipmentItem: Equipment;
@@ -604,10 +679,34 @@ function EquipmentScreen({
   onChangeNumber: (n: number) => void;
   onChangeComment: (comment: string) => void;
   onChangeStatus: (status: EquipmentStatus) => void;
-  onChangePhoto: (url: string | null) => void;
+  onAddPhotos: (photos: string[]) => void;
+  onRemovePhoto: (index: number) => void;
+  onChangeCheck: (checkId: string, value: string) => void;
+  onChangeField: (fieldId: string, value: string) => void;
+  onAddAudio: (audio: AudioNote) => void;
+  onRemoveAudio: (id: string) => void;
 }) {
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  function handleGallerySelect(files: FileList | null) {
+    if (!files || files.length === 0) return;
+    const urls = Array.from(files).map((f) => URL.createObjectURL(f));
+    onAddPhotos(urls);
+  }
+
   return (
     <>
+      {cameraOpen && (
+        <CameraCapture
+          onCancel={() => setCameraOpen(false)}
+          onDone={(photos) => {
+            onAddPhotos(photos);
+            setCameraOpen(false);
+          }}
+        />
+      )}
+
       <TopBar title={equipmentItem.code} onBack={onBack} action={<button onClick={onOpenHistory}><ClockIcon size={18} /></button>} />
       <div className="p-4">
         <div className="card-reg p-4 flex flex-col gap-4">
@@ -637,44 +736,115 @@ function EquipmentScreen({
             </>
           )}
 
-          <div
-            className="flex flex-col items-center justify-center gap-2"
-            style={{ aspectRatio: "1/1", background: "var(--color-surface)", border: "1px solid var(--color-divider)" }}
-          >
-            {eqData.photoUrl ? (
-              <img src={eqData.photoUrl} alt="Foto del equipo" className="w-full h-full object-cover" style={{ filter: "sepia(0.3) hue-rotate(-30deg) saturate(2)" }} />
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label style={{ fontSize: 12 }}>Fotos</label>
+              <span style={{ fontSize: 11, opacity: 0.6 }}>{eqData.photos.length} fotos</span>
+            </div>
+
+            {eqData.photos.length === 0 ? (
+              <div
+                className="flex flex-col items-center justify-center gap-2"
+                style={{ aspectRatio: "16/9", background: "var(--color-surface)", border: "1px solid var(--color-divider)" }}
+              >
+                <CameraIcon size={26} className="opacity-40" />
+                <span style={{ fontSize: 13, opacity: 0.6 }}>Sin fotos todavía</span>
+                <div className="flex gap-2 mt-1">
+                  <button className="btn btn-primary" style={{ minHeight: 38, padding: "0 14px", fontSize: 13 }} onClick={() => setCameraOpen(true)}>
+                    Tomar fotos
+                  </button>
+                  <button
+                    className="btn btn-ghost"
+                    style={{ minHeight: 38, padding: "0 14px", fontSize: 13 }}
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    Elegir de la galería
+                  </button>
+                </div>
+              </div>
             ) : (
-              <>
-                <CameraIcon size={28} className="opacity-40" />
-                <span style={{ fontSize: 13, opacity: 0.6 }}>Sin foto todavía</span>
-              </>
+              <div className="grid grid-cols-3 gap-2">
+                {eqData.photos.map((p, i) => (
+                  <div key={i} className="relative" style={{ aspectRatio: "1/1" }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={p} alt={`Foto ${i + 1}`} className="w-full h-full object-cover" />
+                    <button
+                      aria-label="Quitar foto"
+                      onClick={() => onRemovePhoto(i)}
+                      style={{
+                        position: "absolute", top: 2, right: 2, width: 20, height: 20,
+                        background: "rgba(0,0,0,0.6)", color: "#fff", fontSize: 12, lineHeight: 1,
+                      }}
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+                <button
+                  className="flex items-center justify-center"
+                  style={{ aspectRatio: "1/1", border: "1px dashed var(--color-accent-300)", color: "var(--color-accent-600)" }}
+                  onClick={() => setCameraOpen(true)}
+                  aria-label="Agregar foto"
+                >
+                  <PlusIcon size={18} />
+                </button>
+              </div>
             )}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={(e) => handleGallerySelect(e.target.files)}
+            />
           </div>
 
-          <input
-            type="file"
-            accept="image/*"
-            capture="environment"
-            id={`photo-${equipmentItem.id}`}
-            className="hidden"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) onChangePhoto(URL.createObjectURL(file));
-            }}
-          />
-          {eqData.photoUrl ? (
-            <div className="flex gap-2">
-              <label htmlFor={`photo-${equipmentItem.id}`} className="btn btn-ghost" style={{ flex: 1 }}>
-                Reemplazar foto
-              </label>
-              <button className="btn btn-ghost" style={{ flex: 1 }} onClick={() => onChangePhoto(null)}>
-                Quitar
-              </button>
+          {category.checks.length > 0 && (
+            <div className="flex flex-col gap-2">
+              <label style={{ fontSize: 12 }}>Verificaciones</label>
+              {category.checks.map((check) => (
+                <div key={check.id} className="flex items-center justify-between gap-2 hairline-b" style={{ padding: "6px 0" }}>
+                  <span style={{ fontSize: 13 }}>{check.label}</span>
+                  <div className="seg" style={{ maxWidth: 160 }}>
+                    {check.options.map((opt) => (
+                      <button
+                        key={opt}
+                        className={`seg-opt ${eqData.checks[check.id] === opt ? "active" : ""}`}
+                        style={{ fontSize: 12, minHeight: 34 }}
+                        onClick={() => onChangeCheck(check.id, opt)}
+                      >
+                        {opt}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
-          ) : (
-            <label htmlFor={`photo-${equipmentItem.id}`} className="btn btn-primary btn-block">
-              Tomar foto
-            </label>
+          )}
+
+          {category.fields.length > 0 && (
+            <div className="flex flex-col gap-2">
+              <label style={{ fontSize: 12 }}>Mediciones</label>
+              {category.fields.map((field) => (
+                <label key={field.id} className="flex flex-col gap-1" style={{ fontSize: 12 }}>
+                  {field.label}
+                  <div className="relative">
+                    <input
+                      className="field-input"
+                      placeholder={field.placeholder}
+                      value={eqData.fields[field.id] ?? ""}
+                      onChange={(e) => onChangeField(field.id, e.target.value)}
+                    />
+                    {field.unit && (
+                      <span className="absolute" style={{ right: 10, top: 12, fontSize: 12, opacity: 0.5 }}>
+                        {field.unit}
+                      </span>
+                    )}
+                  </div>
+                </label>
+              ))}
+            </div>
           )}
 
           <label className="flex flex-col gap-1" style={{ fontSize: 12 }}>
@@ -686,6 +856,8 @@ function EquipmentScreen({
             />
           </label>
 
+          <AudioRecorder audios={eqData.audios} onAdd={onAddAudio} onRemove={onRemoveAudio} />
+
           <div className="seg">
             {(["ok", "falla", "pendiente"] as EquipmentStatus[]).map((st) => (
               <button
@@ -693,7 +865,7 @@ function EquipmentScreen({
                 className={`seg-opt ${eqData.status === st ? "active" : ""}`}
                 onClick={() => onChangeStatus(st)}
               >
-                {st === "ok" ? "OK" : st === "falla" ? "Falla" : "Pendiente"}
+                {st === "ok" ? "OK" : st === "falla" ? "No OK" : "Pendiente"}
               </button>
             ))}
           </div>
@@ -743,7 +915,8 @@ function SummaryScreen({
       <TopBar title="Resumen de visita" onBack={onBackToLocations} />
       <div className="p-4 flex flex-col gap-4">
         <div>
-          <span className="tag-outline">{location.chain}</span>
+          <span className="tag-outline">{location.chain}</span>{" "}
+          <span className="tag-outline">{location.suc}</span>
           <h3 style={{ marginTop: 4 }}>{location.name}</h3>
           <div style={{ fontSize: 12, opacity: 0.7 }}>Visitado el {dd}/{mm}/{yyyy}</div>
         </div>
@@ -758,7 +931,7 @@ function SummaryScreen({
             style={counts.falla > 0 ? { background: "var(--color-accent-900)", color: "#fff" } : undefined}
           >
             <div style={{ fontFamily: "var(--font-heading)", fontSize: 26 }}>{counts.falla}</div>
-            <div style={{ fontSize: 11, opacity: 0.85 }}>Con falla</div>
+            <div style={{ fontSize: 11, opacity: 0.85 }}>No OK</div>
           </div>
           <div className="card-reg p-3 text-center">
             <div style={{ fontFamily: "var(--font-heading)", fontSize: 26 }}>{counts.pendiente}</div>
@@ -781,7 +954,7 @@ function SummaryScreen({
         )}
 
         <button className="btn btn-ghost btn-block" onClick={onExport}>
-          Exportar fotos por equipo
+          Exportar fotos y audios por equipo
         </button>
         <button className="btn btn-primary btn-block" onClick={onGeneratePdf}>
           Generar reporte PDF
@@ -822,13 +995,16 @@ function HistoryModal({ code, onClose }: { code: string; onClose: () => void }) 
 
 // ---------- Shared: top bar ----------
 
-function TopBar({ title, onBack, action }: { title: string; onBack: () => void; action?: React.ReactNode }) {
+function TopBar({ title, kicker, onBack, action }: { title: string; kicker?: string; onBack: () => void; action?: React.ReactNode }) {
   return (
     <div className="hairline-b flex items-center gap-3 p-4">
       <button onClick={onBack} aria-label="Volver">
         <ArrowLeftIcon />
       </button>
-      <h5 className="flex-1 truncate">{title}</h5>
+      <span className="flex-1 min-w-0">
+        {kicker && <span className="kicker block" style={{ color: "var(--color-text)", opacity: 0.5 }}>{kicker}</span>}
+        <h5 className="truncate">{title}</h5>
+      </span>
       {action}
     </div>
   );

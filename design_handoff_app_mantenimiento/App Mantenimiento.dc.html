@@ -13,14 +13,6 @@
   <style>
     body{margin:0}
     ::-webkit-scrollbar{width:0;height:0}
-    :root{
-      --color-bg:#ffffff; --color-surface:#f7eded;
-      --color-accent:#d21f2b;
-      --color-accent-100:#fdecec; --color-accent-200:#fad0d1; --color-accent-300:#f2a3a6; --color-accent-400:#e8767a;
-      --color-accent-500:#dd4a50; --color-accent-600:#d21f2b; --color-accent-700:#a8171f; --color-accent-800:#7c1116; --color-accent-900:#4a0a0d;
-      --color-accent-2-100:#fdecec; --color-accent-2-200:#fad0d1; --color-accent-2-300:#f2a3a6; --color-accent-2-400:#e8767a;
-      --color-accent-2-500:#dd4a50; --color-accent-2-600:#d21f2b; --color-accent-2-700:#a8171f; --color-accent-2-800:#7c1116; --color-accent-2-900:#4a0a0d;
-    }
   </style>
 </helmet>
 
@@ -28,29 +20,25 @@
 
   <div style="width:390px; max-width:100%; height:844px; background:var(--color-bg); border:1px solid var(--color-divider); border-radius:32px; overflow:hidden; position:relative; box-shadow:var(--shadow-lg); display:flex; flex-direction:column">
 
-    <!-- Hero header (home only) -->
     <sc-if value="{{ isLocations }}" hint-placeholder-val="{{ true }}">
-      <div style="flex:none; background:var(--color-accent-900); color:var(--color-bg); padding:24px var(--space-4) 20px; display:flex; flex-direction:column; gap:4px">
-        <div style="font-size:11px; letter-spacing:0.1em; text-transform:uppercase; opacity:0.65">Control de mantenimiento · Uruguay</div>
-        <h2 style="margin:0; font-size:32px; color:var(--color-bg)">Locales</h2>
-        <div style="display:flex; justify-content:space-between; font-size:12px; opacity:0.8; margin-top:4px">
-          <span>Visita de {{ monthLabel }}</span>
-          <span>{{ completedThisMonth }}/{{ totalLocations }} completados</span>
+      <div style="flex:none; background:var(--color-accent-900); color:var(--color-bg); padding:22px var(--space-4) 18px; display:flex; flex-direction:column; gap:3px">
+        <div style="font-size:10.5px; letter-spacing:0.11em; text-transform:uppercase; opacity:0.6">Control de mantenimiento · Uruguay</div>
+        <h2 style="margin:0; font-size:31px; color:var(--color-bg); line-height:1">Plan de visitas</h2>
+        <div style="display:flex; justify-content:space-between; font-size:12px; opacity:0.8; margin-top:5px">
+          <span>{{ monthLabel }}</span>
+          <span>{{ doneCount }}/{{ plannedCount }} completados</span>
         </div>
       </div>
     </sc-if>
 
-    <!-- Header (sub-screens) -->
     <sc-if value="{{ isSubScreen }}" hint-placeholder-val="{{ false }}">
       <div style="flex:none; display:flex; align-items:center; gap:var(--space-3); padding:16px var(--space-4) 12px; border-bottom:1px solid var(--color-divider)">
-        <sc-if value="{{ canGoBack }}" hint-placeholder-val="{{ false }}">
-          <button class="btn btn-icon btn-ghost" onClick="{{ goBack }}" aria-label="Volver">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6 L9 12 L15 18"/></svg>
-          </button>
-        </sc-if>
+        <button class="btn btn-icon btn-ghost" onClick="{{ goBack }}" aria-label="Volver">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6 L9 12 L15 18"/></svg>
+        </button>
         <div style="flex:1; min-width:0">
-          <sc-if value="{{ headerSubtitle }}" hint-placeholder-val="{{ false }}">
-            <div style="font-size:11px; color:color-mix(in srgb, var(--color-text) 55%, transparent); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:1px">{{ headerSubtitle }}</div>
+          <sc-if value="{{ hasHeaderSubtitle }}" hint-placeholder-val="{{ false }}">
+            <div style="font-size:10.5px; color:color-mix(in srgb, var(--color-text) 55%, transparent); text-transform:uppercase; letter-spacing:0.07em; margin-bottom:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">{{ headerSubtitle }}</div>
           </sc-if>
           <h4 style="margin:0; font-size:20px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">{{ headerTitle }}</h4>
         </div>
@@ -62,33 +50,38 @@
       </div>
     </sc-if>
 
-    <!-- Content -->
     <div style="flex:1; overflow-y:auto; padding:var(--space-4); display:flex; flex-direction:column; gap:var(--space-4)">
 
-      <!-- LOCATIONS SCREEN -->
+      <!-- LOCALES -->
       <sc-if value="{{ isLocations }}" hint-placeholder-val="{{ true }}">
-        <div style="display:flex; flex-direction:column; gap:var(--space-4)">
+        <div style="display:flex; flex-direction:column; gap:var(--space-3)">
           <div class="field" style="margin:0">
             <div style="position:relative">
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="position:absolute; left:10px; top:10px; opacity:0.5"><path d="M11 3 A8 8 0 1 0 11 19 A8 8 0 1 0 11 3 M21 21 L16.65 16.65"/></svg>
-              <input class="input" style="padding-left:32px" placeholder="Buscar local o número" value="{{ search }}" onChange="{{ setSearch }}"/>
+              <input class="input" style="padding-left:32px" placeholder="Buscar sucursal, nombre o dirección" value="{{ search }}" onChange="{{ setSearch }}"/>
             </div>
           </div>
 
-          <div class="seg" style="align-self:flex-start">
-            <label class="seg-opt"><input type="radio" name="chainSeg" checked="{{ isAll }}" onChange="{{ setAll }}"/>Todos</label>
-            <label class="seg-opt"><input type="radio" name="chainSeg" checked="{{ isDisco }}" onChange="{{ setDisco }}"/>Disco</label>
-            <label class="seg-opt"><input type="radio" name="chainSeg" checked="{{ isDevoto }}" onChange="{{ setDevoto }}"/>Devoto</label>
+          <div style="display:flex; gap:var(--space-2); flex-wrap:wrap">
+            <div class="seg">
+              <label class="seg-opt"><input type="radio" name="scopeSeg" checked="{{ scopeMonth }}" onChange="{{ setScopeMonth }}"/>Este mes</label>
+              <label class="seg-opt"><input type="radio" name="scopeSeg" checked="{{ scopeAll }}" onChange="{{ setScopeAll }}"/>Todos</label>
+            </div>
+            <div class="seg">
+              <label class="seg-opt"><input type="radio" name="chainSeg" checked="{{ isAll }}" onChange="{{ setAll }}"/>Todos</label>
+              <label class="seg-opt"><input type="radio" name="chainSeg" checked="{{ isDisco }}" onChange="{{ setDisco }}"/>Disco</label>
+              <label class="seg-opt"><input type="radio" name="chainSeg" checked="{{ isDevoto }}" onChange="{{ setDevoto }}"/>Devoto</label>
+            </div>
           </div>
 
           <div style="display:flex; flex-direction:column">
-            <sc-for list="{{ filteredLocations }}" as="loc" hint-placeholder-count="8">
-              <div onClick="{{ loc.onClick }}" style="display:flex; align-items:center; gap:var(--space-3); padding:12px var(--space-1); min-height:56px; border-bottom:1px solid var(--color-divider); cursor:pointer">
-                <div style="width:34px; height:34px; flex:none; display:flex; align-items:center; justify-content:center; font-family:var(--font-heading); font-weight:600; font-size:12px; letter-spacing:0.06em; border:1px solid var(--color-accent); background:{{ loc.chainBg }}; color:{{ loc.chainColor }}">{{ loc.chainCode }}</div>
+            <sc-for list="{{ filteredLocations }}" as="loc" hint-placeholder-count="0">
+              <div onClick="{{ loc.onClick }}" style="display:flex; align-items:center; gap:var(--space-3); padding:12px var(--space-1); min-height:58px; border-bottom:1px solid var(--color-divider); cursor:pointer">
+                <div style="width:40px; height:40px; flex:none; display:flex; align-items:center; justify-content:center; font-family:var(--font-heading); font-weight:600; font-size:12px; letter-spacing:0.03em; border:1px solid var(--color-accent); background:{{ loc.chainBg }}; color:{{ loc.chainColor }}">{{ loc.suc }}</div>
                 <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:3px">
                   <span style="font-weight:600; font-family:var(--font-heading); font-size:16px; line-height:1.1">{{ loc.name }}</span>
                   <div style="font-size:11.5px; color:color-mix(in srgb, var(--color-text) 55%, transparent); white-space:nowrap; overflow:hidden; text-overflow:ellipsis">{{ loc.address }}</div>
-                  <div style="height:3px; background:var(--color-neutral-200); overflow:hidden; max-width:120px">
+                  <div style="height:3px; background:var(--color-neutral-200); overflow:hidden; max-width:110px">
                     <div style="height:100%; background:var(--color-accent); width:{{ loc.progressPct }}%"></div>
                   </div>
                 </div>
@@ -99,41 +92,52 @@
               </div>
             </sc-for>
           </div>
+
+          <sc-if value="{{ noResults }}" hint-placeholder-val="{{ false }}">
+            <div style="padding:var(--space-5) 0; text-align:center; font-size:13px; color:color-mix(in srgb, var(--color-text) 50%, transparent)">No hay locales para este filtro.</div>
+          </sc-if>
         </div>
       </sc-if>
 
-      <!-- LOCATION SCREEN (categories overview) -->
+      <!-- LOCAL -->
       <sc-if value="{{ isLocation }}" hint-placeholder-val="{{ false }}">
         <div style="display:flex; flex-direction:column; gap:var(--space-4)">
           <div>
-            <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px">
+            <div style="display:flex; align-items:center; gap:6px; margin-bottom:6px; flex-wrap:wrap">
               <span class="{{ locChainTagClass }}">{{ locChain }}</span>
-              <span style="font-size:13px; color:color-mix(in srgb, var(--color-text) 55%, transparent)">{{ locAddress }}</span>
+              <span class="tag tag-outline">{{ locSuc }}</span>
+              <span style="font-size:12.5px; color:color-mix(in srgb, var(--color-text) 55%, transparent)">{{ locAddress }}</span>
             </div>
-            <div style="height:6px; background:var(--color-surface); border:1px solid var(--color-divider); position:relative; overflow:hidden">
+            <div style="height:6px; background:var(--color-surface); border:1px solid var(--color-divider); overflow:hidden">
               <div style="height:100%; background:var(--color-accent); width:{{ locProgressPct }}%"></div>
             </div>
             <div style="font-size:12px; margin-top:6px; color:color-mix(in srgb, var(--color-text) 55%, transparent)">{{ locationCounts.ok }} OK · {{ locationCounts.falla }} con falla · {{ locationCounts.pendiente }} pendientes</div>
           </div>
 
-          <div class="field" style="margin:0; max-width:180px">
-            <label>Fecha de visita</label>
-            <input class="input" type="text" placeholder="AAAA-MM-DD" value="{{ visitDate }}" onChange="{{ setVisitDate }}"/>
+          <div style="display:flex; gap:var(--space-2)">
+            <div class="field" style="flex:1; margin:0">
+              <label>Fecha de visita</label>
+              <input class="input" type="text" placeholder="AAAA-MM-DD" value="{{ visitDate }}" onChange="{{ setVisitDate }}"/>
+            </div>
+            <div class="field" style="flex:1; margin:0">
+              <label>Visitas planificadas</label>
+              <div class="input" style="display:flex; align-items:center; background:var(--color-surface)">{{ locMonthsLabel }}</div>
+            </div>
           </div>
 
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:var(--space-3)">
-            <sc-for list="{{ categoryCards }}" as="cat" hint-placeholder-count="5">
+            <sc-for list="{{ categoryCards }}" as="cat" hint-placeholder-count="0">
               <div class="card blueprint" onClick="{{ cat.onClick }}" style="cursor:pointer; padding:var(--space-3); gap:7px; border-top:3px solid var(--color-accent)">
                 <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
                 <div style="width:38px; height:38px; background:var(--color-accent-100); display:flex; align-items:center; justify-content:center">
                   <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--color-accent-700)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="{{ cat.iconPath }}"/></svg>
                 </div>
-                <div class="card-title" style="font-size:16px; line-height:1.2">{{ cat.name }}</div>
+                <div class="card-title" style="font-size:16px; line-height:1.15">{{ cat.name }}</div>
                 <div class="card-body" style="font-size:12px">{{ cat.progressLabel }}</div>
                 <div style="height:3px; background:var(--color-neutral-200); overflow:hidden">
                   <div style="height:100%; background:var(--color-accent); width:{{ cat.progressPct }}%"></div>
                 </div>
-                <sc-if value="{{ cat.fallaLabel }}" hint-placeholder-val="{{ false }}">
+                <sc-if value="{{ cat.hasFalla }}" hint-placeholder-val="{{ false }}">
                   <span class="tag tag-outline" style="font-size:10px; align-self:flex-start">{{ cat.fallaLabel }}</span>
                 </sc-if>
               </div>
@@ -144,23 +148,32 @@
         </div>
       </sc-if>
 
-      <!-- CATEGORY SCREEN (equipment list) -->
+      <!-- CATEGORÍA -->
       <sc-if value="{{ isCategory }}" hint-placeholder-val="{{ false }}">
         <div style="display:flex; flex-direction:column">
           <h6 style="margin:0 0 var(--space-2); color:color-mix(in srgb, var(--color-text) 55%, transparent)">Equipos relevados</h6>
-          <sc-for list="{{ equipmentRows }}" as="eq" hint-placeholder-count="4">
+          <sc-for list="{{ equipmentRows }}" as="eq" hint-placeholder-count="0">
             <div onClick="{{ eq.onClick }}" style="display:flex; align-items:center; gap:var(--space-3); padding:var(--space-3) var(--space-1); border-bottom:1px solid var(--color-divider); cursor:pointer">
-              <div style="width:44px; height:44px; flex:none; border:1px solid var(--color-divider); display:flex; align-items:center; justify-content:center; overflow:hidden; background:var(--color-surface)">
+              <div style="width:46px; height:46px; flex:none; border:1px solid var(--color-divider); display:flex; align-items:center; justify-content:center; overflow:hidden; background:var(--color-surface); position:relative">
                 <sc-if value="{{ eq.hasPhoto }}" hint-placeholder-val="{{ false }}">
-                  <img src="{{ eq.photo }}" style="width:100%; height:100%; object-fit:cover"/>
+                  <div style="width:100%; height:100%">{{ eq.thumb }}</div>
                 </sc-if>
-                <sc-if value="{{ eq.hasPhoto }}" hint-placeholder-val="{{ true }}">
+                <sc-if value="{{ eq.noPhoto }}" hint-placeholder-val="{{ true }}">
+                  <svg style="opacity:0.35" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8 L7 8 L9 5 L15 5 L17 8 L20 8 A2 2 0 0 1 22 10 L22 18 A2 2 0 0 1 20 20 L4 20 A2 2 0 0 1 2 18 L2 10 A2 2 0 0 1 4 8 Z M12 17 A3.5 3.5 0 1 0 12 10 A3.5 3.5 0 1 0 12 17"/></svg>
                 </sc-if>
-                <svg style="opacity:0.35" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8 L7 8 L9 5 L15 5 L17 8 L20 8 A2 2 0 0 1 22 10 L22 18 A2 2 0 0 1 20 20 L4 20 A2 2 0 0 1 2 18 L2 10 A2 2 0 0 1 4 8 Z M12 17 A3.5 3.5 0 1 0 12 10 A3.5 3.5 0 1 0 12 17"/></svg>
               </div>
               <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px">
                 <div style="font-size:10px; letter-spacing:0.09em; text-transform:uppercase; color:color-mix(in srgb, var(--color-text) 50%, transparent)">{{ eq.subtype }}</div>
                 <div style="font-weight:600; font-family:var(--font-heading); font-size:16px; line-height:1.1">{{ eq.code }}</div>
+                <div style="display:flex; gap:6px; align-items:center; font-size:10.5px; color:color-mix(in srgb, var(--color-text) 45%, transparent)">
+                  <span>{{ eq.photoCount }}</span>
+                  <sc-if value="{{ eq.hasAudio }}" hint-placeholder-val="{{ false }}">
+                    <span style="display:inline-flex; align-items:center; gap:3px; color:var(--color-accent-700)">
+                      <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 A3 3 0 0 1 15 5 L15 11 A3 3 0 0 1 9 11 L9 5 A3 3 0 0 1 12 2 M5 11 A7 7 0 0 0 19 11 M12 18 L12 22"/></svg>
+                      audio
+                    </span>
+                  </sc-if>
+                </div>
               </div>
               <span class="{{ eq.statusTagClass }}" style="display:inline-flex; align-items:center; gap:4px">
                 <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="{{ eq.statusIconPath }}"/></svg>
@@ -175,61 +188,152 @@
         </div>
       </sc-if>
 
-      <!-- EQUIPMENT SCREEN -->
+      <!-- EQUIPO -->
       <sc-if value="{{ isEquipment }}" hint-placeholder-val="{{ false }}">
         <div style="display:flex; flex-direction:column; gap:var(--space-4)">
           <div class="blueprint" style="padding:var(--space-3); display:flex; flex-direction:column; gap:var(--space-3)">
             <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
 
             <sc-if value="{{ isAcEquipment }}" hint-placeholder-val="{{ false }}">
-              <div style="display:flex; flex-direction:column; gap:var(--space-2)">
-                <div>
-                  <label style="display:block; font-size:12px; margin-bottom:5px; color:color-mix(in srgb, var(--color-text) 70%, transparent)">Tipo de equipo</label>
-                  <div class="seg" style="width:100%">
-                    <sc-for list="{{ eqSubtypeOptions }}" as="opt" hint-placeholder-count="4">
-                      <label class="seg-opt" style="flex:1; justify-content:center"><input type="radio" name="acSubtypeSeg" checked="{{ opt.checked }}" onChange="{{ opt.onSelect }}"/>{{ opt.label }}</label>
-                    </sc-for>
-                  </div>
+              <div style="display:flex; gap:var(--space-2)">
+                <div class="field" style="flex:1; margin:0">
+                  <label>Tipo de equipo</label>
+                  <select class="input" value="{{ eqSubtype }}" onChange="{{ setEqSubtype }}">
+                    <option value="Split">Split</option>
+                    <option value="Rooftop">Rooftop</option>
+                    <option value="Chiller">Chiller</option>
+                    <option value="Manejadora">Manejadora</option>
+                  </select>
                 </div>
-                <div class="field" style="width:110px; margin:0">
-                  <label>N° de equipo</label>
+                <div class="field" style="width:104px; margin:0">
+                  <label>N° equipo</label>
                   <input class="input" type="text" inputmode="numeric" value="{{ eqNumPart }}" onChange="{{ setEqNumPart }}"/>
                 </div>
               </div>
             </sc-if>
 
-            <sc-if value="{{ eqHasPhoto }}" hint-placeholder-val="{{ false }}">
-              <div class="blueprint duotone" style="aspect-ratio:1/1; overflow:hidden">
-                <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
-                <img src="{{ eqPhoto }}" style="width:100%; height:100%; object-fit:cover"/>
+            <!-- Fotos -->
+            <div style="display:flex; flex-direction:column; gap:var(--space-2)">
+              <div style="display:flex; align-items:baseline; justify-content:space-between">
+                <label style="font-size:12px; color:color-mix(in srgb, var(--color-text) 70%, transparent)">Fotos</label>
+                <span style="font-size:11px; color:color-mix(in srgb, var(--color-text) 50%, transparent)">{{ eqPhotoCountLabel }}</span>
               </div>
-              <div style="display:flex; gap:var(--space-2)">
-                <button class="btn btn-secondary" style="flex:1" onClick="{{ triggerPhotoInput }}">Reemplazar foto</button>
-                <button class="btn btn-ghost" onClick="{{ removePhoto }}">Quitar</button>
-              </div>
-            </sc-if>
 
-            <sc-if value="{{ eqHasPhoto }}" hint-placeholder-val="{{ true }}">
-              <div class="blueprint" style="aspect-ratio:1/1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; background:var(--color-surface)">
-                <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
-                <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="var(--color-accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8 L7 8 L9 5 L15 5 L17 8 L20 8 A2 2 0 0 1 22 10 L22 18 A2 2 0 0 1 20 20 L4 20 A2 2 0 0 1 2 18 L2 10 A2 2 0 0 1 4 8 Z M12 17 A3.5 3.5 0 1 0 12 10 A3.5 3.5 0 1 0 12 17"/></svg>
-                <span style="font-size:12px; color:color-mix(in srgb, var(--color-text) 55%, transparent)">Sin foto todavía</span>
-              </div>
-              <button class="btn btn-primary btn-block" style="margin-top:0" onClick="{{ triggerPhotoInput }}">Tomar foto</button>
-            </sc-if>
+              <sc-if value="{{ eqHasPhotos }}" hint-placeholder-val="{{ false }}">
+                <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:var(--space-2)">
+                  <sc-for list="{{ eqPhotos }}" as="p" hint-placeholder-count="0">
+                    <div class="blueprint" style="aspect-ratio:1/1; overflow:hidden; position:relative">
+                      <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+                      <div style="width:100%; height:100%">{{ p.img }}</div>
+                      <button onClick="{{ p.onRemove }}" aria-label="Quitar foto" style="position:absolute; top:3px; right:3px; width:22px; height:22px; display:flex; align-items:center; justify-content:center; border:none; background:var(--color-accent-900); color:var(--color-bg); cursor:pointer; padding:0">
+                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6 L18 18 M6 18 L18 6"/></svg>
+                      </button>
+                    </div>
+                  </sc-for>
+                  <button onClick="{{ openCamera }}" aria-label="Agregar foto" style="aspect-ratio:1/1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; border:1px dashed var(--color-accent-300); background:var(--color-accent-100); color:var(--color-accent-700); cursor:pointer; font-family:var(--font-body); font-size:10px">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6 L12 18 M6 12 L18 12"/></svg>
+                    Agregar
+                  </button>
+                </div>
+              </sc-if>
 
-            <input type="file" accept="image/*" capture="environment" ref="{{ photoInputRef }}" onChange="{{ handlePhotoChange }}" style="display:none"/>
-
-            <div class="field" style="margin:0">
-              <label>Observación</label>
-              <textarea class="input" placeholder="Escribí un comentario…" value="{{ eqComment }}" onChange="{{ onCommentChange }}"></textarea>
+              <sc-if value="{{ eqNoPhotos }}" hint-placeholder-val="{{ true }}">
+                <div class="blueprint" style="aspect-ratio:16/9; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; background:var(--color-surface)">
+                  <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+                  <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="var(--color-accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8 L7 8 L9 5 L15 5 L17 8 L20 8 A2 2 0 0 1 22 10 L22 18 A2 2 0 0 1 20 20 L4 20 A2 2 0 0 1 2 18 L2 10 A2 2 0 0 1 4 8 Z M12 17 A3.5 3.5 0 1 0 12 10 A3.5 3.5 0 1 0 12 17"/></svg>
+                  <span style="font-size:12px; color:color-mix(in srgb, var(--color-text) 55%, transparent)">Sin fotos todavía</span>
+                </div>
+                <button class="btn btn-primary btn-block" style="margin-top:0; min-height:46px" onClick="{{ openCamera }}">Tomar fotos</button>
+                <button class="btn btn-ghost" style="align-self:center" onClick="{{ triggerPhotoInput }}">Elegir de la galería</button>
+              </sc-if>
             </div>
 
-            <div>
-              <label style="display:block; font-size:12px; margin-bottom:5px; color:color-mix(in srgb, var(--color-text) 70%, transparent)">Estado</label>
+            <input type="file" accept="image/*" multiple="{{ true }}" ref="{{ photoInputRef }}" onChange="{{ handlePhotoChange }}" style="display:none"/>
+
+            <!-- Verificaciones -->
+            <sc-if value="{{ eqHasChecks }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex; flex-direction:column; gap:var(--space-2); padding-top:var(--space-2); border-top:1px solid var(--color-divider)">
+                <label style="font-size:12px; color:color-mix(in srgb, var(--color-text) 70%, transparent)">Verificaciones</label>
+                <sc-for list="{{ eqChecks }}" as="c" hint-placeholder-count="0">
+                  <div style="display:flex; align-items:center; justify-content:space-between; gap:var(--space-2); min-height:34px">
+                    <span style="font-size:13.5px; flex:1; min-width:0">{{ c.label }}</span>
+                    <div class="seg" style="flex:none">
+                      <sc-for list="{{ c.options }}" as="o" hint-placeholder-count="0">
+                        <label class="seg-opt" style="min-width:52px; justify-content:center"><input type="radio" name="{{ c.radioName }}" checked="{{ o.checked }}" onChange="{{ o.onSelect }}"/>{{ o.label }}</label>
+                      </sc-for>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+
+            <!-- Mediciones -->
+            <sc-if value="{{ eqHasFields }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex; gap:var(--space-2); flex-wrap:wrap; padding-top:var(--space-2); border-top:1px solid var(--color-divider)">
+                <sc-for list="{{ eqFields }}" as="f" hint-placeholder-count="0">
+                  <div class="field" style="flex:1; min-width:118px; margin:0">
+                    <label>{{ f.label }}</label>
+                    <div style="position:relative">
+                      <input class="input" type="text" inputmode="decimal" placeholder="{{ f.placeholder }}" value="{{ f.value }}" onChange="{{ f.onChange }}"/>
+                      <span style="position:absolute; right:9px; top:50%; transform:translateY(-50%); font-size:12px; color:color-mix(in srgb, var(--color-text) 45%, transparent); pointer-events:none">{{ f.unit }}</span>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+
+            <!-- Observación -->
+            <div class="field" style="margin:0; padding-top:var(--space-2); border-top:1px solid var(--color-divider)">
+              <label>Observación</label>
+              <textarea class="input" style="min-height:80px" placeholder="Escribí un comentario…" value="{{ eqComment }}" onChange="{{ onCommentChange }}"></textarea>
+            </div>
+
+            <!-- Nota de voz -->
+            <div style="display:flex; flex-direction:column; gap:var(--space-2)">
+              <label style="font-size:12px; color:color-mix(in srgb, var(--color-text) 70%, transparent)">Nota de voz</label>
+
+              <sc-if value="{{ isRecording }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex; align-items:center; gap:var(--space-3); padding:10px var(--space-3); background:var(--color-accent-900); color:var(--color-bg)">
+                  <span style="width:9px; height:9px; background:var(--color-bg); border-radius:50%; flex:none"></span>
+                  <span style="flex:1; font-size:13px">Grabando… {{ recordingTime }}</span>
+                  <button class="btn btn-secondary" style="background:var(--color-bg); min-height:34px" onClick="{{ stopRecording }}">Detener</button>
+                </div>
+              </sc-if>
+
+              <sc-if value="{{ canRecord }}" hint-placeholder-val="{{ true }}">
+                <button class="btn btn-secondary btn-block" style="margin-top:0; min-height:44px; display:inline-flex; align-items:center; justify-content:center; gap:7px" onClick="{{ startRecording }}">
+                  <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 A3 3 0 0 1 15 5 L15 11 A3 3 0 0 1 9 11 L9 5 A3 3 0 0 1 12 2 M5 11 A7 7 0 0 0 19 11 M12 18 L12 22"/></svg>
+                  Grabar nota de voz
+                </button>
+              </sc-if>
+
+              <sc-if value="{{ hasAudios }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex; flex-direction:column; gap:var(--space-2)">
+                  <sc-for list="{{ eqAudios }}" as="a" hint-placeholder-count="0">
+                    <div style="display:flex; align-items:center; gap:var(--space-2); border:1px solid var(--color-divider); padding:8px var(--space-2)">
+                      <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:4px">
+                        <span style="font-size:11px; color:color-mix(in srgb, var(--color-text) 55%, transparent)">{{ a.label }}</span>
+                        <div style="width:100%">{{ a.player }}</div>
+                      </div>
+                      <button class="btn btn-icon btn-ghost" onClick="{{ a.onRemove }}" aria-label="Borrar nota de voz" style="flex:none; width:32px; height:32px">
+                        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7 L20 7 M10 7 L10 4 L14 4 L14 7 M6 7 L7 20 L17 20 L18 7"/></svg>
+                      </button>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-if>
+
+              <sc-if value="{{ micError }}" hint-placeholder-val="{{ false }}">
+                <div style="font-size:11.5px; color:var(--color-accent-800)">{{ micError }}</div>
+              </sc-if>
+            </div>
+
+            <!-- Estado -->
+            <div style="padding-top:var(--space-2); border-top:1px solid var(--color-divider)">
+              <label style="display:block; font-size:12px; margin-bottom:5px; color:color-mix(in srgb, var(--color-text) 70%, transparent)">Estado general</label>
               <div class="seg" style="width:100%">
                 <label class="seg-opt" style="flex:1; justify-content:center"><input type="radio" name="statusSeg" checked="{{ eqIsOk }}" onChange="{{ setEqOk }}"/>OK</label>
-                <label class="seg-opt" style="flex:1; justify-content:center"><input type="radio" name="statusSeg" checked="{{ eqIsFalla }}" onChange="{{ setEqFalla }}"/>Falla</label>
+                <label class="seg-opt" style="flex:1; justify-content:center"><input type="radio" name="statusSeg" checked="{{ eqIsFalla }}" onChange="{{ setEqFalla }}"/>No OK</label>
                 <label class="seg-opt" style="flex:1; justify-content:center"><input type="radio" name="statusSeg" checked="{{ eqIsPendiente }}" onChange="{{ setEqPendiente }}"/>Pendiente</label>
               </div>
             </div>
@@ -245,14 +349,15 @@
         </div>
       </sc-if>
 
-      <!-- SUMMARY SCREEN -->
+      <!-- RESUMEN -->
       <sc-if value="{{ isSummary }}" hint-placeholder-val="{{ false }}">
         <div style="display:flex; flex-direction:column; gap:var(--space-4)">
-          <div style="display:flex; align-items:center; gap:6px">
+          <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap">
             <span class="{{ locChainTagClass }}">{{ locChain }}</span>
-            <span style="font-family:var(--font-heading); font-weight:600; font-size:16px">{{ headerSubtitle }}</span>
+            <span class="tag tag-outline">{{ locSuc }}</span>
+            <span style="font-family:var(--font-heading); font-weight:600; font-size:16px">{{ locName }}</span>
           </div>
-          <div style="font-size:12px; color:color-mix(in srgb, var(--color-text) 55%, transparent); margin-top:-8px">Visitado el {{ visitDateFormatted }}</div>
+          <div style="font-size:12px; color:color-mix(in srgb, var(--color-text) 55%, transparent); margin-top:-10px">Visitado el {{ visitDateFormatted }}</div>
 
           <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:var(--space-2)">
             <div class="blueprint" style="padding:var(--space-3); text-align:center">
@@ -263,7 +368,7 @@
             <div class="blueprint" style="padding:var(--space-3); text-align:center; background:{{ fallaCardBg }}; color:{{ fallaCardColor }}">
               <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
               <div style="font-family:var(--font-heading); font-size:26px">{{ locationCounts.falla }}</div>
-              <div style="font-size:11px; opacity:0.85">Con falla</div>
+              <div style="font-size:11px; opacity:0.85">No OK</div>
             </div>
             <div class="blueprint" style="padding:var(--space-3); text-align:center">
               <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
@@ -275,10 +380,10 @@
           <sc-if value="{{ hasFalla }}" hint-placeholder-val="{{ false }}">
             <div style="display:flex; flex-direction:column; gap:var(--space-2)">
               <h5 style="margin:0">Fallas detectadas</h5>
-              <sc-for list="{{ fallaItems }}" as="f" hint-placeholder-count="2">
+              <sc-for list="{{ fallaItems }}" as="f" hint-placeholder-count="0">
                 <div onClick="{{ f.onClick }}" class="blueprint" style="padding:var(--space-3); cursor:pointer">
                   <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
-                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px">
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; gap:6px">
                     <span style="font-weight:600; font-family:var(--font-heading); font-size:14px">{{ f.code }}</span>
                     <span class="tag tag-outline" style="font-size:10px">{{ f.catName }}</span>
                   </div>
@@ -289,14 +394,8 @@
           </sc-if>
 
           <div style="display:flex; flex-direction:column; gap:var(--space-2)">
-            <button class="btn btn-secondary btn-block" style="margin-top:0" onClick="{{ exportPhotos }}">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 L12 15 M7 10 L12 15 L17 10 M5 19 L19 19"/></svg>
-              Exportar fotos por equipo
-            </button>
-            <button class="btn btn-primary btn-block" style="margin-top:0" onClick="{{ generatePdf }}">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 L14 2 L20 8 L20 22 L6 22 Z M14 2 L14 8 L20 8 M8 13 L16 13 M8 17 L16 17"/></svg>
-              Generar reporte PDF
-            </button>
+            <button class="btn btn-secondary btn-block" style="margin-top:0; min-height:44px" onClick="{{ exportPhotos }}">Exportar fotos y audios por equipo</button>
+            <button class="btn btn-primary btn-block" style="margin-top:0; min-height:46px" onClick="{{ generatePdf }}">Generar reporte PDF</button>
             <button class="btn btn-ghost" onClick="{{ goLocations }}">Volver a locales</button>
           </div>
         </div>
@@ -305,9 +404,36 @@
     </div>
   </div>
 
-  <p style="max-width:390px; text-align:center; font-size:12px; color:color-mix(in srgb, var(--color-text) 50%, transparent); margin:0">Prototipo interactivo — marcá estado, sacá fotos y comentá cada equipo desde el celular.</p>
+  <p style="max-width:390px; text-align:center; font-size:12px; color:color-mix(in srgb, var(--color-text) 50%, transparent); margin:0">Prototipo interactivo — 52 sucursales reales del plan de visitas.</p>
 
-  <!-- History dialog -->
+  <sc-if value="{{ cameraOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed; inset:0; z-index:80; background:#0b0b0c; display:flex; flex-direction:column">
+      <div style="flex:none; display:flex; align-items:center; justify-content:space-between; padding:14px 18px; color:#fff">
+        <button class="btn btn-ghost" style="color:#fff" onClick="{{ cancelCamera }}">Cancelar</button>
+        <span style="font-size:12.5px; opacity:0.75">{{ shotCountLabel }}</span>
+        <button class="btn btn-primary" style="min-height:38px" onClick="{{ confirmCamera }}">{{ confirmLabel }}</button>
+      </div>
+
+      <div style="flex:1; min-height:0; position:relative; background:#000">
+        <video ref="{{ videoRef }}" autoPlay="{{ true }}" playsInline="{{ true }}" muted="{{ true }}" style="width:100%; height:100%; object-fit:cover"></video>
+      </div>
+
+      <sc-if value="{{ hasShots }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:none; display:flex; gap:8px; padding:10px 14px; overflow-x:auto; background:#141415">
+          <sc-for list="{{ shotThumbs }}" as="s" hint-placeholder-count="0">
+            <div title="{{ s.label }}" style="width:52px; height:52px; flex:none; border:1px solid rgba(255,255,255,0.25); background-image:url({{ s.url }}); background-size:cover; background-position:center"></div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <div style="flex:none; display:flex; align-items:center; justify-content:space-between; padding:16px 26px 26px; background:#0b0b0c">
+        <button class="btn btn-ghost" style="color:#fff; opacity:0.8; min-width:74px" onClick="{{ undoShot }}">Deshacer</button>
+        <button onClick="{{ shoot }}" aria-label="Sacar foto" style="width:70px; height:70px; border-radius:50%; border:4px solid #fff; background:var(--color-accent); cursor:pointer; padding:0"></button>
+        <span style="min-width:74px; text-align:right; color:#fff; font-family:var(--font-heading); font-size:20px">{{ shotCount }}</span>
+      </div>
+    </div>
+  </sc-if>
+
   <sc-if value="{{ historyOpen }}" hint-placeholder-val="{{ false }}">
     <div style="position:absolute; inset:0; z-index:50; background:rgba(29,31,32,0.55); display:flex; align-items:center; justify-content:center; padding:24px">
       <div class="dialog blueprint" style="width:100%">
@@ -320,9 +446,9 @@
         </div>
         <div class="dialog-body" style="font-size:12px; opacity:0.6; margin-top:-8px">{{ historyTitle }}</div>
         <div style="display:flex; flex-direction:column; gap:var(--space-2); margin-top:var(--space-2)">
-          <sc-for list="{{ historyEntries }}" as="h" hint-placeholder-count="3">
-            <div style="display:flex; justify-content:space-between; align-items:center; padding:var(--space-2) 0; border-bottom:1px solid var(--color-divider)">
-              <div>
+          <sc-for list="{{ historyEntries }}" as="h" hint-placeholder-count="0">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; padding:var(--space-2) 0; border-bottom:1px solid var(--color-divider)">
+              <div style="min-width:0">
                 <div style="font-size:13px; font-weight:600">{{ h.date }}</div>
                 <div style="font-size:11px; opacity:0.65">{{ h.comment }}</div>
               </div>
@@ -337,9 +463,8 @@
     </div>
   </sc-if>
 
-  <!-- Toast -->
   <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
-    <div style="position:absolute; bottom:24px; left:50%; transform:translateX(-50%); z-index:60; background:var(--color-accent-900); color:var(--color-bg); padding:10px 18px; border-radius:2px; font-size:13px; box-shadow:var(--shadow-md)">{{ toast }}</div>
+    <div style="position:fixed; bottom:28px; left:50%; transform:translateX(-50%); z-index:60; background:var(--color-accent-900); color:var(--color-bg); padding:10px 18px; font-size:13px; box-shadow:var(--shadow-md)">{{ toast }}</div>
   </sc-if>
 
 </div>
@@ -347,61 +472,141 @@
 </x-dc>
 <script type="text/x-dc" data-dc-script>
 
-function seededRand(seed){ const x = Math.sin(seed) * 10000; return x - Math.floor(x); }
+const RAW_LOCATIONS = [
+  ["D 01","Scoseria","Scosería 2628",[1,7]],["D 02","Agraciada","Av. Agraciada 2986",[1,4]],
+  ["D 03","Arenal Grande","Arenal Grande 1376",[1,2]],["D 04","Legrand","Av. Legrand 5085",[1,3]],
+  ["D 05","Parada 5","Pedragosa Sierra y Av. Italia, Punta del Este",[1,6]],
+  ["D 06","Fernandez Crespo","Av. Daniel Fernandez Crespo 1727",[1,4]],
+  ["D 07","Soca","Av. Dr. Francisco Soca 1318",[1,4]],
+  ["D 08","Roosevelt","Av. Roosevelt y Zelmar Michellini s/n, Maldonado",[1,5]],
+  ["D 09","Pta Carretas","Ellauri 350, local 002. Shopping Punta Carretas",[1,6]],
+  ["D 10","Camino Maldonado","Brig. Gral. Lavalleja 7722, Maldonado",[1,4]],
+  ["D 11","8 de Octubre y Garibaldi","8 de Octubre 2681",[1,5]],
+  ["D 12","Curva De Maroñas","8 de Octubre 4786",[1,2]],["D 13","Chucarro","Chucarro 1320",[1,6]],
+  ["D 14","De La Punta","Calle 17, entre Gorlero y 24, Punta del Este",[1,6]],
+  ["D 15","Marcelino Sosa","Marcelino Sosa 2706",[1,5]],["D 16","Ayacucho","Ayacucho 3370",[1,6]],
+  ["D 17","Calle Maldonado","Maldonado 1024",[1,7]],
+  ["D 18","Solymar","Av. Giannattasio Km. 23.500, Solymar",[1,3]],
+  ["D 19","Atlantida","Calle Gral. Artigas s/n, entre 22 y 24, Atlántida",[1,2]],
+  ["D 20","20 De Setiembre","20 de setiembre 1521",[1,4]],["D 21","Ejido","Ejido 1530",[1,2]],
+  ["D 22","Barrios Amorin","Barrios Amorín 859",[1,2]],
+  ["D 23","Medanos","Av. Giannattasio km 27.500 y Av. Central, Médanos",[1,3]],
+  ["D 24","Obligado","Obligado 968",[1,4]],["D 25","Solano Lopez","Francisco Solano López 1680",[1,5]],
+  ["D 26","Canelones","Florencio Sanchez 729, Canelones",[1,6]],
+  ["D 27","Avda Italia","Magariños Cervantes 2052",[1,5]],
+  ["D 28","La Cabaña","Naciones Unidas y Rambla, El Pinar",[1,3]],
+  ["DV 01","Malvin","H. Irigoyen 1444",[1,6]],["DV 02","Punta Gorda","Gral. Paz 1404",[1,7]],
+  ["DV 03","Brisas","Rivera 4502",[1,2]],["DV 04","Carrasco","Bolivia 1413",[1,3]],
+  ["DV 05","Shangrila","Av. Calcagno s/n, Shangrilá",[1,4]],
+  ["DV 06","Santa Mónica","Av. Italia 6958 esq. Sta. Mónica",[1,7]],
+  ["DV 07","Colón","Av. Garzón 1945",[1,7]],["DV 08","San Martín I","San Martín 3709",[1,7]],
+  ["DV 09","Punta del Este","Av. Roosevelt y Parada 10, Punta del Este",[1,5]],
+  ["DV 10","Portones","Av. Italia 5779",[1,2]],["DV 11","Sayago","Cno. Ariel 4626",[1,4]],
+  ["DV 12","Pando","Ruta 8 km 30.800, Pando",[1,5]],
+  ["DV 13","Piriapolis Rambla","Rbla. de los Argentinos y Vázquez, Piriápolis",[1,2]],
+  ["DV 14","Hiperpiria","Av. Piria y Bs. As., Piriápolis",[1,5]],
+  ["DV 15","Agraciada","Agraciada y Fco. Gómez",[1,3]],
+  ["DV 16","San Martín II","Av. Gral. San Martín 3083",[1,6]],
+  ["DV 18","Las Piedras I","Juan A. Lavalleja 671",[1,3]],
+  ["DV 19","Prado - Suárez","Joaquín Suarez 3458",[1,8]],
+  ["DV 20","Arenal Grande","Arenal Grande 2006",[1,7]],
+  ["DV 21","8 de Octubre","8 de Octubre 3621",[1,7]],
+  ["DV 22","26 de Marzo","26 de Marzo esq. Lorenzo Pérez",[1,3]],
+  ["DV 23","Coronel Mora","Coronel Mora y Agr. Francisco Ros",[1,4]],
+  ["DV 24","San Quintín","Av. San Quintín 4376",[1,2]],
+  ["DV 25","Las Piedras II","Av. Dr. Pouey 622",[1,3]]
+];
+
+// Julio verificado contra la hoja "Mes" del calendario (8 locales)
+const JULIO = ['D 03','D 12','D 21','D 22','DV 03','DV 10','DV 19','DV 24'];
+
+const MONTH_NAMES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Setiembre','Octubre','Noviembre','Diciembre'];
 
 const ICONS = {
   wind: "M2 8 L14 8 A2.5 2.5 0 1 0 11.5 5.5 M2 13 L18 13 A2.5 2.5 0 1 1 15.5 16.5 M2 18 L10 18",
   flame: "M12 2 C9 6 8 9 10 11 C11 12 11 13 10 14 C8 16 8 19 12 22 C16 19 16 16 14 14 C13 13 13 12 14 11 C16 9 15 6 12 2 Z",
-  batteryCharging: "M15 7 L2 7 A2 2 0 0 0 0 9 L0 15 A2 2 0 0 0 2 17 L15 17 A2 2 0 0 0 17 15 L17 9 A2 2 0 0 0 15 7 Z M20 10 L20 14 M9.5 9 L6.5 13 L9.5 13 L8.5 17",
+  battery: "M15 7 L2 7 A2 2 0 0 0 0 9 L0 15 A2 2 0 0 0 2 17 L15 17 A2 2 0 0 0 17 15 L17 9 A2 2 0 0 0 15 7 Z M20 10 L20 14 M9.5 9 L6.5 13 L9.5 13 L8.5 17",
   zap: "M13 2 L4 14 L11 14 L10 22 L20 10 L13 10 Z",
   panel: "M3 3 L10 3 L10 10 L3 10 Z M14 3 L21 3 L21 10 L14 10 Z M14 14 L21 14 L21 21 L14 21 Z M3 14 L10 14 L10 21 L3 21 Z"
 };
 
-const STATUS_LABEL = { ok: "OK", falla: "Falla", pendiente: "Pendiente" };
-const STATUS_TAGCLASS = { ok: "tag tag-accent", falla: "tag tag-outline", pendiente: "tag tag-neutral" };
+const CATEGORY_DEFS = [
+  { id:'ac', name:'Aires acondicionados', icon:ICONS.wind, prefix:'AC', subtypes:['Split','Rooftop','Chiller','Manejadora'], baseCount:4, countRange:4,
+    checks:[
+      { id:'filtro', label:'Filtro', options:['OK','No OK'] },
+      { id:'desague', label:'Desagüe', options:['OK','No OK'] },
+      { id:'intercambiador', label:'Intercambiador', options:['OK','No OK'] }
+    ], fields:[] },
+  { id:'gas', name:'Cañerías de gas', icon:ICONS.flame, prefix:'GAS', subtypes:['Tramo'], baseCount:1, countRange:2,
+    checks:[
+      { id:'flexibles', label:'Flexibles autorizados', options:['OK','No OK'] },
+      { id:'cortePanico', label:'Sistema de corte por pánico', options:['OK','No OK'] }
+    ], fields:[] },
+  { id:'ups', name:'UPS', icon:ICONS.battery, prefix:'UPS', subtypes:['UPS'], baseCount:1, countRange:2,
+    checks:[
+      { id:'enLinea', label:'UPS en línea', options:['OK','No OK'] },
+      { id:'aireDedicado', label:'Aire acondicionado dedicado', options:['Sí','No'] },
+      { id:'cargaBaterias', label:'Estado de carga de baterías', options:['OK','No OK'] }
+    ],
+    fields:[
+      { id:'carga', label:'Carga', unit:'%', placeholder:'100' },
+      { id:'autonomia', label:'Autonomía', unit:'', placeholder:'2 h 12 min' }
+    ] },
+  { id:'gen', name:'Generador eléctrico', icon:ICONS.zap, prefix:'GEN', subtypes:['Generador'], baseCount:1, countRange:2,
+    checks:[
+      { id:'bateria', label:'Batería', options:['OK','No OK'] },
+      { id:'refrigerante', label:'Líquido refrigerante', options:['OK','No OK'] },
+      { id:'lubricante', label:'Lubricante', options:['OK','No OK'] },
+      { id:'correa', label:'Correa', options:['OK','No OK'] }
+    ],
+    fields:[
+      { id:'combustible', label:'Tanque de combustible', unit:'%', placeholder:'55' },
+      { id:'horas', label:'Horas de equipo', unit:'h', placeholder:'0' },
+      { id:'voltaje', label:'Voltaje', unit:'V', placeholder:'220' }
+    ] },
+  { id:'sub', name:'Subestación y tablero', icon:ICONS.panel, prefix:'TAB', subtypes:['Tablero'], baseCount:1, countRange:3,
+    checks:[
+      { id:'objetos', label:'Objetos extraños', options:['OK','No OK'] },
+      { id:'filtraciones', label:'Filtraciones de agua', options:['OK','No OK'] },
+      { id:'tableros', label:'Tableros eléctricos', options:['OK','No OK'] },
+      { id:'condensadores', label:'Bancos de condensadores', options:['OK','No OK'] }
+    ],
+    fields:[ { id:'fp', label:'Factor de potencia', unit:'', placeholder:'0,95' } ] }
+];
+
+const STATUS_LABEL = { ok:'OK', falla:'No OK', pendiente:'Pendiente' };
+const STATUS_TAGCLASS = { ok:'tag tag-accent', falla:'tag tag-outline', pendiente:'tag tag-neutral' };
 const STATUS_ICON = {
   ok: "M2 12 A10 10 0 1 0 22 12 A10 10 0 1 0 2 12 M9 12 L11 14 L15 10",
   falla: "M12 3 L22 20 L2 20 Z M12 9 L12 13 M12 16.5 L12 16.6",
   pendiente: "M2 12 A10 10 0 1 0 22 12 A10 10 0 1 0 2 12 M12 7 L12 12 L16 14"
 };
 
+function seededRand(seed){ const x = Math.sin(seed) * 10000; return x - Math.floor(x); }
+
 function buildLocations(){
-  const barrios = ['Pocitos','Carrasco','Cordón','Malvín','Punta Carretas','Buceo','Parque Rodó','Tres Cruces','Ciudad Vieja','Aguada','Centro','La Blanqueada','Punta Gorda','Villa Dolores','Malvín Norte','Prado','Capurro','Cerro','Peñarol','Sayago'];
-  const catDefs = [
-    { id:'ac', name:'Aires acondicionados', icon:ICONS.wind, prefix:'AC', subtypes:['Split','Rooftop','Chiller','Manejadora'], baseCount:4, countRange:4 },
-    { id:'gas', name:'Cañerías de gas', icon:ICONS.flame, prefix:'GAS', subtypes:['Tramo'], baseCount:1, countRange:2 },
-    { id:'ups', name:'UPS', icon:ICONS.batteryCharging, prefix:'UPS', subtypes:['UPS'], baseCount:1, countRange:2 },
-    { id:'gen', name:'Generador eléctrico', icon:ICONS.zap, prefix:'GEN', subtypes:['Generador'], baseCount:1, countRange:1 },
-    { id:'panel', name:'Tablero eléctrico', icon:ICONS.panel, prefix:'TAB', subtypes:['Tablero'], baseCount:1, countRange:3 }
-  ];
-  const locations = [];
-  [['Disco',20],['Devoto',20]].forEach(function(pair){
-    const chain = pair[0], count = pair[1];
-    for(let i=1;i<=count;i++){
-      const idx = chain==='Disco' ? i : i+100;
-      const seed = idx*7.919;
-      const barrio = barrios[(idx*3)%barrios.length];
-      const categories = catDefs.map(function(cd){
-        const n = cd.baseCount + Math.floor(seededRand(seed+cd.id.length)*cd.countRange);
-        const equipment = [];
-        for(let k=1;k<=n;k++){
-          const r = seededRand(seed + cd.id.length*3 + k*2.7);
-          const status = r<0.55 ? 'ok' : r<0.75 ? 'pendiente' : 'falla';
-          const subtype = cd.subtypes[(k-1)%cd.subtypes.length];
-          equipment.push({
-            id: cd.id+'-'+k,
-            prefix: cd.prefix, numPart: idx*10+k,
-            subtype: subtype, status: status,
-            comment: status==='falla' ? 'Ruido anómalo, revisar' : status==='ok' ? 'Funcionamiento correcto' : '',
-            updatedAt: status==='pendiente' ? null : ('24 jul · '+(9+(k%4))+':1'+(k%5)+'h')
-          });
-        }
-        return { id:cd.id, name:cd.name, icon:cd.icon, equipment:equipment };
-      });
-      locations.push({ id: chain.toLowerCase()+'-'+i, chain: chain, number:i, name: chain+' '+i, address: barrio+', Montevideo', categories: categories });
-    }
+  return RAW_LOCATIONS.map(function(row, idx){
+    const suc = row[0], chain = suc.indexOf('DV')===0 ? 'Devoto' : 'Disco';
+    const seed = (idx+1)*7.919;
+    const categories = CATEGORY_DEFS.map(function(cd){
+      const n = cd.baseCount + Math.floor(seededRand(seed+cd.id.length)*cd.countRange);
+      const equipment = [];
+      for(let k=1;k<=n;k++){
+        const r = seededRand(seed + cd.id.length*3 + k*2.7);
+        const status = r<0.55 ? 'ok' : r<0.78 ? 'pendiente' : 'falla';
+        equipment.push({
+          id: cd.id+'-'+k, prefix: cd.prefix, numPart: (idx+1)*10+k,
+          subtype: cd.subtypes[(k-1)%cd.subtypes.length], status: status,
+          comment: status==='falla' ? 'Revisar en próxima visita' : status==='ok' ? 'Funcionamiento correcto' : '',
+          photos: [], audios: [],
+          updatedAt: status==='pendiente' ? null : '24 jul · '+(9+(k%4))+':1'+(k%5)+'h'
+        });
+      }
+      return { id:cd.id, name:cd.name, icon:cd.icon, equipment:equipment };
+    });
+    const months = JULIO.indexOf(suc)!==-1 ? [1,7] : row[3].filter((m)=>m!==7);
+    return { id:suc.replace(' ','').toLowerCase(), suc:suc, chain:chain, name:row[1], address:row[2], months:months, categories:categories };
   });
-  return locations;
 }
 
 class Component extends DCLogic {
@@ -409,85 +614,81 @@ class Component extends DCLogic {
     super(props);
     this.locations = buildLocations();
     this.photoInputRef = React.createRef();
+    this.videoRef = React.createRef();
+    this._camStream = null;
     this._toastTimer = null;
-    const todayStr = new Date().toISOString().slice(0,10);
-    const visitDates = {};
-    this.locations.forEach((l)=>{ visitDates[l.id] = todayStr; });
-    this.state = { stack:[{screen:'locations'}], search:'', chainFilter:'all', equipmentData:{}, addedEquipment:{}, deletedEquipment:{}, visitDates, historyFor:null, toast:null };
+    this._tick = null;
+    this._recorder = null;
+    this._chunks = [];
+    this.state = {
+      stack:[{screen:'locations'}], search:'', chainFilter:'all', scope:'month',
+      equipmentData:{}, addedEquipment:{}, deletedEquipment:{}, visitDates:{},
+      historyFor:null, toast:null, recording:null, recordSeconds:0, micError:null,
+      cameraOpen:false, shots:[]
+    };
   }
 
+  componentWillUnmount(){ clearTimeout(this._toastTimer); clearInterval(this._tick); }
+
   key(locId,catId,eqId){ return locId+'|'+catId+'|'+eqId; }
-  nowStr(){ const d=new Date(); return 'Hoy · '+d.toLocaleTimeString('es-UY',{hour:'2-digit',minute:'2-digit'}); }
+  nowStr(){ return 'Hoy · '+new Date().toLocaleTimeString('es-UY',{hour:'2-digit',minute:'2-digit'}); }
+  catDef(catId){ return CATEGORY_DEFS.find((c)=>c.id===catId); }
 
   getEqState(locId,catId,eqId,baseEq){
     const ov = this.state.equipmentData[this.key(locId,catId,eqId)] || {};
     const numPart = ov.numPart !== undefined ? ov.numPart : baseEq.numPart;
+    const photos = ov.photos !== undefined ? ov.photos : (baseEq.photos || []);
+    const audios = ov.audios !== undefined ? ov.audios : (baseEq.audios || []);
     return {
       status: ov.status !== undefined ? ov.status : baseEq.status,
       comment: ov.comment !== undefined ? ov.comment : baseEq.comment,
-      photo: ov.photo !== undefined ? ov.photo : (baseEq.photo || null),
-      updatedAt: ov.updatedAt !== undefined ? ov.updatedAt : baseEq.updatedAt,
+      photos, audios,
+      checks: ov.checks || {},
+      fields: ov.fields || {},
       subtype: ov.subtype !== undefined ? ov.subtype : baseEq.subtype,
-      numPart: numPart,
-      code: baseEq.prefix+'-'+String(numPart).padStart(3,'0')
+      numPart,
+      code: baseEq.prefix+'-'+String(numPart).padStart(3,'0'),
+      updatedAt: ov.updatedAt !== undefined ? ov.updatedAt : baseEq.updatedAt
     };
   }
 
-  getVisitDate(locId){ return this.state.visitDates[locId]; }
-  setVisitDate = (e) => { const t=this.state.stack[this.state.stack.length-1]; const locId=t.locId; const val=e.target.value; this.setState((s)=>({ visitDates:{...s.visitDates,[locId]:val} })); };
-  setEqSubtypeValue(value){ const t=this.state.stack[this.state.stack.length-1]; this.setEquipmentField(t.locId,t.catId,t.eqId,'subtype',value); }
-  setEqNumPart = (e) => { const t=this.state.stack[this.state.stack.length-1]; const val=parseInt(e.target.value,10)||0; this.setEquipmentField(t.locId,t.catId,t.eqId,'numPart',val); };
-
   getCategoryEquipment(loc,cat){
-    const key = loc.id+'|'+cat.id;
-    const all = [...cat.equipment, ...(this.state.addedEquipment[key]||[])];
-    return all.filter((eq)=> !this.state.deletedEquipment[this.key(loc.id,cat.id,eq.id)]);
+    const k = loc.id+'|'+cat.id;
+    return [...cat.equipment, ...(this.state.addedEquipment[k]||[])]
+      .filter((eq)=> !this.state.deletedEquipment[this.key(loc.id,cat.id,eq.id)]);
   }
-
-  deleteEquipment(locId,catId,eqId){
-    const k = this.key(locId,catId,eqId);
-    this.setState((s)=>{
-      const top = s.stack[s.stack.length-1];
-      const onIt = top.screen==='equipment' && top.eqId===eqId;
-      return { deletedEquipment:{ ...s.deletedEquipment, [k]:true }, stack: onIt ? s.stack.slice(0,-1) : s.stack };
-    });
-    this.showToast('Equipo eliminado');
-  }
-
-  addEquipment = (locId,catId) => {
-    const loc = this.locations.find((l)=>l.id===locId);
-    const cat = loc.categories.find((c)=>c.id===catId);
-    const key = locId+'|'+catId;
-    const existing = this.getCategoryEquipment(loc,cat);
-    const maxNum = existing.reduce((m,e)=>Math.max(m,e.numPart||0),0);
-    const newEq = { id: catId+'-new-'+Date.now(), prefix: cat.equipment[0] ? cat.equipment[0].prefix : catId.toUpperCase(), numPart: maxNum+1, subtype: cat.equipment[0] ? cat.equipment[0].subtype : 'Split', status:'pendiente', comment:'', photo:null, updatedAt:null };
-    this.setState((s)=>({ addedEquipment:{ ...s.addedEquipment, [key]: [...(s.addedEquipment[key]||[]), newEq] }, stack:[...s.stack,{screen:'equipment',locId,catId,eqId:newEq.id}] }));
-  };
 
   countStatus(loc,cat){
     let ok=0,falla=0,pendiente=0;
-    this.getCategoryEquipment(loc,cat).forEach((eq)=>{
+    const list = this.getCategoryEquipment(loc,cat);
+    list.forEach((eq)=>{
       const st = this.getEqState(loc.id,cat.id,eq.id,eq).status;
       if(st==='ok') ok++; else if(st==='falla') falla++; else pendiente++;
     });
-    return { ok, falla, pendiente, total: this.getCategoryEquipment(loc,cat).length };
+    return { ok, falla, pendiente, total:list.length };
   }
 
   countLocation(loc){
     let ok=0,falla=0,pendiente=0,total=0;
-    loc.categories.forEach((cat)=>{
-      const c = this.countStatus(loc,cat);
-      ok+=c.ok; falla+=c.falla; pendiente+=c.pendiente; total+=c.total;
-    });
+    loc.categories.forEach((cat)=>{ const c=this.countStatus(loc,cat); ok+=c.ok; falla+=c.falla; pendiente+=c.pendiente; total+=c.total; });
     return { ok, falla, pendiente, total };
+  }
+
+  top(){ return this.state.stack[this.state.stack.length-1]; }
+  ctx(){
+    const t = this.top();
+    const loc = t.locId ? this.locations.find((l)=>l.id===t.locId) : null;
+    const cat = loc && t.catId ? loc.categories.find((c)=>c.id===t.catId) : null;
+    const eq = cat ? this.getCategoryEquipment(loc,cat).find((x)=>x.id===t.eqId) : null;
+    return { t, loc, cat, eq };
   }
 
   setEquipmentField(locId,catId,eqId,field,value){
     const k = this.key(locId,catId,eqId);
-    this.setState((s)=>({ equipmentData: { ...s.equipmentData, [k]: { ...s.equipmentData[k], [field]: value, updatedAt: this.nowStr() } } }));
+    this.setState((s)=>({ equipmentData:{ ...s.equipmentData, [k]:{ ...s.equipmentData[k], [field]:value, updatedAt:this.nowStr() } } }));
   }
-
-  setStatusForCurrent(status){ const top=this.state.stack[this.state.stack.length-1]; this.setEquipmentField(top.locId,top.catId,top.eqId,'status',status); }
+  patchCurrent(field,value){ const t=this.top(); this.setEquipmentField(t.locId,t.catId,t.eqId,field,value); }
+  currentState(){ const c=this.ctx(); return c.eq ? this.getEqState(c.loc.id,c.cat.id,c.eq.id,c.eq) : null; }
 
   goLocations = () => this.setState({ stack:[{screen:'locations'}] });
   openLocation = (locId) => this.setState((s)=>({ stack:[...s.stack,{screen:'location',locId}] }));
@@ -497,157 +698,377 @@ class Component extends DCLogic {
   goBack = () => this.setState((s)=> s.stack.length>1 ? { stack:s.stack.slice(0,-1) } : s);
   jumpToEquipment = (locId,catId,eqId) => this.setState({ stack:[{screen:'locations'},{screen:'location',locId},{screen:'category',locId,catId},{screen:'equipment',locId,catId,eqId}] });
 
-  setSearch = (v) => this.setState({ search:v });
-  setChain = (v) => this.setState({ chainFilter:v });
+  addEquipment(locId,catId){
+    const loc = this.locations.find((l)=>l.id===locId);
+    const cat = loc.categories.find((c)=>c.id===catId);
+    const def = this.catDef(catId);
+    const list = this.getCategoryEquipment(loc,cat);
+    const maxNum = list.reduce((m,e)=>Math.max(m, this.getEqState(locId,catId,e.id,e).numPart||0), 0);
+    const newEq = { id:catId+'-new-'+Date.now(), prefix:def.prefix, numPart:maxNum+1, subtype:def.subtypes[0], status:'pendiente', comment:'', photos:[], audios:[], updatedAt:null };
+    const k = locId+'|'+catId;
+    this.setState((s)=>({
+      addedEquipment:{ ...s.addedEquipment, [k]:[ ...(s.addedEquipment[k]||[]), newEq ] },
+      stack:[ ...s.stack, {screen:'equipment', locId, catId, eqId:newEq.id} ]
+    }));
+  }
 
-  openHistory = (locId,catId,eqId) => this.setState({ historyFor:{locId,catId,eqId} });
-  closeHistory = () => this.setState({ historyFor:null });
+  deleteEquipment(locId,catId,eqId){
+    const k = this.key(locId,catId,eqId);
+    this.setState((s)=>{
+      const t = s.stack[s.stack.length-1];
+      const onIt = t.screen==='equipment' && t.eqId===eqId;
+      return { deletedEquipment:{ ...s.deletedEquipment, [k]:true }, stack: onIt ? s.stack.slice(0,-1) : s.stack };
+    });
+    this.showToast('Equipo eliminado');
+  }
 
-  showToast(msg){ this.setState({ toast:msg }); clearTimeout(this._toastTimer); this._toastTimer = setTimeout(()=>this.setState({toast:null}), 2200); }
-  exportPhotos = () => this.showToast('Fotos exportadas ✓');
-  generatePdf = () => this.showToast('Reporte PDF generado ✓');
+  getVisitDate(locId){ return this.state.visitDates[locId] || new Date().toISOString().slice(0,10); }
+  setVisitDate = (e) => { const id=this.top().locId; const v=e.target.value; this.setState((s)=>({ visitDates:{...s.visitDates,[id]:v} })); };
+
+  setSearch = (e) => this.setState({ search:e.target.value });
+  setChain = (v) => () => this.setState({ chainFilter:v });
+  setScope = (v) => () => this.setState({ scope:v });
+
+  setStatus = (status) => () => this.patchCurrent('status',status);
+  setEqSubtype = (e) => this.patchCurrent('subtype', e.target.value);
+  setEqNumPart = (e) => this.patchCurrent('numPart', parseInt(e.target.value,10)||0);
+  onCommentChange = (e) => this.patchCurrent('comment', e.target.value);
+  setCheck(id,val){ const st=this.currentState(); this.patchCurrent('checks',{ ...(st?st.checks:{}), [id]:val }); }
+  setField(id,val){ const st=this.currentState(); this.patchCurrent('fields',{ ...(st?st.fields:{}), [id]:val }); }
+
+  openCamera = () => {
+    if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){ this.triggerPhotoInput(); return; }
+    navigator.mediaDevices.getUserMedia({ video:{ facingMode:'environment' }, audio:false }).then((stream)=>{
+      this._camStream = stream;
+      this.setState({ cameraOpen:true, shots:[] }, ()=>{
+        if(this.videoRef.current){ this.videoRef.current.srcObject = stream; this.videoRef.current.play(); }
+      });
+    }).catch(()=> this.triggerPhotoInput());
+  };
+
+  shoot = () => {
+    const v = this.videoRef.current; if(!v || !v.videoWidth) return;
+    const c = document.createElement('canvas');
+    c.width = v.videoWidth; c.height = v.videoHeight;
+    c.getContext('2d').drawImage(v,0,0);
+    const url = c.toDataURL('image/jpeg',0.9);
+    this.setState((s)=>({ shots:[...s.shots, url] }));
+  };
+
+  undoShot = () => this.setState((s)=>({ shots:s.shots.slice(0,-1) }));
+
+  closeCamera(keep){
+    if(this._camStream){ this._camStream.getTracks().forEach((t)=>t.stop()); this._camStream = null; }
+    const shots = this.state.shots;
+    this.setState({ cameraOpen:false, shots:[] });
+    if(keep && shots.length){
+      const st = this.currentState();
+      this.patchCurrent('photos', [ ...(st?st.photos:[]), ...shots ]);
+      this.showToast(shots.length===1 ? '1 foto agregada' : shots.length+' fotos agregadas');
+    }
+  }
+  confirmCamera = () => this.closeCamera(true);
+  cancelCamera = () => this.closeCamera(false);
 
   triggerPhotoInput = () => { if(this.photoInputRef.current) this.photoInputRef.current.click(); };
   handlePhotoChange = (e) => {
-    const file = e.target.files && e.target.files[0]; if(!file) return;
-    const top = this.state.stack[this.state.stack.length-1];
-    const reader = new FileReader();
-    reader.onload = () => this.setEquipmentField(top.locId, top.catId, top.eqId, 'photo', reader.result);
-    reader.readAsDataURL(file);
-    e.target.value = '';
+    const files = Array.from(e.target.files||[]); e.target.value='';
+    if(!files.length) return;
+    Promise.all(files.map((f)=> new Promise((res)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.readAsDataURL(f); })))
+      .then((urls)=>{ const st=this.currentState(); this.patchCurrent('photos',[ ...(st?st.photos:[]), ...urls ]); });
   };
-  removePhoto = () => { const top=this.state.stack[this.state.stack.length-1]; this.setEquipmentField(top.locId, top.catId, top.eqId, 'photo', null); };
+  removePhotoAt(i){ const st=this.currentState(); if(st) this.patchCurrent('photos', st.photos.filter((_,x)=>x!==i)); }
+  removeAudioAt(i){ const st=this.currentState(); if(st) this.patchCurrent('audios', st.audios.filter((_,x)=>x!==i)); }
+
+  startRecording = () => {
+    const t = this.top();
+    if(!navigator.mediaDevices || !window.MediaRecorder){ this.setState({ micError:'Este navegador no permite grabar audio.' }); return; }
+    navigator.mediaDevices.getUserMedia({ audio:true }).then((stream)=>{
+      const rec = new MediaRecorder(stream);
+      this._recorder = rec; this._chunks = [];
+      rec.ondataavailable = (e)=>{ if(e.data && e.data.size) this._chunks.push(e.data); };
+      rec.onstop = ()=>{
+        stream.getTracks().forEach((tr)=>tr.stop());
+        const blob = new Blob(this._chunks, { type:'audio/webm' });
+        const url = URL.createObjectURL(blob);
+        const secs = this.state.recordSeconds;
+        const k = this.key(t.locId,t.catId,t.eqId);
+        const prev = (this.state.equipmentData[k] && this.state.equipmentData[k].audios) || [];
+        const loc = this.locations.find((l)=>l.id===t.locId);
+        const cat = loc.categories.find((c)=>c.id===t.catId);
+        const base = this.getCategoryEquipment(loc,cat).find((x)=>x.id===t.eqId);
+        const existing = base ? this.getEqState(t.locId,t.catId,t.eqId,base).audios : prev;
+        clearInterval(this._tick);
+        this.setState({ recording:null, recordSeconds:0 });
+        this.setEquipmentField(t.locId,t.catId,t.eqId,'audios',[ ...existing, { url, secs } ]);
+        this.showToast('Nota de voz guardada');
+      };
+      rec.start();
+      this.setState({ recording:t.eqId, recordSeconds:0, micError:null });
+      clearInterval(this._tick);
+      this._tick = setInterval(()=>this.setState((s)=>({ recordSeconds:s.recordSeconds+1 })), 1000);
+    }).catch(()=> this.setState({ micError:'No se pudo acceder al micrófono. Revisá los permisos.' }));
+  };
+  stopRecording = () => { if(this._recorder && this._recorder.state!=='inactive') this._recorder.stop(); };
+
+  openHistory = () => { const t=this.top(); this.setState({ historyFor:{locId:t.locId,catId:t.catId,eqId:t.eqId} }); };
+  closeHistory = () => this.setState({ historyFor:null });
+
+  showToast(msg){ this.setState({ toast:msg }); clearTimeout(this._toastTimer); this._toastTimer=setTimeout(()=>this.setState({toast:null}),2200); }
+  crc32(buf){
+    let c, tbl = Component._crcTbl;
+    if(!tbl){
+      tbl = Component._crcTbl = [];
+      for(let n=0;n<256;n++){ c=n; for(let k=0;k<8;k++) c = c&1 ? 0xEDB88320^(c>>>1) : c>>>1; tbl[n]=c>>>0; }
+    }
+    let crc = 0xFFFFFFFF;
+    for(let i=0;i<buf.length;i++) crc = (crc>>>8) ^ tbl[(crc ^ buf[i]) & 0xFF];
+    return (crc ^ 0xFFFFFFFF)>>>0;
+  }
+
+  makeZip(entries){
+    const enc = new TextEncoder();
+    const parts = [], central = [];
+    let offset = 0;
+    entries.forEach((e)=>{
+      const name = enc.encode(e.name), data = e.data, crc = this.crc32(data);
+      const lh = new DataView(new ArrayBuffer(30));
+      lh.setUint32(0,0x04034b50,true); lh.setUint16(4,20,true); lh.setUint16(6,0x0800,true);
+      lh.setUint16(8,0,true); lh.setUint32(14,crc,true);
+      lh.setUint32(18,data.length,true); lh.setUint32(22,data.length,true);
+      lh.setUint16(26,name.length,true);
+      parts.push(new Uint8Array(lh.buffer), name, data);
+      const ch = new DataView(new ArrayBuffer(46));
+      ch.setUint32(0,0x02014b50,true); ch.setUint16(4,20,true); ch.setUint16(6,20,true);
+      ch.setUint16(8,0x0800,true); ch.setUint16(10,0,true); ch.setUint32(16,crc,true);
+      ch.setUint32(20,data.length,true); ch.setUint32(24,data.length,true);
+      ch.setUint16(28,name.length,true); ch.setUint32(42,offset,true);
+      central.push(new Uint8Array(ch.buffer), name);
+      offset += 30 + name.length + data.length;
+    });
+    const cdSize = central.reduce((s,p)=>s+p.length,0);
+    const eo = new DataView(new ArrayBuffer(22));
+    eo.setUint32(0,0x06054b50,true);
+    eo.setUint16(8,entries.length,true); eo.setUint16(10,entries.length,true);
+    eo.setUint32(12,cdSize,true); eo.setUint32(16,offset,true);
+    return new Blob([...parts, ...central, new Uint8Array(eo.buffer)], { type:'application/zip' });
+  }
+
+  async urlToBytes(url){
+    const r = await fetch(url);
+    return new Uint8Array(await r.arrayBuffer());
+  }
+
+  slug(s){ return String(s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^A-Za-z0-9]+/g,'-').replace(/^-|-$/g,''); }
+
+  exportPhotos = () => {
+    const loc = this.locations.find((l)=>l.id===this.top().locId);
+    if(!loc) return;
+    this.showToast('Armando el archivo…');
+    const date = this.getVisitDate(loc.id);
+    const base = this.slug(loc.suc)+'_'+this.slug(loc.name)+'_'+date;
+    const jobs = [], lines = ['Local: '+loc.suc+' — '+loc.name, 'Direccion: '+loc.address, 'Fecha de visita: '+date, ''];
+    loc.categories.forEach((cat)=>{
+      const folder = this.slug(cat.name);
+      this.getCategoryEquipment(loc,cat).forEach((e)=>{
+        const st = this.getEqState(loc.id,cat.id,e.id,e);
+        lines.push('['+cat.name+'] '+st.subtype+' '+st.code+' — '+STATUS_LABEL[st.status]);
+        if(st.comment) lines.push('   Observacion: '+st.comment);
+        const def = this.catDef(cat.id);
+        def.checks.forEach((c)=>{ if(st.checks[c.id]) lines.push('   '+c.label+': '+st.checks[c.id]); });
+        def.fields.forEach((f)=>{ const v=st.fields[f.id]; if(v!==undefined && v!=='') lines.push('   '+f.label+': '+v+(f.unit?' '+f.unit:'')); });
+        st.photos.forEach((p,i)=>{
+          const ext = (/^data:image\/(\w+)/.exec(p)||[])[1] || 'jpg';
+          jobs.push({ name: folder+'/'+st.code+'_foto'+(i+1)+'.'+(ext==='jpeg'?'jpg':ext), url:p });
+        });
+        st.audios.forEach((a,i)=>{ jobs.push({ name: folder+'/'+st.code+'_nota'+(i+1)+'.webm', url:a.url }); });
+        if(st.photos.length) lines.push('   Fotos: '+st.photos.length);
+        if(st.audios.length) lines.push('   Notas de voz: '+st.audios.length);
+      });
+    });
+    Promise.all(jobs.map((j)=>this.urlToBytes(j.url).then((data)=>({ name:base+'/'+j.name, data })))).then((files)=>{
+      files.push({ name: base+'/informe.txt', data: new TextEncoder().encode(lines.join('\n')) });
+      const blob = this.makeZip(files);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = base+'.zip';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(()=>URL.revokeObjectURL(url), 4000);
+      this.showToast(jobs.length ? ('Descargado · '+jobs.length+' archivos') : 'Descargado (sin fotos aún)');
+    }).catch(()=>this.showToast('No se pudo generar el archivo'));
+  };
+  generatePdf = () => this.showToast('Reporte PDF generado ✓');
+
+  fmtSecs(s){ return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); }
 
   renderVals(){
-    const top = this.state.stack[this.state.stack.length-1];
-    const screen = top.screen;
-    const loc = top.locId ? this.locations.find((l)=>l.id===top.locId) : null;
-    const cat = loc && top.catId ? loc.categories.find((c)=>c.id===top.catId) : null;
-    const eqBase = cat && top.eqId ? this.getCategoryEquipment(loc,cat).find((e)=>e.id===top.eqId) : null;
-    const eqState = eqBase ? this.getEqState(loc.id,cat.id,eqBase.id,eqBase) : null;
+    const { t, loc, cat, eq } = this.ctx();
+    const screen = t.screen;
+    const eqState = eq ? this.getEqState(loc.id,cat.id,eq.id,eq) : null;
+    const def = cat ? this.catDef(cat.id) : null;
+    const month = new Date().getMonth()+1;
 
     const search = this.state.search.trim().toLowerCase();
     const filteredLocations = this.locations.filter((l)=>{
+      if(this.state.scope==='month' && l.months.indexOf(month)===-1) return false;
       if(this.state.chainFilter!=='all' && l.chain.toLowerCase()!==this.state.chainFilter) return false;
       if(!search) return true;
-      return l.name.toLowerCase().includes(search) || l.address.toLowerCase().includes(search) || String(l.number).includes(search);
+      return (l.name+' '+l.address+' '+l.suc).toLowerCase().includes(search);
     }).map((l)=>{
       const c = this.countLocation(l);
-      const complete = c.pendiente===0 && c.falla===0;
-      const started = (c.ok+c.falla) > 0;
+      const reviewed = c.ok+c.falla;
+      const allReviewed = c.total>0 && c.pendiente===0;
+      const complete = allReviewed && c.falla===0;
+      const started = reviewed>0;
       return {
-        id:l.id, chain:l.chain, name:l.name, address:l.address,
-        chainCode: l.chain==='Disco' ? 'DI' : 'DE',
+        id:l.id, suc:l.suc, name:l.name, address:l.address,
         chainBg: l.chain==='Disco' ? 'var(--color-accent)' : 'transparent',
         chainColor: l.chain==='Disco' ? '#ffffff' : 'var(--color-accent-700)',
-        progressPct: c.total ? Math.round((c.ok+c.falla)/c.total*100) : 0,
-        progressLabel: (c.ok+c.falla)+'/'+c.total,
-        statusText: complete ? 'Completo' : started ? 'En progreso' : 'Pendiente',
-        statusTagClass: complete ? 'tag tag-accent' : started ? 'tag tag-outline' : 'tag tag-neutral',
-        onClick: () => this.openLocation(l.id)
+        progressPct: c.total ? Math.round(reviewed/c.total*100) : 0,
+        progressLabel: reviewed+'/'+c.total+' revisados',
+        statusText: complete ? 'Completo' : allReviewed ? c.falla+' no OK' : started ? 'En progreso' : 'Pendiente',
+        statusTagClass: complete ? 'tag tag-accent' : allReviewed ? 'tag tag-outline' : started ? 'tag tag-neutral' : 'tag tag-neutral',
+        onClick: ()=>this.openLocation(l.id)
       };
     });
 
-    const completedThisMonth = this.locations.filter((l)=>{ const c=this.countLocation(l); return c.pendiente===0 && c.falla===0; }).length;
+    const planned = this.locations.filter((l)=>l.months.indexOf(month)!==-1);
+    const doneCount = planned.filter((l)=>{ const c=this.countLocation(l); return c.pendiente===0 && c.falla===0; }).length;
 
     const categoryCards = loc ? loc.categories.map((c)=>{
       const counts = this.countStatus(loc,c);
       return {
-        id:c.id, name:c.name, iconPath:c.icon,
-        progressLabel: (counts.ok+counts.falla)+'/'+counts.total+' revisados',
+        name:c.name, iconPath:c.icon,
+        progressLabel:(counts.ok+counts.falla)+'/'+counts.total+' revisados',
         progressPct: counts.total ? Math.round((counts.ok+counts.falla)/counts.total*100) : 0,
-        fallaLabel: counts.falla>0 ? (counts.falla+' con falla') : null,
-        onClick: () => this.openCategory(loc.id,c.id)
+        hasFalla: counts.falla>0, fallaLabel: counts.falla+' no OK',
+        onClick: ()=>this.openCategory(loc.id,c.id)
       };
     }) : [];
 
-    const locationCounts = loc ? this.countLocation(loc) : null;
+    const locationCounts = loc ? this.countLocation(loc) : { ok:0, falla:0, pendiente:0, total:0 };
 
-    const equipmentRows = cat ? this.getCategoryEquipment(loc,cat).map((eq)=>{
-      const st = this.getEqState(loc.id,cat.id,eq.id,eq);
+    const equipmentRows = cat ? this.getCategoryEquipment(loc,cat).map((e)=>{
+      const st = this.getEqState(loc.id,cat.id,e.id,e);
       return {
-        id:eq.id, code:eq.code, subtype:eq.subtype,
-        statusLabel: STATUS_LABEL[st.status], statusTagClass: STATUS_TAGCLASS[st.status], statusIconPath: STATUS_ICON[st.status],
-        hasPhoto: !!st.photo, photo: st.photo,
-        onClick: () => this.openEquipment(loc.id,cat.id,eq.id),
-        onDelete: (e) => { if(e && e.stopPropagation) e.stopPropagation(); this.deleteEquipment(loc.id,cat.id,eq.id); }
+        code:st.code, subtype:st.subtype,
+        statusLabel:STATUS_LABEL[st.status], statusTagClass:STATUS_TAGCLASS[st.status], statusIconPath:STATUS_ICON[st.status],
+        hasPhoto: st.photos.length>0, noPhoto: st.photos.length===0,
+        thumb: st.photos.length ? React.createElement('img',{ src:st.photos[0], alt:'', style:{width:'100%',height:'100%',objectFit:'cover'} }) : null,
+        photoCount: st.photos.length===1 ? '1 foto' : st.photos.length+' fotos',
+        hasAudio: st.audios.length>0,
+        onClick: ()=>this.openEquipment(loc.id,cat.id,e.id),
+        onDelete: (ev)=>{ if(ev&&ev.stopPropagation) ev.stopPropagation(); this.deleteEquipment(loc.id,cat.id,e.id); }
       };
     }) : [];
 
     const fallaItems = loc ? loc.categories.flatMap((c)=> this.getCategoryEquipment(loc,c)
-      .filter((eq)=> this.getEqState(loc.id,c.id,eq.id,eq).status==='falla')
-      .map((eq)=>({
-        code: eq.code, catName: c.name,
-        comment: this.getEqState(loc.id,c.id,eq.id,eq).comment,
-        onClick: () => this.jumpToEquipment(loc.id,c.id,eq.id)
-      }))
-    ) : [];
+      .filter((e)=> this.getEqState(loc.id,c.id,e.id,e).status==='falla')
+      .map((e)=>{ const st=this.getEqState(loc.id,c.id,e.id,e); return {
+        code:st.code, catName:c.name, comment: st.comment || 'Sin observaciones',
+        onClick: ()=>this.jumpToEquipment(loc.id,c.id,e.id)
+      }; })) : [];
 
-    const historyFor = this.state.historyFor;
+    const hf = this.state.historyFor;
     let historyEntries = [], historyTitle = '';
-    if(historyFor){
-      const hl = this.locations.find((l)=>l.id===historyFor.locId);
-      const hc = hl && hl.categories.find((c)=>c.id===historyFor.catId);
-      const he = hc && this.getCategoryEquipment(hl,hc).find((e)=>e.id===historyFor.eqId);
+    if(hf){
+      const hl = this.locations.find((l)=>l.id===hf.locId);
+      const hc = hl && hl.categories.find((c)=>c.id===hf.catId);
+      const he = hc && this.getCategoryEquipment(hl,hc).find((e)=>e.id===hf.eqId);
       if(he){
-        historyTitle = he.subtype+' '+he.code;
         const cur = this.getEqState(hl.id,hc.id,he.id,he);
+        historyTitle = cur.subtype+' '+cur.code+' · '+hl.name;
         historyEntries = [
-          { date:'Julio 2026 (hoy)', statusLabel: STATUS_LABEL[cur.status], statusTagClass: STATUS_TAGCLASS[cur.status], comment: cur.comment || 'Sin observaciones' },
-          { date:'Junio 2026', statusLabel:'OK', statusTagClass:'tag tag-accent', comment:'Sin observaciones' },
-          { date:'Mayo 2026', statusLabel: he.status==='falla' ? 'Pendiente' : 'OK', statusTagClass: he.status==='falla' ? 'tag tag-neutral' : 'tag tag-accent', comment:'—' }
+          { date:'Julio 2026 (hoy)', statusLabel:STATUS_LABEL[cur.status], statusTagClass:STATUS_TAGCLASS[cur.status], comment: cur.comment || 'Sin observaciones' },
+          { date:'Enero 2026', statusLabel:'OK', statusTagClass:'tag tag-accent', comment:'Sin observaciones' },
+          { date:'Julio 2025', statusLabel: cur.status==='falla' ? 'Pendiente' : 'OK', statusTagClass: cur.status==='falla' ? 'tag tag-neutral' : 'tag tag-accent', comment:'—' }
         ];
       }
     }
 
-    const headerTitleMap = {
-      locations: 'Locales',
-      location: loc ? loc.name : '',
-      category: cat ? cat.name : '',
-      equipment: eqState ? (eqState.subtype+' '+eqState.code) : '',
-      summary: 'Resumen de visita'
-    };
-    const visitDate = loc ? this.getVisitDate(loc.id) : null;
-    const visitDateFormatted = visitDate ? (visitDate.slice(8,10)+'/'+visitDate.slice(5,7)+'/'+visitDate.slice(0,4)) : '';
+    const visitDate = loc ? this.getVisitDate(loc.id) : '';
+    const headerTitle = screen==='location' ? loc.name : screen==='category' ? cat.name
+      : screen==='equipment' ? (eqState.subtype+' '+eqState.code) : screen==='summary' ? 'Resumen de visita' : 'Locales';
+    const headerSubtitle = screen==='location' ? (loc.suc+' · '+loc.chain)
+      : screen==='category' ? (loc.suc+' · '+loc.name)
+      : screen==='equipment' ? (loc.suc+' · '+cat.name)
+      : screen==='summary' ? (loc.suc+' · '+loc.name) : '';
 
     return {
-      isLocations: screen==='locations', isLocation: screen==='location', isCategory: screen==='category', isEquipment: screen==='equipment', isSummary: screen==='summary',
-      isSubScreen: screen!=='locations',
-      canGoBack: this.state.stack.length>1,
-      headerTitle: headerTitleMap[screen] || '',
-      headerSubtitle: (screen==='category' && loc) ? loc.name : (screen==='equipment' && cat) ? cat.name : (screen==='summary' && loc) ? loc.name : '',
+      isLocations: screen==='locations', isLocation: screen==='location', isCategory: screen==='category',
+      isEquipment: screen==='equipment', isSummary: screen==='summary', isSubScreen: screen!=='locations',
+      headerTitle, headerSubtitle, hasHeaderSubtitle: headerSubtitle.length>0,
       goBack: this.goBack, goLocations: this.goLocations,
-      monthLabel: 'Julio 2026', completedThisMonth, totalLocations: this.locations.length,
-      search: this.state.search, setSearch: (e)=>this.setSearch(e.target.value),
+      monthLabel: MONTH_NAMES[month-1]+' 2026', doneCount, plannedCount: planned.length,
+      search: this.state.search, setSearch: this.setSearch,
+      scopeMonth: this.state.scope==='month', scopeAll: this.state.scope==='all',
+      setScopeMonth: this.setScope('month'), setScopeAll: this.setScope('all'),
       isAll: this.state.chainFilter==='all', isDisco: this.state.chainFilter==='disco', isDevoto: this.state.chainFilter==='devoto',
-      setAll: ()=>this.setChain('all'), setDisco: ()=>this.setChain('disco'), setDevoto: ()=>this.setChain('devoto'),
-      filteredLocations,
-      locAddress: loc ? loc.address : '', locChain: loc ? loc.chain : '',
-      locChainTagClass: loc && loc.chain==='Devoto' ? 'tag tag-accent-2' : 'tag tag-accent',
+      setAll: this.setChain('all'), setDisco: this.setChain('disco'), setDevoto: this.setChain('devoto'),
+      filteredLocations, noResults: filteredLocations.length===0,
+
+      locName: loc?loc.name:'', locSuc: loc?loc.suc:'', locChain: loc?loc.chain:'', locAddress: loc?loc.address:'',
+      locChainTagClass: loc && loc.chain==='Devoto' ? 'tag tag-outline' : 'tag tag-accent',
+      locMonthsLabel: loc ? loc.months.map((m)=>MONTH_NAMES[m-1].slice(0,3)).join(' · ') : '',
       locationCounts,
-      locProgressPct: locationCounts && locationCounts.total ? Math.round((locationCounts.ok+locationCounts.falla)/locationCounts.total*100) : 0,
-      fallaCardBg: locationCounts && locationCounts.falla>0 ? 'var(--color-accent-900)' : 'transparent',
-      fallaCardColor: locationCounts && locationCounts.falla>0 ? 'var(--color-bg)' : 'var(--color-text)',
-      visitDate, visitDateFormatted, setVisitDate: this.setVisitDate,
-      categoryCards,
-      openSummary: loc ? ()=>this.openSummary(loc.id) : ()=>{},
-      equipmentRows,
+      locProgressPct: locationCounts.total ? Math.round((locationCounts.ok+locationCounts.falla)/locationCounts.total*100) : 0,
+      visitDate, setVisitDate: this.setVisitDate,
+      visitDateFormatted: visitDate ? (visitDate.slice(8,10)+'/'+visitDate.slice(5,7)+'/'+visitDate.slice(0,4)) : '',
+      categoryCards, openSummary: loc ? ()=>this.openSummary(loc.id) : ()=>{},
+
+      equipmentRows, addEquipmentForCurrent: (loc&&cat) ? ()=>this.addEquipment(loc.id,cat.id) : ()=>{},
+      deleteCurrentEquipment: (loc&&cat&&eq) ? ()=>this.deleteEquipment(loc.id,cat.id,eq.id) : ()=>{},
+
       isAcEquipment: !!(cat && cat.id==='ac'),
-      eqSubtypeOptions: ['Split','Rooftop','Chiller','Manejadora'].map((s)=>({ label:s, checked: !!(eqState && eqState.subtype===s), onSelect: ()=>this.setEqSubtypeValue(s) })),
-      eqNumPart: eqState ? eqState.numPart : 0, setEqNumPart: this.setEqNumPart,
-      addEquipmentForCurrent: (loc && cat) ? ()=>this.addEquipment(loc.id,cat.id) : ()=>{},
-      deleteCurrentEquipment: (loc && cat && eqBase) ? ()=>this.deleteEquipment(loc.id,cat.id,eqBase.id) : ()=>{},
-      categoryTitle: cat ? cat.name : '',
-      eqComment: eqState ? eqState.comment : '',
-      onCommentChange: (e)=>{ const t=this.state.stack[this.state.stack.length-1]; this.setEquipmentField(t.locId,t.catId,t.eqId,'comment',e.target.value); },
+      eqSubtype: eqState?eqState.subtype:'', setEqSubtype: this.setEqSubtype,
+      eqNumPart: eqState?eqState.numPart:'', setEqNumPart: this.setEqNumPart,
+      eqComment: eqState?eqState.comment:'', onCommentChange: this.onCommentChange,
+      eqPhotos: eqState ? eqState.photos.map((p,i)=>({
+        img: React.createElement('img',{ src:p, alt:'Foto '+(i+1), style:{width:'100%',height:'100%',objectFit:'cover'} }),
+        onRemove:(ev)=>{ if(ev&&ev.stopPropagation) ev.stopPropagation(); this.removePhotoAt(i); }
+      })) : [],
+      eqHasPhotos: !!(eqState && eqState.photos.length), eqNoPhotos: !(eqState && eqState.photos.length),
+      eqPhotoCountLabel: eqState ? (eqState.photos.length===1 ? '1 foto' : eqState.photos.length+' fotos') : '0 fotos',
+      photoInputRef: this.photoInputRef, triggerPhotoInput: this.triggerPhotoInput, handlePhotoChange: this.handlePhotoChange,
+      openCamera: this.openCamera, videoRef: this.videoRef,
+      cameraOpen: this.state.cameraOpen, shoot: this.shoot, undoShot: this.undoShot,
+      confirmCamera: this.confirmCamera, cancelCamera: this.cancelCamera,
+      shotThumbs: this.state.shots.map((s,i)=>({ url:s, label:'Foto '+(i+1) })),
+      shotCount: this.state.shots.length,
+      shotCountLabel: this.state.shots.length===1 ? '1 foto tomada' : this.state.shots.length+' fotos tomadas',
+      hasShots: this.state.shots.length>0,
+      confirmLabel: this.state.shots.length ? ('Listo · usar '+this.state.shots.length) : 'Listo',
+
+      eqHasChecks: !!(def && def.checks.length),
+      eqChecks: def ? def.checks.map((c)=>({
+        label:c.label, radioName:'chk-'+(eq?eq.id:'x')+'-'+c.id,
+        options: c.options.map((o)=>({ label:o, checked: !!(eqState && eqState.checks[c.id]===o), onSelect: ()=>this.setCheck(c.id,o) }))
+      })) : [],
+      eqHasFields: !!(def && def.fields.length),
+      eqFields: def ? def.fields.map((f)=>({
+        label:f.label, unit:f.unit, placeholder:f.placeholder,
+        value: (eqState && eqState.fields[f.id]!==undefined) ? eqState.fields[f.id] : '',
+        onChange: (e)=>this.setField(f.id, e.target.value)
+      })) : [],
+
+      eqAudios: eqState ? eqState.audios.map((a,i)=>({
+        player: React.createElement('audio',{ controls:true, src:a.url, style:{width:'100%',height:'32px'} }),
+        label:'Nota '+(i+1)+' · '+this.fmtSecs(a.secs||0), onRemove:()=>this.removeAudioAt(i)
+      })) : [],
+      hasAudios: !!(eqState && eqState.audios.length),
+      isRecording: !!this.state.recording, canRecord: !this.state.recording,
+      recordingTime: this.fmtSecs(this.state.recordSeconds),
+      startRecording: this.startRecording, stopRecording: this.stopRecording,
+      micError: this.state.micError,
+
       eqIsOk: !!(eqState && eqState.status==='ok'), eqIsFalla: !!(eqState && eqState.status==='falla'), eqIsPendiente: !!(eqState && eqState.status==='pendiente'),
-      setEqOk: ()=>this.setStatusForCurrent('ok'), setEqFalla: ()=>this.setStatusForCurrent('falla'), setEqPendiente: ()=>this.setStatusForCurrent('pendiente'),
-      eqPhoto: eqState ? eqState.photo : null, eqHasPhoto: !!(eqState && eqState.photo),
+      setEqOk: this.setStatus('ok'), setEqFalla: this.setStatus('falla'), setEqPendiente: this.setStatus('pendiente'),
       eqUpdatedAt: eqState && eqState.updatedAt ? eqState.updatedAt : 'Sin revisar aún',
-      photoInputRef: this.photoInputRef, triggerPhotoInput: this.triggerPhotoInput, handlePhotoChange: this.handlePhotoChange, removePhoto: this.removePhoto,
-      openHistoryForCurrent: ()=>{ const t=this.state.stack[this.state.stack.length-1]; this.openHistory(t.locId,t.catId,t.eqId); },
-      historyOpen: !!historyFor, historyTitle, historyEntries, closeHistory: this.closeHistory,
+
+      openHistoryForCurrent: this.openHistory, historyOpen: !!hf, historyTitle, historyEntries, closeHistory: this.closeHistory,
       fallaItems, hasFalla: fallaItems.length>0,
+      fallaCardBg: locationCounts.falla>0 ? 'var(--color-accent-900)' : 'transparent',
+      fallaCardColor: locationCounts.falla>0 ? 'var(--color-bg)' : 'var(--color-text)',
       exportPhotos: this.exportPhotos, generatePdf: this.generatePdf,
       toast: this.state.toast
     };
