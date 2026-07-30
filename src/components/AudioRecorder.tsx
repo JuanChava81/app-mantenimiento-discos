@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { uploadToStorage } from "@/lib/storage";
+import { supabaseConfigured } from "@/lib/supabase";
 import { AudioNote } from "@/lib/types";
 import { TrashIcon } from "./icons";
 
@@ -10,12 +12,27 @@ function formatDuration(secs: number) {
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
+// Safari/iOS no soporta audio/webm (MediaRecorder ahí graba en audio/mp4).
+// Forzar "audio/webm" en el Blob rompe la reproducción en esos dispositivos:
+// hay que usar el mimeType real que usó el grabador.
+function pickMimeType(): string | undefined {
+  const candidates = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/aac"];
+  for (const type of candidates) {
+    if (typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported?.(type)) {
+      return type;
+    }
+  }
+  return undefined;
+}
+
 export function AudioRecorder({
   audios,
+  equipmentId,
   onAdd,
   onRemove,
 }: {
   audios: AudioNote[];
+  equipmentId: string;
   onAdd: (audio: AudioNote) => void;
   onRemove: (id: string) => void;
 }) {
@@ -37,14 +54,23 @@ export function AudioRecorder({
     setError(null);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const recorder = new MediaRecorder(stream);
+      const mimeType = pickMimeType();
+      const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
       chunksRef.current = [];
       recorder.ondataavailable = (e) => chunksRef.current.push(e.data);
-      recorder.onstop = () => {
+      recorder.onstop = async () => {
         stream.getTracks().forEach((t) => t.stop());
-        const blob = new Blob(chunksRef.current, { type: "audio/webm" });
-        const url = URL.createObjectURL(blob);
+        const usedMimeType = recorder.mimeType || "audio/webm";
+        const blob = new Blob(chunksRef.current, { type: usedMimeType });
         const durationSecs = (Date.now() - startRef.current) / 1000;
+
+        let url = URL.createObjectURL(blob);
+        if (supabaseConfigured) {
+          const ext = usedMimeType.includes("mp4") ? "m4a" : usedMimeType.includes("aac") ? "aac" : "webm";
+          const uploaded = await uploadToStorage("audios", equipmentId, blob, ext);
+          if (uploaded) url = uploaded;
+        }
+
         onAdd({
           id: `audio-${Date.now()}`,
           url,
