@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+
+<helmet>
+  <link rel="stylesheet" href="./styles.css">
+  <style>
+    body{margin:0}
+    ::-webkit-scrollbar{width:0;height:0}
+    :root{
+      --color-bg:#ffffff; --color-surface:#f7eded;
+      --color-accent:#d21f2b;
+      --color-accent-100:#fdecec; --color-accent-200:#fad0d1; --color-accent-300:#f2a3a6; --color-accent-400:#e8767a;
+      --color-accent-500:#dd4a50; --color-accent-600:#d21f2b; --color-accent-700:#a8171f; --color-accent-800:#7c1116; --color-accent-900:#4a0a0d;
+      --color-accent-2-100:#fdecec; --color-accent-2-200:#fad0d1; --color-accent-2-300:#f2a3a6; --color-accent-2-400:#e8767a;
+      --color-accent-2-500:#dd4a50; --color-accent-2-600:#d21f2b; --color-accent-2-700:#a8171f; --color-accent-2-800:#7c1116; --color-accent-2-900:#4a0a0d;
+    }
+  </style>
+</helmet>
+
+<div style="min-height:100vh; display:flex; flex-direction:column; align-items:center; gap:16px; background:var(--color-neutral-200); padding:40px 20px; font-family:var(--font-body); color:var(--color-text)">
+
+  <div style="width:390px; max-width:100%; height:844px; background:var(--color-bg); border:1px solid var(--color-divider); border-radius:32px; overflow:hidden; position:relative; box-shadow:var(--shadow-lg); display:flex; flex-direction:column">
+
+    <!-- Hero header (home only) -->
+    <sc-if value="{{ isLocations }}" hint-placeholder-val="{{ true }}">
+      <div style="flex:none; background:var(--color-accent-900); color:var(--color-bg); padding:24px var(--space-4) 20px; display:flex; flex-direction:column; gap:4px">
+        <div style="font-size:11px; letter-spacing:0.1em; text-transform:uppercase; opacity:0.65">Control de mantenimiento · Uruguay</div>
+        <h2 style="margin:0; font-size:32px; color:var(--color-bg)">Locales</h2>
+        <div style="display:flex; justify-content:space-between; font-size:12px; opacity:0.8; margin-top:4px">
+          <span>Visita de {{ monthLabel }}</span>
+          <span>{{ completedThisMonth }}/{{ totalLocations }} completados</span>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- Header (sub-screens) -->
+    <sc-if value="{{ isSubScreen }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:none; display:flex; align-items:center; gap:var(--space-3); padding:16px var(--space-4) 12px; border-bottom:1px solid var(--color-divider)">
+        <sc-if value="{{ canGoBack }}" hint-placeholder-val="{{ false }}">
+          <button class="btn btn-icon btn-ghost" onClick="{{ goBack }}" aria-label="Volver">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6 L9 12 L15 18"/></svg>
+          </button>
+        </sc-if>
+        <div style="flex:1; min-width:0">
+          <sc-if value="{{ headerSubtitle }}" hint-placeholder-val="{{ false }}">
+            <div style="font-size:11px; color:color-mix(in srgb, var(--color-text) 55%, transparent); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:1px">{{ headerSubtitle }}</div>
+          </sc-if>
+          <h4 style="margin:0; font-size:20px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">{{ headerTitle }}</h4>
+        </div>
+        <sc-if value="{{ isEquipment }}" hint-placeholder-val="{{ false }}">
+          <button class="btn btn-icon btn-ghost" onClick="{{ openHistoryForCurrent }}" aria-label="Historial">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12 A10 10 0 1 0 22 12 A10 10 0 1 0 2 12 M12 7 L12 12 L16 14"/></svg>
+          </button>
+        </sc-if>
+      </div>
+    </sc-if>
+
+    <!-- Content -->
+    <div style="flex:1; overflow-y:auto; padding:var(--space-4); display:flex; flex-direction:column; gap:var(--space-4)">
+
+      <!-- LOCATIONS SCREEN -->
+      <sc-if value="{{ isLocations }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex; flex-direction:column; gap:var(--space-4)">
+          <div class="field" style="margin:0">
+            <div style="position:relative">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="position:absolute; left:10px; top:10px; opacity:0.5"><path d="M11 3 A8 8 0 1 0 11 19 A8 8 0 1 0 11 3 M21 21 L16.65 16.65"/></svg>
+              <input class="input" style="padding-left:32px" placeholder="Buscar local o número" value="{{ search }}" onChange="{{ setSearch }}"/>
+            </div>
+          </div>
+
+          <div class="seg" style="align-self:flex-start">
+            <label class="seg-opt"><input type="radio" name="chainSeg" checked="{{ isAll }}" onChange="{{ setAll }}"/>Todos</label>
+            <label class="seg-opt"><input type="radio" name="chainSeg" checked="{{ isDisco }}" onChange="{{ setDisco }}"/>Disco</label>
+            <label class="seg-opt"><input type="radio" name="chainSeg" checked="{{ isDevoto }}" onChange="{{ setDevoto }}"/>Devoto</label>
+          </div>
+
+          <div style="display:flex; flex-direction:column">
+            <sc-for list="{{ filteredLocations }}" as="loc" hint-placeholder-count="8">
+              <div onClick="{{ loc.onClick }}" style="display:flex; align-items:center; gap:var(--space-3); padding:12px var(--space-1); min-height:56px; border-bottom:1px solid var(--color-divider); cursor:pointer">
+                <div style="width:34px; height:34px; flex:none; display:flex; align-items:center; justify-content:center; font-family:var(--font-heading); font-weight:600; font-size:12px; letter-spacing:0.06em; border:1px solid var(--color-accent); background:{{ loc.chainBg }}; color:{{ loc.chainColor }}">{{ loc.chainCode }}</div>
+                <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:3px">
+                  <span style="font-weight:600; font-family:var(--font-heading); font-size:16px; line-height:1.1">{{ loc.name }}</span>
+                  <div style="font-size:11.5px; color:color-mix(in srgb, var(--color-text) 55%, transparent); white-space:nowrap; overflow:hidden; text-overflow:ellipsis">{{ loc.address }}</div>
+                  <div style="height:3px; background:var(--color-neutral-200); overflow:hidden; max-width:120px">
+                    <div style="height:100%; background:var(--color-accent); width:{{ loc.progressPct }}%"></div>
+                  </div>
+                </div>
+                <div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px; flex:none">
+                  <span class="{{ loc.statusTagClass }}">{{ loc.statusText }}</span>
+                  <span style="font-size:11px; color:color-mix(in srgb, var(--color-text) 50%, transparent)">{{ loc.progressLabel }}</span>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- LOCATION SCREEN (categories overview) -->
+      <sc-if value="{{ isLocation }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex; flex-direction:column; gap:var(--space-4)">
+          <div>
+            <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px">
+              <span class="{{ locChainTagClass }}">{{ locChain }}</span>
+              <span style="font-size:13px; color:color-mix(in srgb, var(--color-text) 55%, transparent)">{{ locAddress }}</span>
+            </div>
+            <div style="height:6px; background:var(--color-surface); border:1px solid var(--color-divider); position:relative; overflow:hidden">
+              <div style="height:100%; background:var(--color-accent); width:{{ locProgressPct }}%"></div>
+            </div>
+            <div style="font-size:12px; margin-top:6px; color:color-mix(in srgb, var(--color-text) 55%, transparent)">{{ locationCounts.ok }} OK · {{ locationCounts.falla }} con falla · {{ locationCounts.pendiente }} pendientes</div>
+          </div>
+
+          <div class="field" style="margin:0; max-width:180px">
+            <label>Fecha de visita</label>
+            <input class="input" type="text" placeholder="AAAA-MM-DD" value="{{ visitDate }}" onChange="{{ setVisitDate }}"/>
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:var(--space-3)">
+            <sc-for list="{{ categoryCards }}" as="cat" hint-placeholder-count="5">
+              <div class="card blueprint" onClick="{{ cat.onClick }}" style="cursor:pointer; padding:var(--space-3); gap:7px; border-top:3px solid var(--color-accent)">
+                <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+                <div style="width:38px; height:38px; background:var(--color-accent-100); display:flex; align-items:center; justify-content:center">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--color-accent-700)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="{{ cat.iconPath }}"/></svg>
+                </div>
+                <div class="card-title" style="font-size:16px; line-height:1.2">{{ cat.name }}</div>
+                <div class="card-body" style="font-size:12px">{{ cat.progressLabel }}</div>
+                <div style="height:3px; background:var(--color-neutral-200); overflow:hidden">
+                  <div style="height:100%; background:var(--color-accent); width:{{ cat.progressPct }}%"></div>
+                </div>
+                <sc-if value="{{ cat.fallaLabel }}" hint-placeholder-val="{{ false }}">
+                  <span class="tag tag-outline" style="font-size:10px; align-self:flex-start">{{ cat.fallaLabel }}</span>
+                </sc-if>
+              </div>
+            </sc-for>
+          </div>
+
+          <button class="btn btn-primary btn-block" style="min-height:46px" onClick="{{ openSummary }}">Ver resumen de visita</button>
+        </div>
+      </sc-if>
+
+      <!-- CATEGORY SCREEN (equipment list) -->
+      <sc-if value="{{ isCategory }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex; flex-direction:column">
+          <h6 style="margin:0 0 var(--space-2); color:color-mix(in srgb, var(--color-text) 55%, transparent)">Equipos relevados</h6>
+          <sc-for list="{{ equipmentRows }}" as="eq" hint-placeholder-count="4">
+            <div onClick="{{ eq.onClick }}" style="display:flex; align-items:center; gap:var(--space-3); padding:var(--space-3) var(--space-1); border-bottom:1px solid var(--color-divider); cursor:pointer">
+              <div style="width:44px; height:44px; flex:none; border:1px solid var(--color-divider); display:flex; align-items:center; justify-content:center; overflow:hidden; background:var(--color-surface)">
+                <sc-if value="{{ eq.hasPhoto }}" hint-placeholder-val="{{ false }}">
+                  <img src="{{ eq.photo }}" style="width:100%; height:100%; object-fit:cover"/>
+                </sc-if>
+                <sc-if value="{{ eq.hasPhoto }}" hint-placeholder-val="{{ true }}">
+                </sc-if>
+                <svg style="opacity:0.35" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8 L7 8 L9 5 L15 5 L17 8 L20 8 A2 2 0 0 1 22 10 L22 18 A2 2 0 0 1 20 20 L4 20 A2 2 0 0 1 2 18 L2 10 A2 2 0 0 1 4 8 Z M12 17 A3.5 3.5 0 1 0 12 10 A3.5 3.5 0 1 0 12 17"/></svg>
+              </div>
+              <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px">
+                <div style="font-size:10px; letter-spacing:0.09em; text-transform:uppercase; color:color-mix(in srgb, var(--color-text) 50%, transparent)">{{ eq.subtype }}</div>
+                <div style="font-weight:600; font-family:var(--font-heading); font-size:16px; line-height:1.1">{{ eq.code }}</div>
+              </div>
+              <span class="{{ eq.statusTagClass }}" style="display:inline-flex; align-items:center; gap:4px">
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="{{ eq.statusIconPath }}"/></svg>
+                {{ eq.statusLabel }}
+              </span>
+              <button class="btn btn-icon btn-ghost" onClick="{{ eq.onDelete }}" aria-label="Eliminar equipo" style="flex:none; width:32px; height:32px">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7 L20 7 M10 7 L10 4 L14 4 L14 7 M6 7 L7 20 L17 20 L18 7"/></svg>
+              </button>
+            </div>
+          </sc-for>
+          <button class="btn btn-primary btn-block" style="min-height:46px" onClick="{{ addEquipmentForCurrent }}">+ Agregar equipo</button>
+        </div>
+      </sc-if>
+
+      <!-- EQUIPMENT SCREEN -->
+      <sc-if value="{{ isEquipment }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex; flex-direction:column; gap:var(--space-4)">
+          <div class="blueprint" style="padding:var(--space-3); display:flex; flex-direction:column; gap:var(--space-3)">
+            <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+
+            <sc-if value="{{ isAcEquipment }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex; flex-direction:column; gap:var(--space-2)">
+                <div>
+                  <label style="display:block; font-size:12px; margin-bottom:5px; color:color-mix(in srgb, var(--color-text) 70%, transparent)">Tipo de equipo</label>
+                  <div class="seg" style="width:100%">
+                    <sc-for list="{{ eqSubtypeOptions }}" as="opt" hint-placeholder-count="4">
+                      <label class="seg-opt" style="flex:1; justify-content:center"><input type="radio" name="acSubtypeSeg" checked="{{ opt.checked }}" onChange="{{ opt.onSelect }}"/>{{ opt.label }}</label>
+                    </sc-for>
+                  </div>
+                </div>
+                <div class="field" style="width:110px; margin:0">
+                  <label>N° de equipo</label>
+                  <input class="input" type="text" inputmode="numeric" value="{{ eqNumPart }}" onChange="{{ setEqNumPart }}"/>
+                </div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ eqHasPhoto }}" hint-placeholder-val="{{ false }}">
+              <div class="blueprint duotone" style="aspect-ratio:1/1; overflow:hidden">
+                <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+                <img src="{{ eqPhoto }}" style="width:100%; height:100%; object-fit:cover"/>
+              </div>
+              <div style="display:flex; gap:var(--space-2)">
+                <button class="btn btn-secondary" style="flex:1" onClick="{{ triggerPhotoInput }}">Reemplazar foto</button>
+                <button class="btn btn-ghost" onClick="{{ removePhoto }}">Quitar</button>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ eqHasPhoto }}" hint-placeholder-val="{{ true }}">
+              <div class="blueprint" style="aspect-ratio:1/1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; background:var(--color-surface)">
+                <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+                <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="var(--color-accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8 L7 8 L9 5 L15 5 L17 8 L20 8 A2 2 0 0 1 22 10 L22 18 A2 2 0 0 1 20 20 L4 20 A2 2 0 0 1 2 18 L2 10 A2 2 0 0 1 4 8 Z M12 17 A3.5 3.5 0 1 0 12 10 A3.5 3.5 0 1 0 12 17"/></svg>
+                <span style="font-size:12px; color:color-mix(in srgb, var(--color-text) 55%, transparent)">Sin foto todavía</span>
+              </div>
+              <button class="btn btn-primary btn-block" style="margin-top:0" onClick="{{ triggerPhotoInput }}">Tomar foto</button>
+            </sc-if>
+
+            <input type="file" accept="image/*" capture="environment" ref="{{ photoInputRef }}" onChange="{{ handlePhotoChange }}" style="display:none"/>
+
+            <div class="field" style="margin:0">
+              <label>Observación</label>
+              <textarea class="input" placeholder="Escribí un comentario…" value="{{ eqComment }}" onChange="{{ onCommentChange }}"></textarea>
+            </div>
+
+            <div>
+              <label style="display:block; font-size:12px; margin-bottom:5px; color:color-mix(in srgb, var(--color-text) 70%, transparent)">Estado</label>
+              <div class="seg" style="width:100%">
+                <label class="seg-opt" style="flex:1; justify-content:center"><input type="radio" name="statusSeg" checked="{{ eqIsOk }}" onChange="{{ setEqOk }}"/>OK</label>
+                <label class="seg-opt" style="flex:1; justify-content:center"><input type="radio" name="statusSeg" checked="{{ eqIsFalla }}" onChange="{{ setEqFalla }}"/>Falla</label>
+                <label class="seg-opt" style="flex:1; justify-content:center"><input type="radio" name="statusSeg" checked="{{ eqIsPendiente }}" onChange="{{ setEqPendiente }}"/>Pendiente</label>
+              </div>
+            </div>
+
+            <div style="font-size:11px; color:color-mix(in srgb, var(--color-text) 50%, transparent)">{{ eqUpdatedAt }}</div>
+          </div>
+
+          <button class="btn btn-primary btn-block" style="margin-top:0; min-height:46px" onClick="{{ goBack }}">Guardar y volver</button>
+          <button class="btn btn-ghost" onClick="{{ deleteCurrentEquipment }}" style="align-self:center; display:inline-flex; align-items:center; gap:6px">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7 L20 7 M10 7 L10 4 L14 4 L14 7 M6 7 L7 20 L17 20 L18 7"/></svg>
+            Eliminar equipo
+          </button>
+        </div>
+      </sc-if>
+
+      <!-- SUMMARY SCREEN -->
+      <sc-if value="{{ isSummary }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex; flex-direction:column; gap:var(--space-4)">
+          <div style="display:flex; align-items:center; gap:6px">
+            <span class="{{ locChainTagClass }}">{{ locChain }}</span>
+            <span style="font-family:var(--font-heading); font-weight:600; font-size:16px">{{ headerSubtitle }}</span>
+          </div>
+          <div style="font-size:12px; color:color-mix(in srgb, var(--color-text) 55%, transparent); margin-top:-8px">Visitado el {{ visitDateFormatted }}</div>
+
+          <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:var(--space-2)">
+            <div class="blueprint" style="padding:var(--space-3); text-align:center">
+              <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+              <div style="font-family:var(--font-heading); font-size:26px">{{ locationCounts.ok }}</div>
+              <div style="font-size:11px; color:color-mix(in srgb, var(--color-text) 55%, transparent)">OK</div>
+            </div>
+            <div class="blueprint" style="padding:var(--space-3); text-align:center; background:{{ fallaCardBg }}; color:{{ fallaCardColor }}">
+              <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+              <div style="font-family:var(--font-heading); font-size:26px">{{ locationCounts.falla }}</div>
+              <div style="font-size:11px; opacity:0.85">Con falla</div>
+            </div>
+            <div class="blueprint" style="padding:var(--space-3); text-align:center">
+              <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+              <div style="font-family:var(--font-heading); font-size:26px">{{ locationCounts.pendiente }}</div>
+              <div style="font-size:11px; color:color-mix(in srgb, var(--color-text) 55%, transparent)">Pendientes</div>
+            </div>
+          </div>
+
+          <sc-if value="{{ hasFalla }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex; flex-direction:column; gap:var(--space-2)">
+              <h5 style="margin:0">Fallas detectadas</h5>
+              <sc-for list="{{ fallaItems }}" as="f" hint-placeholder-count="2">
+                <div onClick="{{ f.onClick }}" class="blueprint" style="padding:var(--space-3); cursor:pointer">
+                  <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px">
+                    <span style="font-weight:600; font-family:var(--font-heading); font-size:14px">{{ f.code }}</span>
+                    <span class="tag tag-outline" style="font-size:10px">{{ f.catName }}</span>
+                  </div>
+                  <div style="font-size:12px; opacity:0.75">{{ f.comment }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <div style="display:flex; flex-direction:column; gap:var(--space-2)">
+            <button class="btn btn-secondary btn-block" style="margin-top:0" onClick="{{ exportPhotos }}">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 L12 15 M7 10 L12 15 L17 10 M5 19 L19 19"/></svg>
+              Exportar fotos por equipo
+            </button>
+            <button class="btn btn-primary btn-block" style="margin-top:0" onClick="{{ generatePdf }}">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 L14 2 L20 8 L20 22 L6 22 Z M14 2 L14 8 L20 8 M8 13 L16 13 M8 17 L16 17"/></svg>
+              Generar reporte PDF
+            </button>
+            <button class="btn btn-ghost" onClick="{{ goLocations }}">Volver a locales</button>
+          </div>
+        </div>
+      </sc-if>
+
+    </div>
+  </div>
+
+  <p style="max-width:390px; text-align:center; font-size:12px; color:color-mix(in srgb, var(--color-text) 50%, transparent); margin:0">Prototipo interactivo — marcá estado, sacá fotos y comentá cada equipo desde el celular.</p>
+
+  <!-- History dialog -->
+  <sc-if value="{{ historyOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute; inset:0; z-index:50; background:rgba(29,31,32,0.55); display:flex; align-items:center; justify-content:center; padding:24px">
+      <div class="dialog blueprint" style="width:100%">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <div style="display:flex; justify-content:space-between; align-items:flex-start">
+          <div class="dialog-title">Historial</div>
+          <button class="btn btn-icon btn-ghost" onClick="{{ closeHistory }}" aria-label="Cerrar">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6 L18 18 M6 18 L18 6"/></svg>
+          </button>
+        </div>
+        <div class="dialog-body" style="font-size:12px; opacity:0.6; margin-top:-8px">{{ historyTitle }}</div>
+        <div style="display:flex; flex-direction:column; gap:var(--space-2); margin-top:var(--space-2)">
+          <sc-for list="{{ historyEntries }}" as="h" hint-placeholder-count="3">
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:var(--space-2) 0; border-bottom:1px solid var(--color-divider)">
+              <div>
+                <div style="font-size:13px; font-weight:600">{{ h.date }}</div>
+                <div style="font-size:11px; opacity:0.65">{{ h.comment }}</div>
+              </div>
+              <span class="{{ h.statusTagClass }}">{{ h.statusLabel }}</span>
+            </div>
+          </sc-for>
+        </div>
+        <div class="dialog-actions">
+          <button class="btn btn-secondary" onClick="{{ closeHistory }}">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- Toast -->
+  <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute; bottom:24px; left:50%; transform:translateX(-50%); z-index:60; background:var(--color-accent-900); color:var(--color-bg); padding:10px 18px; border-radius:2px; font-size:13px; box-shadow:var(--shadow-md)">{{ toast }}</div>
+  </sc-if>
+
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+
+function seededRand(seed){ const x = Math.sin(seed) * 10000; return x - Math.floor(x); }
+
+const ICONS = {
+  wind: "M2 8 L14 8 A2.5 2.5 0 1 0 11.5 5.5 M2 13 L18 13 A2.5 2.5 0 1 1 15.5 16.5 M2 18 L10 18",
+  flame: "M12 2 C9 6 8 9 10 11 C11 12 11 13 10 14 C8 16 8 19 12 22 C16 19 16 16 14 14 C13 13 13 12 14 11 C16 9 15 6 12 2 Z",
+  batteryCharging: "M15 7 L2 7 A2 2 0 0 0 0 9 L0 15 A2 2 0 0 0 2 17 L15 17 A2 2 0 0 0 17 15 L17 9 A2 2 0 0 0 15 7 Z M20 10 L20 14 M9.5 9 L6.5 13 L9.5 13 L8.5 17",
+  zap: "M13 2 L4 14 L11 14 L10 22 L20 10 L13 10 Z",
+  panel: "M3 3 L10 3 L10 10 L3 10 Z M14 3 L21 3 L21 10 L14 10 Z M14 14 L21 14 L21 21 L14 21 Z M3 14 L10 14 L10 21 L3 21 Z"
+};
+
+const STATUS_LABEL = { ok: "OK", falla: "Falla", pendiente: "Pendiente" };
+const STATUS_TAGCLASS = { ok: "tag tag-accent", falla: "tag tag-outline", pendiente: "tag tag-neutral" };
+const STATUS_ICON = {
+  ok: "M2 12 A10 10 0 1 0 22 12 A10 10 0 1 0 2 12 M9 12 L11 14 L15 10",
+  falla: "M12 3 L22 20 L2 20 Z M12 9 L12 13 M12 16.5 L12 16.6",
+  pendiente: "M2 12 A10 10 0 1 0 22 12 A10 10 0 1 0 2 12 M12 7 L12 12 L16 14"
+};
+
+function buildLocations(){
+  const barrios = ['Pocitos','Carrasco','Cordón','Malvín','Punta Carretas','Buceo','Parque Rodó','Tres Cruces','Ciudad Vieja','Aguada','Centro','La Blanqueada','Punta Gorda','Villa Dolores','Malvín Norte','Prado','Capurro','Cerro','Peñarol','Sayago'];
+  const catDefs = [
+    { id:'ac', name:'Aires acondicionados', icon:ICONS.wind, prefix:'AC', subtypes:['Split','Rooftop','Chiller','Manejadora'], baseCount:4, countRange:4 },
+    { id:'gas', name:'Cañerías de gas', icon:ICONS.flame, prefix:'GAS', subtypes:['Tramo'], baseCount:1, countRange:2 },
+    { id:'ups', name:'UPS', icon:ICONS.batteryCharging, prefix:'UPS', subtypes:['UPS'], baseCount:1, countRange:2 },
+    { id:'gen', name:'Generador eléctrico', icon:ICONS.zap, prefix:'GEN', subtypes:['Generador'], baseCount:1, countRange:1 },
+    { id:'panel', name:'Tablero eléctrico', icon:ICONS.panel, prefix:'TAB', subtypes:['Tablero'], baseCount:1, countRange:3 }
+  ];
+  const locations = [];
+  [['Disco',20],['Devoto',20]].forEach(function(pair){
+    const chain = pair[0], count = pair[1];
+    for(let i=1;i<=count;i++){
+      const idx = chain==='Disco' ? i : i+100;
+      const seed = idx*7.919;
+      const barrio = barrios[(idx*3)%barrios.length];
+      const categories = catDefs.map(function(cd){
+        const n = cd.baseCount + Math.floor(seededRand(seed+cd.id.length)*cd.countRange);
+        const equipment = [];
+        for(let k=1;k<=n;k++){
+          const r = seededRand(seed + cd.id.length*3 + k*2.7);
+          const status = r<0.55 ? 'ok' : r<0.75 ? 'pendiente' : 'falla';
+          const subtype = cd.subtypes[(k-1)%cd.subtypes.length];
+          equipment.push({
+            id: cd.id+'-'+k,
+            prefix: cd.prefix, numPart: idx*10+k,
+            subtype: subtype, status: status,
+            comment: status==='falla' ? 'Ruido anómalo, revisar' : status==='ok' ? 'Funcionamiento correcto' : '',
+            updatedAt: status==='pendiente' ? null : ('24 jul · '+(9+(k%4))+':1'+(k%5)+'h')
+          });
+        }
+        return { id:cd.id, name:cd.name, icon:cd.icon, equipment:equipment };
+      });
+      locations.push({ id: chain.toLowerCase()+'-'+i, chain: chain, number:i, name: chain+' '+i, address: barrio+', Montevideo', categories: categories });
+    }
+  });
+  return locations;
+}
+
+class Component extends DCLogic {
+  constructor(props){
+    super(props);
+    this.locations = buildLocations();
+    this.photoInputRef = React.createRef();
+    this._toastTimer = null;
+    const todayStr = new Date().toISOString().slice(0,10);
+    const visitDates = {};
+    this.locations.forEach((l)=>{ visitDates[l.id] = todayStr; });
+    this.state = { stack:[{screen:'locations'}], search:'', chainFilter:'all', equipmentData:{}, addedEquipment:{}, deletedEquipment:{}, visitDates, historyFor:null, toast:null };
+  }
+
+  key(locId,catId,eqId){ return locId+'|'+catId+'|'+eqId; }
+  nowStr(){ const d=new Date(); return 'Hoy · '+d.toLocaleTimeString('es-UY',{hour:'2-digit',minute:'2-digit'}); }
+
+  getEqState(locId,catId,eqId,baseEq){
+    const ov = this.state.equipmentData[this.key(locId,catId,eqId)] || {};
+    const numPart = ov.numPart !== undefined ? ov.numPart : baseEq.numPart;
+    return {
+      status: ov.status !== undefined ? ov.status : baseEq.status,
+      comment: ov.comment !== undefined ? ov.comment : baseEq.comment,
+      photo: ov.photo !== undefined ? ov.photo : (baseEq.photo || null),
+      updatedAt: ov.updatedAt !== undefined ? ov.updatedAt : baseEq.updatedAt,
+      subtype: ov.subtype !== undefined ? ov.subtype : baseEq.subtype,
+      numPart: numPart,
+      code: baseEq.prefix+'-'+String(numPart).padStart(3,'0')
+    };
+  }
+
+  getVisitDate(locId){ return this.state.visitDates[locId]; }
+  setVisitDate = (e) => { const t=this.state.stack[this.state.stack.length-1]; const locId=t.locId; const val=e.target.value; this.setState((s)=>({ visitDates:{...s.visitDates,[locId]:val} })); };
+  setEqSubtypeValue(value){ const t=this.state.stack[this.state.stack.length-1]; this.setEquipmentField(t.locId,t.catId,t.eqId,'subtype',value); }
+  setEqNumPart = (e) => { const t=this.state.stack[this.state.stack.length-1]; const val=parseInt(e.target.value,10)||0; this.setEquipmentField(t.locId,t.catId,t.eqId,'numPart',val); };
+
+  getCategoryEquipment(loc,cat){
+    const key = loc.id+'|'+cat.id;
+    const all = [...cat.equipment, ...(this.state.addedEquipment[key]||[])];
+    return all.filter((eq)=> !this.state.deletedEquipment[this.key(loc.id,cat.id,eq.id)]);
+  }
+
+  deleteEquipment(locId,catId,eqId){
+    const k = this.key(locId,catId,eqId);
+    this.setState((s)=>{
+      const top = s.stack[s.stack.length-1];
+      const onIt = top.screen==='equipment' && top.eqId===eqId;
+      return { deletedEquipment:{ ...s.deletedEquipment, [k]:true }, stack: onIt ? s.stack.slice(0,-1) : s.stack };
+    });
+    this.showToast('Equipo eliminado');
+  }
+
+  addEquipment = (locId,catId) => {
+    const loc = this.locations.find((l)=>l.id===locId);
+    const cat = loc.categories.find((c)=>c.id===catId);
+    const key = locId+'|'+catId;
+    const existing = this.getCategoryEquipment(loc,cat);
+    const maxNum = existing.reduce((m,e)=>Math.max(m,e.numPart||0),0);
+    const newEq = { id: catId+'-new-'+Date.now(), prefix: cat.equipment[0] ? cat.equipment[0].prefix : catId.toUpperCase(), numPart: maxNum+1, subtype: cat.equipment[0] ? cat.equipment[0].subtype : 'Split', status:'pendiente', comment:'', photo:null, updatedAt:null };
+    this.setState((s)=>({ addedEquipment:{ ...s.addedEquipment, [key]: [...(s.addedEquipment[key]||[]), newEq] }, stack:[...s.stack,{screen:'equipment',locId,catId,eqId:newEq.id}] }));
+  };
+
+  countStatus(loc,cat){
+    let ok=0,falla=0,pendiente=0;
+    this.getCategoryEquipment(loc,cat).forEach((eq)=>{
+      const st = this.getEqState(loc.id,cat.id,eq.id,eq).status;
+      if(st==='ok') ok++; else if(st==='falla') falla++; else pendiente++;
+    });
+    return { ok, falla, pendiente, total: this.getCategoryEquipment(loc,cat).length };
+  }
+
+  countLocation(loc){
+    let ok=0,falla=0,pendiente=0,total=0;
+    loc.categories.forEach((cat)=>{
+      const c = this.countStatus(loc,cat);
+      ok+=c.ok; falla+=c.falla; pendiente+=c.pendiente; total+=c.total;
+    });
+    return { ok, falla, pendiente, total };
+  }
+
+  setEquipmentField(locId,catId,eqId,field,value){
+    const k = this.key(locId,catId,eqId);
+    this.setState((s)=>({ equipmentData: { ...s.equipmentData, [k]: { ...s.equipmentData[k], [field]: value, updatedAt: this.nowStr() } } }));
+  }
+
+  setStatusForCurrent(status){ const top=this.state.stack[this.state.stack.length-1]; this.setEquipmentField(top.locId,top.catId,top.eqId,'status',status); }
+
+  goLocations = () => this.setState({ stack:[{screen:'locations'}] });
+  openLocation = (locId) => this.setState((s)=>({ stack:[...s.stack,{screen:'location',locId}] }));
+  openCategory = (locId,catId) => this.setState((s)=>({ stack:[...s.stack,{screen:'category',locId,catId}] }));
+  openEquipment = (locId,catId,eqId) => this.setState((s)=>({ stack:[...s.stack,{screen:'equipment',locId,catId,eqId}] }));
+  openSummary = (locId) => this.setState((s)=>({ stack:[...s.stack,{screen:'summary',locId}] }));
+  goBack = () => this.setState((s)=> s.stack.length>1 ? { stack:s.stack.slice(0,-1) } : s);
+  jumpToEquipment = (locId,catId,eqId) => this.setState({ stack:[{screen:'locations'},{screen:'location',locId},{screen:'category',locId,catId},{screen:'equipment',locId,catId,eqId}] });
+
+  setSearch = (v) => this.setState({ search:v });
+  setChain = (v) => this.setState({ chainFilter:v });
+
+  openHistory = (locId,catId,eqId) => this.setState({ historyFor:{locId,catId,eqId} });
+  closeHistory = () => this.setState({ historyFor:null });
+
+  showToast(msg){ this.setState({ toast:msg }); clearTimeout(this._toastTimer); this._toastTimer = setTimeout(()=>this.setState({toast:null}), 2200); }
+  exportPhotos = () => this.showToast('Fotos exportadas ✓');
+  generatePdf = () => this.showToast('Reporte PDF generado ✓');
+
+  triggerPhotoInput = () => { if(this.photoInputRef.current) this.photoInputRef.current.click(); };
+  handlePhotoChange = (e) => {
+    const file = e.target.files && e.target.files[0]; if(!file) return;
+    const top = this.state.stack[this.state.stack.length-1];
+    const reader = new FileReader();
+    reader.onload = () => this.setEquipmentField(top.locId, top.catId, top.eqId, 'photo', reader.result);
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+  removePhoto = () => { const top=this.state.stack[this.state.stack.length-1]; this.setEquipmentField(top.locId, top.catId, top.eqId, 'photo', null); };
+
+  renderVals(){
+    const top = this.state.stack[this.state.stack.length-1];
+    const screen = top.screen;
+    const loc = top.locId ? this.locations.find((l)=>l.id===top.locId) : null;
+    const cat = loc && top.catId ? loc.categories.find((c)=>c.id===top.catId) : null;
+    const eqBase = cat && top.eqId ? this.getCategoryEquipment(loc,cat).find((e)=>e.id===top.eqId) : null;
+    const eqState = eqBase ? this.getEqState(loc.id,cat.id,eqBase.id,eqBase) : null;
+
+    const search = this.state.search.trim().toLowerCase();
+    const filteredLocations = this.locations.filter((l)=>{
+      if(this.state.chainFilter!=='all' && l.chain.toLowerCase()!==this.state.chainFilter) return false;
+      if(!search) return true;
+      return l.name.toLowerCase().includes(search) || l.address.toLowerCase().includes(search) || String(l.number).includes(search);
+    }).map((l)=>{
+      const c = this.countLocation(l);
+      const complete = c.pendiente===0 && c.falla===0;
+      const started = (c.ok+c.falla) > 0;
+      return {
+        id:l.id, chain:l.chain, name:l.name, address:l.address,
+        chainCode: l.chain==='Disco' ? 'DI' : 'DE',
+        chainBg: l.chain==='Disco' ? 'var(--color-accent)' : 'transparent',
+        chainColor: l.chain==='Disco' ? '#ffffff' : 'var(--color-accent-700)',
+        progressPct: c.total ? Math.round((c.ok+c.falla)/c.total*100) : 0,
+        progressLabel: (c.ok+c.falla)+'/'+c.total,
+        statusText: complete ? 'Completo' : started ? 'En progreso' : 'Pendiente',
+        statusTagClass: complete ? 'tag tag-accent' : started ? 'tag tag-outline' : 'tag tag-neutral',
+        onClick: () => this.openLocation(l.id)
+      };
+    });
+
+    const completedThisMonth = this.locations.filter((l)=>{ const c=this.countLocation(l); return c.pendiente===0 && c.falla===0; }).length;
+
+    const categoryCards = loc ? loc.categories.map((c)=>{
+      const counts = this.countStatus(loc,c);
+      return {
+        id:c.id, name:c.name, iconPath:c.icon,
+        progressLabel: (counts.ok+counts.falla)+'/'+counts.total+' revisados',
+        progressPct: counts.total ? Math.round((counts.ok+counts.falla)/counts.total*100) : 0,
+        fallaLabel: counts.falla>0 ? (counts.falla+' con falla') : null,
+        onClick: () => this.openCategory(loc.id,c.id)
+      };
+    }) : [];
+
+    const locationCounts = loc ? this.countLocation(loc) : null;
+
+    const equipmentRows = cat ? this.getCategoryEquipment(loc,cat).map((eq)=>{
+      const st = this.getEqState(loc.id,cat.id,eq.id,eq);
+      return {
+        id:eq.id, code:eq.code, subtype:eq.subtype,
+        statusLabel: STATUS_LABEL[st.status], statusTagClass: STATUS_TAGCLASS[st.status], statusIconPath: STATUS_ICON[st.status],
+        hasPhoto: !!st.photo, photo: st.photo,
+        onClick: () => this.openEquipment(loc.id,cat.id,eq.id),
+        onDelete: (e) => { if(e && e.stopPropagation) e.stopPropagation(); this.deleteEquipment(loc.id,cat.id,eq.id); }
+      };
+    }) : [];
+
+    const fallaItems = loc ? loc.categories.flatMap((c)=> this.getCategoryEquipment(loc,c)
+      .filter((eq)=> this.getEqState(loc.id,c.id,eq.id,eq).status==='falla')
+      .map((eq)=>({
+        code: eq.code, catName: c.name,
+        comment: this.getEqState(loc.id,c.id,eq.id,eq).comment,
+        onClick: () => this.jumpToEquipment(loc.id,c.id,eq.id)
+      }))
+    ) : [];
+
+    const historyFor = this.state.historyFor;
+    let historyEntries = [], historyTitle = '';
+    if(historyFor){
+      const hl = this.locations.find((l)=>l.id===historyFor.locId);
+      const hc = hl && hl.categories.find((c)=>c.id===historyFor.catId);
+      const he = hc && this.getCategoryEquipment(hl,hc).find((e)=>e.id===historyFor.eqId);
+      if(he){
+        historyTitle = he.subtype+' '+he.code;
+        const cur = this.getEqState(hl.id,hc.id,he.id,he);
+        historyEntries = [
+          { date:'Julio 2026 (hoy)', statusLabel: STATUS_LABEL[cur.status], statusTagClass: STATUS_TAGCLASS[cur.status], comment: cur.comment || 'Sin observaciones' },
+          { date:'Junio 2026', statusLabel:'OK', statusTagClass:'tag tag-accent', comment:'Sin observaciones' },
+          { date:'Mayo 2026', statusLabel: he.status==='falla' ? 'Pendiente' : 'OK', statusTagClass: he.status==='falla' ? 'tag tag-neutral' : 'tag tag-accent', comment:'—' }
+        ];
+      }
+    }
+
+    const headerTitleMap = {
+      locations: 'Locales',
+      location: loc ? loc.name : '',
+      category: cat ? cat.name : '',
+      equipment: eqState ? (eqState.subtype+' '+eqState.code) : '',
+      summary: 'Resumen de visita'
+    };
+    const visitDate = loc ? this.getVisitDate(loc.id) : null;
+    const visitDateFormatted = visitDate ? (visitDate.slice(8,10)+'/'+visitDate.slice(5,7)+'/'+visitDate.slice(0,4)) : '';
+
+    return {
+      isLocations: screen==='locations', isLocation: screen==='location', isCategory: screen==='category', isEquipment: screen==='equipment', isSummary: screen==='summary',
+      isSubScreen: screen!=='locations',
+      canGoBack: this.state.stack.length>1,
+      headerTitle: headerTitleMap[screen] || '',
+      headerSubtitle: (screen==='category' && loc) ? loc.name : (screen==='equipment' && cat) ? cat.name : (screen==='summary' && loc) ? loc.name : '',
+      goBack: this.goBack, goLocations: this.goLocations,
+      monthLabel: 'Julio 2026', completedThisMonth, totalLocations: this.locations.length,
+      search: this.state.search, setSearch: (e)=>this.setSearch(e.target.value),
+      isAll: this.state.chainFilter==='all', isDisco: this.state.chainFilter==='disco', isDevoto: this.state.chainFilter==='devoto',
+      setAll: ()=>this.setChain('all'), setDisco: ()=>this.setChain('disco'), setDevoto: ()=>this.setChain('devoto'),
+      filteredLocations,
+      locAddress: loc ? loc.address : '', locChain: loc ? loc.chain : '',
+      locChainTagClass: loc && loc.chain==='Devoto' ? 'tag tag-accent-2' : 'tag tag-accent',
+      locationCounts,
+      locProgressPct: locationCounts && locationCounts.total ? Math.round((locationCounts.ok+locationCounts.falla)/locationCounts.total*100) : 0,
+      fallaCardBg: locationCounts && locationCounts.falla>0 ? 'var(--color-accent-900)' : 'transparent',
+      fallaCardColor: locationCounts && locationCounts.falla>0 ? 'var(--color-bg)' : 'var(--color-text)',
+      visitDate, visitDateFormatted, setVisitDate: this.setVisitDate,
+      categoryCards,
+      openSummary: loc ? ()=>this.openSummary(loc.id) : ()=>{},
+      equipmentRows,
+      isAcEquipment: !!(cat && cat.id==='ac'),
+      eqSubtypeOptions: ['Split','Rooftop','Chiller','Manejadora'].map((s)=>({ label:s, checked: !!(eqState && eqState.subtype===s), onSelect: ()=>this.setEqSubtypeValue(s) })),
+      eqNumPart: eqState ? eqState.numPart : 0, setEqNumPart: this.setEqNumPart,
+      addEquipmentForCurrent: (loc && cat) ? ()=>this.addEquipment(loc.id,cat.id) : ()=>{},
+      deleteCurrentEquipment: (loc && cat && eqBase) ? ()=>this.deleteEquipment(loc.id,cat.id,eqBase.id) : ()=>{},
+      categoryTitle: cat ? cat.name : '',
+      eqComment: eqState ? eqState.comment : '',
+      onCommentChange: (e)=>{ const t=this.state.stack[this.state.stack.length-1]; this.setEquipmentField(t.locId,t.catId,t.eqId,'comment',e.target.value); },
+      eqIsOk: !!(eqState && eqState.status==='ok'), eqIsFalla: !!(eqState && eqState.status==='falla'), eqIsPendiente: !!(eqState && eqState.status==='pendiente'),
+      setEqOk: ()=>this.setStatusForCurrent('ok'), setEqFalla: ()=>this.setStatusForCurrent('falla'), setEqPendiente: ()=>this.setStatusForCurrent('pendiente'),
+      eqPhoto: eqState ? eqState.photo : null, eqHasPhoto: !!(eqState && eqState.photo),
+      eqUpdatedAt: eqState && eqState.updatedAt ? eqState.updatedAt : 'Sin revisar aún',
+      photoInputRef: this.photoInputRef, triggerPhotoInput: this.triggerPhotoInput, handlePhotoChange: this.handlePhotoChange, removePhoto: this.removePhoto,
+      openHistoryForCurrent: ()=>{ const t=this.state.stack[this.state.stack.length-1]; this.openHistory(t.locId,t.catId,t.eqId); },
+      historyOpen: !!historyFor, historyTitle, historyEntries, closeHistory: this.closeHistory,
+      fallaItems, hasFalla: fallaItems.length>0,
+      exportPhotos: this.exportPhotos, generatePdf: this.generatePdf,
+      toast: this.state.toast
+    };
+  }
+}
+
+</script>
+</body>
+</html>
