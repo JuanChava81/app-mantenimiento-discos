@@ -1,83 +1,18 @@
--- Esquema: app de control de mantenimiento (Disco / Devoto)
--- Correr esto una sola vez en el SQL Editor de Supabase (Project > SQL Editor > New query)
--- para un proyecto nuevo. Si ya corriste una version anterior de este archivo
--- (con las 40 sucursales de ejemplo), usá supabase/migrate_v2_locations.sql en su lugar.
+-- Migración: pasar de las 40 sucursales de ejemplo a las 52 sucursales reales
+-- con código de sucursal y meses de visita.
+-- Correr una sola vez en el SQL Editor de Supabase si ya corriste schema.sql
+-- (versión vieja, sin `suc` ni `months`).
 
-create table if not exists locations (
-  id uuid primary key default gen_random_uuid(),
-  suc text not null,              -- código de sucursal, ej. 'D 03' | 'DV 24'
-  chain text not null,            -- 'Disco' | 'Devoto'
-  name text not null,
-  address text,
-  months int[] not null default '{}'  -- meses de visita planificados (1-12)
-);
+alter table locations add column if not exists suc text;
+alter table locations add column if not exists months int[] not null default '{}';
 
-create table if not exists equipment (
-  id uuid primary key default gen_random_uuid(),
-  location_id uuid references locations(id) on delete cascade,
-  category text not null,         -- ac | gas | ups | gen | sub
-  subtype text,                   -- Split | Rooftop | Chiller | Manejadora | ...
-  code text not null,             -- AC-014
-  number int,
-  active boolean default true
-);
+-- Borra los 40 locales de ejemplo (todavía no hay visitas/equipos reales
+-- guardados en la base, así que esto es seguro).
+delete from locations;
 
-create table if not exists visits (
-  id uuid primary key default gen_random_uuid(),
-  location_id uuid references locations(id) on delete cascade,
-  visit_date date not null,
-  technician_id uuid,
-  status text default 'en_progreso',
-  created_at timestamptz default now()
-);
+alter table locations drop column if exists number;
+alter table locations alter column suc set not null;
 
-create table if not exists inspections (
-  id uuid primary key default gen_random_uuid(),
-  visit_id uuid references visits(id) on delete cascade,
-  equipment_id uuid references equipment(id) on delete cascade,
-  status text default 'pendiente', -- ok | falla | pendiente
-  comment text,
-  checks jsonb default '{}',       -- ej. {"filtro":"OK","desague":"No OK"}
-  fields jsonb default '{}',       -- ej. {"combustible":"55","voltaje":"220"}
-  updated_at timestamptz default now()
-);
-
-create table if not exists photos (
-  id uuid primary key default gen_random_uuid(),
-  inspection_id uuid references inspections(id) on delete cascade,
-  storage_path text not null,
-  taken_at timestamptz default now()
-);
-
-create table if not exists audios (
-  id uuid primary key default gen_random_uuid(),
-  inspection_id uuid references inspections(id) on delete cascade,
-  storage_path text not null,
-  duration_secs numeric,
-  recorded_at timestamptz default now()
-);
-
--- Row Level Security: por ahora dejamos lectura pública (sin login todavía,
--- eso es la etapa 4 de GUIA_PASO_A_PASO.md). Cuando se agregue login, esto
--- se reemplaza por políticas atadas al usuario autenticado.
-alter table locations enable row level security;
-alter table equipment enable row level security;
-alter table visits enable row level security;
-alter table inspections enable row level security;
-alter table photos enable row level security;
-alter table audios enable row level security;
-
-create policy "Lectura pública de locations" on locations for select using (true);
-create policy "Lectura pública de equipment" on equipment for select using (true);
-create policy "Lectura pública de visits" on visits for select using (true);
-create policy "Lectura pública de inspections" on inspections for select using (true);
-create policy "Lectura pública de photos" on photos for select using (true);
-create policy "Lectura pública de audios" on audios for select using (true);
-
--- Seed: las 52 sucursales reales (28 Disco + 24 Devoto).
--- OJO: los meses de todos los locales salvo Julio salen de la grilla "Plan con
--- formato" del Excel original y todavía no están validados con el usuario
--- (ver design_handoff_app_mantenimiento/README.md). Julio sí está confirmado.
 insert into locations (suc, chain, name, address, months) values
 ('D 01', 'Disco', 'Scoseria', 'Scosería 2628', '{1}'),
 ('D 02', 'Disco', 'Agraciada', 'Av. Agraciada 2986', '{1,4}'),
@@ -131,3 +66,18 @@ insert into locations (suc, chain, name, address, months) values
 ('DV 23', 'Devoto', 'Coronel Mora', 'Coronel Mora y Agr. Francisco Ros', '{1,4}'),
 ('DV 24', 'Devoto', 'San Quintín', 'Av. San Quintín 4376', '{1,2,7}'),
 ('DV 25', 'Devoto', 'Las Piedras II', 'Av. Dr. Pouey 622', '{1,3}');
+
+-- equipment/visits/inspections: agregamos las columnas nuevas que necesita
+-- el modelo de checks/mediciones y notas de voz (no rompe nada existente).
+alter table inspections add column if not exists checks jsonb default '{}';
+alter table inspections add column if not exists fields jsonb default '{}';
+
+create table if not exists audios (
+  id uuid primary key default gen_random_uuid(),
+  inspection_id uuid references inspections(id) on delete cascade,
+  storage_path text not null,
+  duration_secs numeric,
+  recorded_at timestamptz default now()
+);
+alter table audios enable row level security;
+create policy if not exists "Lectura pública de audios" on audios for select using (true);

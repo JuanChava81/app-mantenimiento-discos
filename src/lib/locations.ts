@@ -9,9 +9,9 @@ export async function fetchLocations(): Promise<{ locations: Location[]; source:
 
   const { data, error } = await supabase
     .from("locations")
-    .select("id, chain, number, name, address")
+    .select("id, suc, chain, name, address, months")
     .order("chain")
-    .order("number");
+    .order("suc");
 
   if (error || !data || data.length === 0) {
     return { locations: MOCK_LOCATIONS, source: "mock" };
