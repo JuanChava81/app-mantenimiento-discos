@@ -34,7 +34,7 @@ function makeAddress(seed: number): string {
   return `${street} ${number}, ${neighborhood}`;
 }
 
-export const LOCATIONS: Location[] = (["Disco", "Devoto"] as Chain[]).flatMap(
+export const MOCK_LOCATIONS: Location[] = (["Disco", "Devoto"] as Chain[]).flatMap(
   (chain, chainIdx) =>
     Array.from({ length: 20 }, (_, i) => {
       const number = i + 1;
@@ -56,36 +56,47 @@ function statusForSeed(seed: number): EquipmentStatus {
   return "pendiente";
 }
 
-export const EQUIPMENT: Equipment[] = [];
-export const INITIAL_EQUIPMENT_DATA: Record<string, EquipmentData> = {};
+/**
+ * Genera equipos y su estado inicial para una lista de locales.
+ * Todavía no hay tablas `equipment`/`inspections` conectadas en Supabase
+ * (ver supabase/schema.sql), así que esto sigue siendo data de ejemplo
+ * generada en el cliente a partir de los locales reales.
+ */
+export function generateEquipmentFor(locations: Location[]): {
+  equipment: Equipment[];
+  data: Record<string, EquipmentData>;
+} {
+  const equipment: Equipment[] = [];
+  const data: Record<string, EquipmentData> = {};
+  let seed = 0;
 
-let globalSeed = 0;
-for (const location of LOCATIONS) {
-  for (const category of CATEGORIES) {
-    const count = category.id === "ac" ? 3 : category.id === "gas" ? 2 : 1;
-    for (let n = 1; n <= count; n++) {
-      globalSeed++;
-      const id = `${location.id}-${category.id}-${n}`;
-      const subtype = category.subtypes[(globalSeed + n) % category.subtypes.length];
-      const code = `${category.prefix}-${String(n).padStart(3, "0")}`;
-      EQUIPMENT.push({
-        id,
-        locationId: location.id,
-        category: category.id,
-        subtype,
-        number: n,
-        code,
-        active: true,
-      });
-      INITIAL_EQUIPMENT_DATA[id] = {
-        status: statusForSeed(globalSeed),
-        comment:
-          statusForSeed(globalSeed) === "falla"
-            ? "Ruido anormal, requiere revisión técnica."
-            : "",
-        photoUrl: null,
-        updatedAt: "Hoy · 09:00",
-      };
+  for (const location of locations) {
+    for (const category of CATEGORIES) {
+      const count = category.id === "ac" ? 3 : category.id === "gas" ? 2 : 1;
+      for (let n = 1; n <= count; n++) {
+        seed++;
+        const id = `${location.id}-${category.id}-${n}`;
+        const subtype = category.subtypes[(seed + n) % category.subtypes.length];
+        const code = `${category.prefix}-${String(n).padStart(3, "0")}`;
+        const status = statusForSeed(seed);
+        equipment.push({
+          id,
+          locationId: location.id,
+          category: category.id,
+          subtype,
+          number: n,
+          code,
+          active: true,
+        });
+        data[id] = {
+          status,
+          comment: status === "falla" ? "Ruido anormal, requiere revisión técnica." : "",
+          photoUrl: null,
+          updatedAt: "Hoy · 09:00",
+        };
+      }
     }
   }
+
+  return { equipment, data };
 }

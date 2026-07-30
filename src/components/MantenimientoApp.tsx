@@ -2,8 +2,8 @@
 
 import { useMemo, useRef, useState } from "react";
 import { CATEGORIES, categoryById } from "@/lib/categories";
-import { EQUIPMENT, INITIAL_EQUIPMENT_DATA, LOCATIONS } from "@/lib/mock-data";
-import { CategoryId, Chain, Equipment, EquipmentData, EquipmentStatus } from "@/lib/types";
+import { generateEquipmentFor } from "@/lib/mock-data";
+import { CategoryId, Chain, Equipment, EquipmentData, EquipmentStatus, Location } from "@/lib/types";
 import { StatusChip } from "./StatusChip";
 import { ProgressBar } from "./ProgressBar";
 import {
@@ -46,10 +46,17 @@ const HISTORY_EXAMPLE = [
   { date: "2026-04-02", status: "ok" as EquipmentStatus, comment: "Revisado, funciona correctamente." },
 ];
 
-export default function MantenimientoApp() {
+export default function MantenimientoApp({
+  locations,
+  dataSource,
+}: {
+  locations: Location[];
+  dataSource: "supabase" | "mock";
+}) {
+  const initial = useMemo(() => generateEquipmentFor(locations), [locations]);
   const [stack, setStack] = useState<View[]>([{ screen: "locations" }]);
-  const [equipment, setEquipment] = useState<Equipment[]>(EQUIPMENT);
-  const [data, setData] = useState<Record<string, EquipmentData>>(INITIAL_EQUIPMENT_DATA);
+  const [equipment, setEquipment] = useState<Equipment[]>(initial.equipment);
+  const [data, setData] = useState<Record<string, EquipmentData>>(initial.data);
   const [visitDates, setVisitDates] = useState<Record<string, string>>({});
   const [search, setSearch] = useState("");
   const [chainFilter, setChainFilter] = useState<"Todos" | Chain>("Todos");
@@ -134,7 +141,7 @@ export default function MantenimientoApp() {
   }
 
   const filteredLocations = useMemo(() => {
-    return LOCATIONS.filter((loc) => {
+    return locations.filter((loc) => {
       if (chainFilter !== "Todos" && loc.chain !== chainFilter) return false;
       if (!search.trim()) return true;
       const q = search.trim().toLowerCase();
@@ -144,9 +151,9 @@ export default function MantenimientoApp() {
         String(loc.number).includes(q)
       );
     });
-  }, [search, chainFilter]);
+  }, [locations, search, chainFilter]);
 
-  const completedThisMonth = LOCATIONS.filter((l) => visitDates[l.id]).length;
+  const completedThisMonth = locations.filter((l) => visitDates[l.id]).length;
   const now = new Date();
   const visitLabel = `Visita de ${MONTHS[now.getMonth()]} ${now.getFullYear()}`;
 
@@ -155,13 +162,14 @@ export default function MantenimientoApp() {
       {view.screen === "locations" && (
         <LocationsScreen
           locations={filteredLocations}
+          dataSource={dataSource}
           search={search}
           setSearch={setSearch}
           chainFilter={chainFilter}
           setChainFilter={setChainFilter}
           visitLabel={visitLabel}
           completedThisMonth={completedThisMonth}
-          totalLocations={LOCATIONS.length}
+          totalLocations={locations.length}
           countsFor={countsFor}
           equipmentForLocation={equipmentForLocation}
           onOpen={(id) => push({ screen: "location", locationId: id })}
@@ -169,7 +177,7 @@ export default function MantenimientoApp() {
       )}
 
       {view.screen === "location" && (() => {
-        const location = LOCATIONS.find((l) => l.id === view.locationId)!;
+        const location = locations.find((l) => l.id === view.locationId)!;
         const list = equipmentForLocation(location.id);
         const counts = countsFor(list);
         return (
@@ -190,7 +198,7 @@ export default function MantenimientoApp() {
       })()}
 
       {view.screen === "category" && (() => {
-        const location = LOCATIONS.find((l) => l.id === view.locationId)!;
+        const location = locations.find((l) => l.id === view.locationId)!;
         const cat = categoryById(view.categoryId);
         const list = equipmentForCategory(location.id, view.categoryId);
         return (
@@ -248,7 +256,7 @@ export default function MantenimientoApp() {
       })()}
 
       {view.screen === "summary" && (() => {
-        const location = LOCATIONS.find((l) => l.id === view.locationId)!;
+        const location = locations.find((l) => l.id === view.locationId)!;
         const list = equipmentForLocation(location.id);
         const counts = countsFor(list);
         const fallas = list.filter((e) => data[e.id]?.status === "falla");
@@ -298,6 +306,7 @@ export default function MantenimientoApp() {
 
 function LocationsScreen({
   locations,
+  dataSource,
   search,
   setSearch,
   chainFilter,
@@ -309,7 +318,8 @@ function LocationsScreen({
   equipmentForLocation,
   onOpen,
 }: {
-  locations: typeof LOCATIONS;
+  locations: Location[];
+  dataSource: "supabase" | "mock";
   search: string;
   setSearch: (v: string) => void;
   chainFilter: "Todos" | Chain;
@@ -331,6 +341,12 @@ function LocationsScreen({
           <span>{completedThisMonth}/{totalLocations} completados</span>
         </div>
       </header>
+
+      {dataSource === "mock" && (
+        <div style={{ background: "var(--color-accent-100)", color: "var(--color-accent-800)", padding: "6px 16px", fontSize: 12 }}>
+          Mostrando datos de ejemplo — conectá Supabase (corré <code>supabase/schema.sql</code>) para ver los locales reales.
+        </div>
+      )}
 
       <div className="p-4 flex flex-col gap-3">
         <div className="relative">
@@ -428,7 +444,7 @@ function LocationScreen({
   onOpenCategory,
   onSummary,
 }: {
-  location: (typeof LOCATIONS)[number];
+  location: Location;
   counts: { ok: number; falla: number; pendiente: number; total: number };
   visitDate: string;
   onVisitDateChange: (v: string) => void;
@@ -509,7 +525,7 @@ function CategoryScreen({
   onAddEquipment,
   onDeleteEquipment,
 }: {
-  location: (typeof LOCATIONS)[number];
+  location: Location;
   category: ReturnType<typeof categoryById>;
   list: Equipment[];
   data: Record<string, EquipmentData>;
@@ -708,7 +724,7 @@ function SummaryScreen({
   onExport,
   onGeneratePdf,
 }: {
-  location: (typeof LOCATIONS)[number];
+  location: Location;
   counts: { ok: number; falla: number; pendiente: number; total: number };
   fallas: Equipment[];
   visitDate: string;
