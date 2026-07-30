@@ -7,7 +7,6 @@ import { MONTH_NAMES } from "@/lib/real-locations";
 import { AudioNote, CategoryId, Chain, Equipment, EquipmentData, EquipmentStatus, Location } from "@/lib/types";
 import { StatusChip } from "./StatusChip";
 import { ProgressBar } from "./ProgressBar";
-import { CameraCapture } from "./CameraCapture";
 import { AudioRecorder } from "./AudioRecorder";
 import {
   ArrowLeftIcon,
@@ -686,27 +685,19 @@ function EquipmentScreen({
   onAddAudio: (audio: AudioNote) => void;
   onRemoveAudio: (id: string) => void;
 }) {
-  const [cameraOpen, setCameraOpen] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
 
-  function handleGallerySelect(files: FileList | null) {
+  function handlePhotoFiles(files: FileList | null, input: HTMLInputElement | null) {
     if (!files || files.length === 0) return;
     const urls = Array.from(files).map((f) => URL.createObjectURL(f));
     onAddPhotos(urls);
+    // Reset para poder volver a tomar/elegir sin recargar la página.
+    if (input) input.value = "";
   }
 
   return (
     <>
-      {cameraOpen && (
-        <CameraCapture
-          onCancel={() => setCameraOpen(false)}
-          onDone={(photos) => {
-            onAddPhotos(photos);
-            setCameraOpen(false);
-          }}
-        />
-      )}
-
       <TopBar title={equipmentItem.code} onBack={onBack} action={<button onClick={onOpenHistory}><ClockIcon size={18} /></button>} />
       <div className="p-4">
         <div className="card-reg p-4 flex flex-col gap-4">
@@ -750,13 +741,13 @@ function EquipmentScreen({
                 <CameraIcon size={26} className="opacity-40" />
                 <span style={{ fontSize: 13, opacity: 0.6 }}>Sin fotos todavía</span>
                 <div className="flex gap-2 mt-1">
-                  <button className="btn btn-primary" style={{ minHeight: 38, padding: "0 14px", fontSize: 13 }} onClick={() => setCameraOpen(true)}>
-                    Tomar fotos
+                  <button className="btn btn-primary" style={{ minHeight: 38, padding: "0 14px", fontSize: 13 }} onClick={() => cameraInputRef.current?.click()}>
+                    Tomar foto
                   </button>
                   <button
                     className="btn btn-ghost"
                     style={{ minHeight: 38, padding: "0 14px", fontSize: 13 }}
-                    onClick={() => fileInputRef.current?.click()}
+                    onClick={() => galleryInputRef.current?.click()}
                   >
                     Elegir de la galería
                   </button>
@@ -783,20 +774,37 @@ function EquipmentScreen({
                 <button
                   className="flex items-center justify-center"
                   style={{ aspectRatio: "1/1", border: "1px dashed var(--color-accent-300)", color: "var(--color-accent-600)" }}
-                  onClick={() => setCameraOpen(true)}
+                  onClick={() => cameraInputRef.current?.click()}
                   aria-label="Agregar foto"
                 >
                   <PlusIcon size={18} />
                 </button>
               </div>
             )}
+            {eqData.photos.length > 0 && (
+              <button
+                className="mt-2"
+                style={{ fontSize: 12, color: "var(--color-accent-700)" }}
+                onClick={() => galleryInputRef.current?.click()}
+              >
+                Elegir de la galería
+              </button>
+            )}
             <input
-              ref={fileInputRef}
+              ref={cameraInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={(e) => handlePhotoFiles(e.target.files, cameraInputRef.current)}
+            />
+            <input
+              ref={galleryInputRef}
               type="file"
               accept="image/*"
               multiple
               className="hidden"
-              onChange={(e) => handleGallerySelect(e.target.files)}
+              onChange={(e) => handlePhotoFiles(e.target.files, galleryInputRef.current)}
             />
           </div>
 
