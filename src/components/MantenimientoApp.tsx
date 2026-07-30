@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { CATEGORIES, categoryById } from "@/lib/categories";
 import { fetchAllEquipmentState, saveEquipmentState } from "@/lib/equipment-state";
+import { exportVisitZip } from "@/lib/export";
 import { generateEquipmentFor } from "@/lib/mock-data";
 import { MONTH_NAMES } from "@/lib/real-locations";
 import { supabaseConfigured } from "@/lib/supabase";
@@ -330,7 +331,15 @@ export default function MantenimientoApp({
                 },
               ])
             }
-            onExport={() => showToast("Fotos y audios exportados (simulado)")}
+            onExport={async () => {
+              showToast("Generando ZIP…");
+              try {
+                await exportVisitZip(location, visitDateFor(location.id), list, data);
+                showToast("ZIP descargado");
+              } catch {
+                showToast("No se pudo generar el ZIP");
+              }
+            }}
             onGeneratePdf={() => showToast("Reporte PDF generado (simulado)")}
           />
         );
