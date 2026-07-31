@@ -1055,8 +1055,11 @@ function HistoryModal({ code, onClose }: { code: string; onClose: () => void }) 
 
 function TopBar({ title, kicker, onBack, action }: { title: string; kicker?: string; onBack: () => void; action?: React.ReactNode }) {
   return (
-    <div className="hairline-b flex items-center gap-3 p-4">
-      <button onClick={onBack} aria-label="Volver">
+    <div
+      className="hairline-b flex items-center gap-3 p-4"
+      style={{ paddingTop: "calc(var(--space-4) + env(safe-area-inset-top))" }}
+    >
+      <button onClick={onBack} aria-label="Volver" style={{ minWidth: 44, minHeight: 44 }}>
         <ArrowLeftIcon />
       </button>
       <span className="flex-1 min-w-0">
