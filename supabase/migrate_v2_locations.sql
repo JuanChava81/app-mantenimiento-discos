@@ -67,17 +67,6 @@ insert into locations (suc, chain, name, address, months) values
 ('DV 24', 'Devoto', 'San Quintín', 'Av. San Quintín 4376', '{1,2,7}'),
 ('DV 25', 'Devoto', 'Las Piedras II', 'Av. Dr. Pouey 622', '{1,3}');
 
--- equipment/visits/inspections: agregamos las columnas nuevas que necesita
--- el modelo de checks/mediciones y notas de voz (no rompe nada existente).
-alter table inspections add column if not exists checks jsonb default '{}';
-alter table inspections add column if not exists fields jsonb default '{}';
-
-create table if not exists audios (
-  id uuid primary key default gen_random_uuid(),
-  inspection_id uuid references inspections(id) on delete cascade,
-  storage_path text not null,
-  duration_secs numeric,
-  recorded_at timestamptz default now()
-);
-alter table audios enable row level security;
-create policy if not exists "Lectura pública de audios" on audios for select using (true);
+-- El modelo de equipos (checklist, mediciones, fotos, audio) se agrega
+-- aparte, en supabase/migrate_v3_equipment_state.sql — corré ese archivo
+-- después de este.
