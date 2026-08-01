@@ -68,6 +68,11 @@ export default function MantenimientoApp({
   const [historyFor, setHistoryFor] = useState<string | null>(null);
   const nextEquipmentSeq = useRef(1);
 
+  // Bloquea la interacción hasta que se sincronice con Supabase. Si se
+  // dejara tocar la app antes, un cambio se guardaría con los datos de
+  // ejemplo iniciales y pisaría lo que ya estaba guardado en la nube.
+  const [ready, setReady] = useState(dataSource !== "supabase");
+
   // Trae el estado real (fotos, audios, checklist, estado) guardado en
   // Supabase para que todos los dispositivos vean lo mismo. Si todavía no
   // hay nada guardado para un equipo, se queda con el dato de ejemplo hasta
@@ -76,13 +81,16 @@ export default function MantenimientoApp({
     if (dataSource !== "supabase") return;
     let cancelled = false;
     fetchAllEquipmentState().then((remote) => {
-      if (cancelled || !remote) return;
-      setEquipment((local) => {
-        const byId = new Map(local.map((e) => [e.id, e]));
-        for (const e of remote.equipment) byId.set(e.id, e);
-        return Array.from(byId.values());
-      });
-      setData((local) => ({ ...local, ...remote.data }));
+      if (cancelled) return;
+      if (remote) {
+        setEquipment((local) => {
+          const byId = new Map(local.map((e) => [e.id, e]));
+          for (const e of remote.equipment) byId.set(e.id, e);
+          return Array.from(byId.values());
+        });
+        setData((local) => ({ ...local, ...remote.data }));
+      }
+      setReady(true);
     });
     return () => {
       cancelled = true;
@@ -203,6 +211,17 @@ export default function MantenimientoApp({
   const planificados = locations.filter((l) => l.months.includes(currentMonth));
   const completedThisMonth = planificados.filter((l) => visitDates[l.id]).length;
   const monthLabel = MONTH_NAMES[currentMonth - 1];
+
+  if (!ready) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-3" style={{ background: "var(--color-bg)" }}>
+        <div className="header-hero" style={{ position: "absolute", top: 0, left: 0, right: 0, padding: "20px 16px" }}>
+          <div className="kicker">CONTROL DE MANTENIMIENTO · URUGUAY</div>
+        </div>
+        <span style={{ fontSize: 14, opacity: 0.6 }}>Sincronizando…</span>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: "var(--color-bg)" }}>
