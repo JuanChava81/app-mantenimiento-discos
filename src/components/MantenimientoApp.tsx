@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { CATEGORIES, categoryById } from "@/lib/categories";
 import { fetchAllEquipmentState, saveEquipmentState } from "@/lib/equipment-state";
 import { exportVisitZip } from "@/lib/export";
+import { generateVisitExcel } from "@/lib/excel-report";
 import { generateEquipmentFor } from "@/lib/mock-data";
 import { MONTH_NAMES } from "@/lib/real-locations";
 import { supabaseConfigured } from "@/lib/supabase";
@@ -292,6 +293,10 @@ export default function MantenimientoApp({
             onRemovePhoto={(idx) =>
               updateEquipmentData(eq.id, { photos: eqData.photos.filter((_, i) => i !== idx) })
             }
+            onSetPrimaryPhoto={(idx) => {
+              const reordered = [eqData.photos[idx], ...eqData.photos.filter((_, i) => i !== idx)];
+              updateEquipmentData(eq.id, { photos: reordered });
+            }}
             onChangeCheck={(checkId, value) =>
               updateEquipmentData(eq.id, { checks: { ...eqData.checks, [checkId]: value } })
             }
@@ -340,7 +345,15 @@ export default function MantenimientoApp({
                 showToast("No se pudo generar el ZIP");
               }
             }}
-            onGeneratePdf={() => showToast("Reporte PDF generado (simulado)")}
+            onGeneratePdf={async () => {
+              showToast("Generando informe…");
+              try {
+                await generateVisitExcel(location, visitDateFor(location.id), list, data);
+                showToast("Informe descargado");
+              } catch {
+                showToast("No se pudo generar el informe");
+              }
+            }}
           />
         );
       })()}
@@ -701,6 +714,7 @@ function EquipmentScreen({
   onChangeStatus,
   onAddPhotos,
   onRemovePhoto,
+  onSetPrimaryPhoto,
   onChangeCheck,
   onChangeField,
   onAddAudio,
@@ -718,6 +732,7 @@ function EquipmentScreen({
   onChangeStatus: (status: EquipmentStatus) => void;
   onAddPhotos: (photos: string[]) => void;
   onRemovePhoto: (index: number) => void;
+  onSetPrimaryPhoto: (index: number) => void;
   onChangeCheck: (checkId: string, value: string) => void;
   onChangeField: (fieldId: string, value: string) => void;
   onAddAudio: (audio: AudioNote) => void;
@@ -806,9 +821,30 @@ function EquipmentScreen({
             ) : (
               <div className="grid grid-cols-3 gap-2">
                 {eqData.photos.map((p, i) => (
-                  <div key={i} className="relative" style={{ aspectRatio: "1/1" }}>
+                  <div key={i} className="relative" style={{ aspectRatio: "1/1", outline: i === 0 ? "2px solid var(--color-accent-600)" : undefined }}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={p} alt={`Foto ${i + 1}`} className="w-full h-full object-cover" />
+                    {i === 0 ? (
+                      <span
+                        style={{
+                          position: "absolute", bottom: 2, left: 2, fontSize: 10, fontWeight: 600,
+                          background: "var(--color-accent-600)", color: "#fff", padding: "1px 5px",
+                        }}
+                      >
+                        Principal
+                      </span>
+                    ) : (
+                      <button
+                        aria-label="Marcar como foto principal"
+                        onClick={() => onSetPrimaryPhoto(i)}
+                        style={{
+                          position: "absolute", bottom: 2, left: 2, fontSize: 10,
+                          background: "rgba(0,0,0,0.6)", color: "#fff", padding: "1px 5px",
+                        }}
+                      >
+                        Marcar principal
+                      </button>
+                    )}
                     <button
                       aria-label="Quitar foto"
                       onClick={() => onRemovePhoto(i)}
@@ -1015,7 +1051,7 @@ function SummaryScreen({
           Exportar fotos y audios por equipo
         </button>
         <button className="btn btn-primary btn-block" onClick={onGeneratePdf}>
-          Generar reporte PDF
+          Generar informe (Excel)
         </button>
         <button className="btn btn-ghost btn-block" onClick={onBackToLocations}>
           Volver a locales
