@@ -1,5 +1,6 @@
 import JSZip from "jszip";
 import { categoryById } from "./categories";
+import { equipmentPhotoCode } from "./equipment-code";
 import { Equipment, EquipmentData, Location } from "./types";
 
 const STATUS_LABEL: Record<string, string> = { ok: "OK", falla: "No OK", pendiente: "Pendiente" };
@@ -54,10 +55,11 @@ export async function exportVisitZip(
     report += `  Observación: ${eqData.comment || "—"}\n`;
     report += `  Fotos: ${eqData.photos.length} · Notas de voz: ${eqData.audios.length}\n\n`;
 
+    const photoCode = equipmentPhotoCode(eq);
     for (let i = 0; i < eqData.photos.length; i++) {
       try {
         const blob = await urlToBlob(eqData.photos[i]);
-        zip.file(`${folder}/${eq.code}_foto${i + 1}.${extFromBlob(blob, "photo")}`, blob);
+        zip.file(`${folder}/${photoCode}_foto${i + 1}.${extFromBlob(blob, "photo")}`, blob);
       } catch {
         // si una foto no se puede descargar (ej. blob local vencido), seguimos con el resto
       }
