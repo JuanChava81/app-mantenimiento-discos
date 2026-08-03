@@ -1,29 +1,11 @@
 import ExcelJS from "exceljs";
 import { CATEGORIES, categoryById } from "./categories";
+import { acShortCode, equipmentPhotoCode as photoCode } from "./equipment-code";
 import { CategoryId, Equipment, EquipmentData, Location } from "./types";
 
 const HEADER_GRAY = "FFE7E4E1";
 const COMMENTS_BG = "FFEDE7E0";
 const CAPTION_BG = "FF1A1A1A";
-
-// Prefijos de código para las fotos/tabla de aires acondicionados, según
-// el subtipo — igual al criterio de la planilla original del usuario
-// (S_01 Split, R_01 Rooftop, CH_01 Chiller, M_01 Manejadora).
-const AC_SUBTYPE_PREFIX: Record<string, string> = {
-  Split: "S",
-  Rooftop: "R",
-  Chiller: "CH",
-  Manejadora: "M",
-};
-
-function acShortCode(eq: Equipment): string {
-  const prefix = AC_SUBTYPE_PREFIX[eq.subtype] ?? eq.subtype.slice(0, 1).toUpperCase();
-  return `${prefix}_${String(eq.number).padStart(2, "0")}`;
-}
-
-function photoCode(eq: Equipment): string {
-  return eq.category === "ac" ? acShortCode(eq) : eq.code;
-}
 
 // Tamaño de foto en la grilla (px a 96dpi) y su cartelito de código abajo.
 const GRID_COLS = 6;
