@@ -9,6 +9,7 @@ import { generateEquipmentFor } from "@/lib/mock-data";
 import { MONTH_NAMES } from "@/lib/real-locations";
 import { supabaseConfigured } from "@/lib/supabase";
 import { uploadToStorage } from "@/lib/storage";
+import { compressPhoto } from "@/lib/image";
 import { AudioNote, CategoryId, Chain, Equipment, EquipmentData, EquipmentStatus, Location } from "@/lib/types";
 import { StatusChip } from "./StatusChip";
 import { ProgressBar } from "./ProgressBar";
@@ -66,7 +67,6 @@ export default function MantenimientoApp({
   const [monthFilter, setMonthFilter] = useState<"Este mes" | "Todos">("Este mes");
   const [toast, setToast] = useState<string | null>(null);
   const [historyFor, setHistoryFor] = useState<string | null>(null);
-  const nextEquipmentSeq = useRef(1);
 
   // Bloquea la interacción hasta que se sincronice con Supabase. Si se
   // dejara tocar la app antes, un cambio se guardaría con los datos de
@@ -142,7 +142,7 @@ export default function MantenimientoApp({
     const nextNumber = existing.length
       ? Math.max(...existing.map((e) => e.number)) + 1
       : 1;
-    const id = `${locationId}-${categoryId}-new-${nextEquipmentSeq.current++}`;
+    const id = `${locationId}-${categoryId}-new-${nextNumber}`;
     const newEq: Equipment = {
       id,
       locationId,
@@ -769,14 +769,15 @@ function EquipmentScreen({
     if (supabaseConfigured) {
       const urls = await Promise.all(
         fileArray.map(async (f) => {
-          const ext = f.type.includes("png") ? "png" : "jpg";
-          const uploaded = await uploadToStorage("photos", equipmentItem.id, f, ext);
-          return uploaded ?? URL.createObjectURL(f);
+          const compressed = await compressPhoto(f);
+          const uploaded = await uploadToStorage("photos", equipmentItem.id, compressed, "jpg");
+          return uploaded ?? URL.createObjectURL(compressed);
         })
       );
       onAddPhotos(urls);
     } else {
-      onAddPhotos(fileArray.map((f) => URL.createObjectURL(f)));
+      const compressedFiles = await Promise.all(fileArray.map((f) => compressPhoto(f)));
+      onAddPhotos(compressedFiles.map((f) => URL.createObjectURL(f)));
     }
   }
 
