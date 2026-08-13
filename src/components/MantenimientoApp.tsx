@@ -142,7 +142,10 @@ export default function MantenimientoApp({
     const nextNumber = existing.length
       ? Math.max(...existing.map((e) => e.number)) + 1
       : 1;
-    const id = `${locationId}-${categoryId}-new-${nextNumber}`;
+    // Id único real (no derivado de un conteo) para que dos equipos nuevos
+    // nunca puedan chocar, aunque se agreguen desde dos dispositivos a la
+    // vez o con doble tap en el mismo celular.
+    const id = `${locationId}-${categoryId}-${crypto.randomUUID()}`;
     const newEq: Equipment = {
       id,
       locationId,
