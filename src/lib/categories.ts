@@ -69,6 +69,14 @@ export const CATEGORIES: CategoryDef[] = [
     ],
     fields: [{ id: "fp", label: "Factor de potencia", unit: "", placeholder: "0,95" }],
   },
+  {
+    id: "cg",
+    name: "Comentarios generales",
+    prefix: "CG",
+    subtypes: ["General"],
+    checks: [],
+    fields: [],
+  },
 ];
 
 export function categoryById(id: string): CategoryDef {
