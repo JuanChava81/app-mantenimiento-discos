@@ -5,7 +5,7 @@ export const CATEGORIES: CategoryDef[] = [
     id: "ac",
     name: "Aires acondicionados",
     prefix: "AC",
-    subtypes: ["Split", "Rooftop", "Chiller", "Manejadora"],
+    subtypes: ["Split", "Rooftop", "Chiller", "Manejadora", "UE", "UI"],
     checks: [
       { id: "filtro", label: "Filtro", options: ["OK", "No OK"] },
       { id: "desague", label: "Desagüe", options: ["OK", "No OK"] },

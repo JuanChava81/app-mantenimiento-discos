@@ -2,13 +2,16 @@ import { Equipment } from "./types";
 
 // Prefijos de código para aires acondicionados según el subtipo — igual
 // al criterio de la planilla original del usuario (S_01 Split, R_01
-// Rooftop, CH_01 Chiller, M_01 Manejadora; el número es el número de
-// equipo). Se usa tanto en el informe Excel como en el export de fotos.
+// Rooftop, CH_01 Chiller, M_01 Manejadora, UE_01 Unidad Exterior, UI_01
+// Unidad Interior; el número es el número de equipo). Se usa tanto en el
+// informe Excel como en el export de fotos.
 const AC_SUBTYPE_PREFIX: Record<string, string> = {
   Split: "S",
   Rooftop: "R",
   Chiller: "CH",
   Manejadora: "M",
+  UE: "UE",
+  UI: "UI",
 };
 
 export function acShortCode(eq: Equipment): string {
