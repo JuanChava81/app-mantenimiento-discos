@@ -34,17 +34,28 @@ create table if not exists equipment_state (
   updated_at timestamptz not null default now()
 );
 
+-- Tabla mínima para el keepalive de Supabase (ver
+-- api/cron/keepalive-supabase.js en el repo wpp-mantenimiento): el plan
+-- gratis pausa el proyecto después de ~7 días sin actividad, así que un
+-- cron le hace un upsert acá todos los días para que nunca llegue a eso.
+create table if not exists _keepalive (
+  id int primary key default 1,
+  pinged_at timestamptz not null default now()
+);
+
 -- Row Level Security: por ahora dejamos lectura y escritura públicas (sin
 -- login todavía, eso es la etapa "Usuarios" de GUIA_PASO_A_PASO.md). Cuando
 -- se agregue login, esto se reemplaza por políticas atadas al técnico
 -- autenticado.
 alter table locations enable row level security;
 alter table equipment_state enable row level security;
+alter table _keepalive enable row level security;
 
 create policy "Lectura pública de locations" on locations for select using (true);
 create policy "Lectura pública de equipment_state" on equipment_state for select using (true);
 create policy "Escritura pública de equipment_state" on equipment_state for insert with check (true);
 create policy "Actualización pública de equipment_state" on equipment_state for update using (true) with check (true);
+create policy "Keepalive escribible" on _keepalive for all using (true) with check (true);
 
 -- Buckets de Storage para fotos y notas de voz, públicos para lectura.
 insert into storage.buckets (id, name, public)
@@ -62,6 +73,9 @@ create policy "Borrado público de fotos" on storage.objects for delete using (b
 create policy "Lectura pública de audios" on storage.objects for select using (bucket_id = 'audios');
 create policy "Subida pública de audios" on storage.objects for insert with check (bucket_id = 'audios');
 create policy "Borrado público de audios" on storage.objects for delete using (bucket_id = 'audios');
+
+insert into _keepalive (id, pinged_at) values (1, now())
+on conflict (id) do nothing;
 
 -- Seed: las 52 sucursales reales (28 Disco + 24 Devoto).
 -- OJO: los meses de todos los locales salvo Julio salen de la grilla "Plan con
