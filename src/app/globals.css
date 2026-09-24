@@ -2,17 +2,24 @@
 
 :root {
   --color-bg: #ffffff;
-  --color-surface: #f7eded;
+  --color-surface: #eef5ef;
   --color-text: #1d1f20;
-  --color-accent-100: #fdecec;
-  --color-accent-200: #fad0d1;
-  --color-accent-300: #f2a3a6;
-  --color-accent-400: #e8767a;
-  --color-accent-500: #dd4a50;
-  --color-accent-600: #d21f2b;
-  --color-accent-700: #a8171f;
-  --color-accent-800: #7c1116;
-  --color-accent-900: #4a0a0d;
+  /* Verde de marca (fondo del splash / ícono de la app). El 600 es el
+     verde base tal cual, el resto es una escala derivada del mismo tono. */
+  --color-accent-100: #e9f6ec;
+  --color-accent-200: #c4e8cc;
+  --color-accent-300: #89d199;
+  --color-accent-400: #47b85f;
+  --color-accent-500: #39934c;
+  --color-accent-600: #296235;
+  --color-accent-700: #1f512a;
+  --color-accent-800: #16391d;
+  --color-accent-900: #0e2513;
+  /* Rojo reservado para el isologo "Disco" (óvalo) y para alertas de falla
+     — no se mezcla con el verde de marca de arriba. */
+  --color-disco-red: #d21f2b;
+  --color-disco-red-dark: #a8171f;
+  --color-danger: #a8171f;
   --color-divider: rgba(29, 31, 32, 0.16);
 
   --font-heading: var(--font-barlow-condensed), "Barlow Condensed", sans-serif;
@@ -131,7 +138,7 @@ button, input, textarea {
 }
 
 .chip-ok { background: var(--color-accent-100); color: #2f7a3a; border-color: #cdeacf; }
-.chip-falla { background: var(--color-accent-900); color: #fff; }
+.chip-falla { background: var(--color-danger); color: #fff; }
 .chip-pendiente { background: var(--color-surface); color: var(--color-accent-800); }
 
 .tag-outline {

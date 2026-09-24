@@ -104,7 +104,7 @@ export function AudioRecorder({
       {recording ? (
         <div
           className="flex items-center justify-between p-3"
-          style={{ background: "var(--color-accent-900)", color: "#fff" }}
+          style={{ background: "var(--color-danger)", color: "#fff" }}
         >
           <span className="flex items-center gap-2" style={{ fontSize: 13 }}>
             <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#fff" }} />
@@ -120,7 +120,7 @@ export function AudioRecorder({
         </button>
       )}
 
-      {error && <p style={{ fontSize: 12, color: "var(--color-accent-700)" }}>{error}</p>}
+      {error && <p style={{ fontSize: 12, color: "var(--color-danger)" }}>{error}</p>}
 
       {audios.map((a, i) => (
         <div key={a.id} className="flex items-center gap-2 hairline-b" style={{ padding: "6px 0" }}>

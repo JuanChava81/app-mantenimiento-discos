@@ -432,7 +432,9 @@ function LocationsScreen({
   return (
     <>
       <header className="header-hero">
-        <div className="kicker">CONTROL DE MANTENIMIENTO · URUGUAY</div>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/branding/disco-logo-oval.png" alt="Disco" style={{ height: 26, width: "auto", display: "block" }} />
+        <div className="kicker" style={{ marginTop: 8 }}>CONTROL DE MANTENIMIENTO · URUGUAY</div>
         <h1 style={{ fontSize: 31, marginTop: 4 }}>Plan de visitas</h1>
         <div className="flex justify-between mt-2" style={{ fontSize: 12, opacity: 0.8 }}>
           <span>{monthLabel}</span>
@@ -515,9 +517,11 @@ function LocationsScreen({
                   style={{
                     width: 40,
                     height: 40,
-                    border: "1.5px solid var(--color-accent-600)",
-                    background: loc.chain === "Disco" ? "var(--color-accent-600)" : "transparent",
-                    color: loc.chain === "Disco" ? "#fff" : "var(--color-accent-700)",
+                    // El cuadrado de sucursal siempre va en rojo Disco (marca de la
+                    // cadena), no en el verde de acento general de la app.
+                    border: "1.5px solid var(--color-disco-red)",
+                    background: loc.chain === "Disco" ? "var(--color-disco-red)" : "transparent",
+                    color: loc.chain === "Disco" ? "#fff" : "var(--color-disco-red-dark)",
                     fontFamily: "var(--font-heading)",
                     fontWeight: 600,
                     fontSize: 12,
@@ -1045,7 +1049,7 @@ function SummaryScreen({
           </div>
           <div
             className="card-reg p-3 text-center"
-            style={counts.falla > 0 ? { background: "var(--color-accent-900)", color: "#fff" } : undefined}
+            style={counts.falla > 0 ? { background: "var(--color-danger)", color: "#fff" } : undefined}
           >
             <div style={{ fontFamily: "var(--font-heading)", fontSize: 26 }}>{counts.falla}</div>
             <div style={{ fontSize: 11, opacity: 0.85 }}>No OK</div>
