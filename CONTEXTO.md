@@ -28,8 +28,11 @@ simple, hacer los cambios uno mismo y probarlos antes de subir).
    - La subida a Supabase se hace fuera del lock de la sucursal; si un
      mensaje falla el webhook responde 500 para que WhatsApp lo reintente.
    - Al cerrar, lo suelto de cada técnico va a SU último equipo.
-   - `Fin` cierra la sucursal para todos; si alguien sigue mandando sin
-     sesión, el bot le avisa (máx. un aviso cada 5 min).
+   - `Fin D24` cierra solo la parte de quien lo manda (se le confirma lo
+     que cargó); la sucursal se cierra del todo, con el resumen a
+     WPP_NOTIFY_TO, cuando manda Fin el último técnico (`sesion.participantes`).
+     El cron de inactividad cierra todo. Si alguien manda material sin
+     visita abierta, el bot le avisa (máx. un aviso cada 5 min).
    - Al mandar el código de sucursal, le contesta "🔓 Se abrió la visita de
      D24" con los comentarios guardados de cada equipo (una vez por técnico
      por visita).
