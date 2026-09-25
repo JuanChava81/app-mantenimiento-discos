@@ -45,6 +45,17 @@ function nowLabel() {
   return `Hoy · ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
 
+// Cuándo se editó por última vez cada equipo en ESTE dispositivo: al
+// refrescar desde Supabase no se pisa un equipo que se está editando (si
+// no, un refresco en medio del tipeo podría deshacer una letra).
+const localEdits: Record<string, number> = {};
+function markLocalEdit(id: string) {
+  localEdits[id] = Date.now();
+}
+function editedRecently(id: string) {
+  return Date.now() - (localEdits[id] ?? 0) < 15000;
+}
+
 const HISTORY_EXAMPLE = [
   { date: "2026-06-04", status: "ok" as EquipmentStatus, comment: "Sin novedades." },
   { date: "2026-05-03", status: "falla" as EquipmentStatus, comment: "Filtro sucio, se programó limpieza." },
@@ -93,20 +104,43 @@ export default function MantenimientoApp({
   useEffect(() => {
     if (dataSource !== "supabase") return;
     let cancelled = false;
-    fetchAllEquipmentState().then((remote) => {
-      if (cancelled) return;
-      if (remote) {
+
+    function sync() {
+      return fetchAllEquipmentState().then((remote) => {
+        if (cancelled || !remote) return;
+        const recent = editedRecently;
         setEquipment((local) => {
           const byId = new Map(local.map((e) => [e.id, e]));
-          for (const e of remote.equipment) byId.set(e.id, e);
+          for (const e of remote.equipment) if (!recent(e.id)) byId.set(e.id, e);
           return Array.from(byId.values());
         });
-        setData((local) => ({ ...local, ...remote.data }));
-      }
-      setReady(true);
+        setData((local) => {
+          const merged = { ...local };
+          for (const [id, d] of Object.entries(remote.data)) if (!recent(id)) merged[id] = d;
+          return merged;
+        });
+      });
+    }
+
+    sync().finally(() => {
+      if (!cancelled) setReady(true);
     });
+
+    // Lo que sube el bot de WhatsApp (o el otro técnico) aparece solo, sin
+    // tener que cerrar y abrir la app. Antes la app se quedaba con lo que
+    // había al abrirla: las fotos nuevas no se veían y, peor, al editar ese
+    // equipo se guardaba la lista vieja de fotos encima de las nuevas.
+    const interval = setInterval(() => {
+      if (document.visibilityState === "visible") sync();
+    }, 15000);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") sync();
+    };
+    document.addEventListener("visibilitychange", onVisible);
     return () => {
       cancelled = true;
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisible);
     };
   }, [dataSource]);
 
@@ -180,6 +214,7 @@ export default function MantenimientoApp({
   }
 
   function deleteEquipment(eqId: string, after?: () => void) {
+    markLocalEdit(eqId);
     setEquipment((eq) => {
       const updated = eq.map((e) => (e.id === eqId ? { ...e, active: false } : e));
       const target = updated.find((e) => e.id === eqId);
@@ -191,6 +226,7 @@ export default function MantenimientoApp({
   }
 
   function updateEquipmentData(eqId: string, patch: Partial<EquipmentData>) {
+    markLocalEdit(eqId);
     setData((d) => {
       const updated = { ...d[eqId], ...patch, updatedAt: nowLabel() };
       const eq = equipment.find((e) => e.id === eqId);
@@ -200,6 +236,7 @@ export default function MantenimientoApp({
   }
 
   function updateEquipmentMeta(eqId: string, patch: Partial<Equipment>) {
+    markLocalEdit(eqId);
     setEquipment((list) => {
       const updated = list.map((e) => (e.id === eqId ? { ...e, ...patch } : e));
       const eq = updated.find((e) => e.id === eqId);

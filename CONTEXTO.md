@@ -36,6 +36,10 @@ simple, hacer los cambios uno mismo y probarlos antes de subir).
    - Al mandar el código de sucursal, le contesta "🔓 Se abrió la visita de
      D24" con los comentarios guardados de cada equipo (una vez por técnico
      por visita).
+   - `CAMBIAR S10 S07` pasa lo cargado a S10 en la visita abierta a S07
+     (si S07 tenía algo, intercambia). `BORRAR` descarta lo mandado sin
+     código. El equipo se re-busca en Supabase en cada código (si se borró
+     en la app, se crea otro).
    - Confirma "✅ R_02 cargado (N fotos · M audios)" al técnico; el resumen
      de cierre va al número de WPP_NOTIFY_TO.
    - Crons diarios: cerrar sesiones inactivas (3 h) y keepalive de
@@ -61,6 +65,8 @@ marcar "Completo" al exportar, e incluye el calendario de visitas completo).
   (`src/lib/visit-completion.ts`).
 - Calendario de visitas (2 meses por local): `src/lib/real-locations.ts` y
   `supabase/schema.sql`, confirmado contra el Excel de Juan.
+- La app se re-sincroniza con Supabase cada 15 s y al volver a la
+  pestaña (sin pisar equipos editados localmente en los últimos 15 s).
 - Estilo: verde oscuro + rojo Disco (`src/app/globals.css`), logo del splash.
 
 ## Informes
