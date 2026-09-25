@@ -30,6 +30,9 @@ simple, hacer los cambios uno mismo y probarlos antes de subir).
    - Al cerrar, lo suelto de cada técnico va a SU último equipo.
    - `Fin` cierra la sucursal para todos; si alguien sigue mandando sin
      sesión, el bot le avisa (máx. un aviso cada 5 min).
+   - Al mandar el código de sucursal, le contesta "🔓 Se abrió la visita de
+     D24" con los comentarios guardados de cada equipo (una vez por técnico
+     por visita).
    - Confirma "✅ R_02 cargado (N fotos · M audios)" al técnico; el resumen
      de cierre va al número de WPP_NOTIFY_TO.
    - Crons diarios: cerrar sesiones inactivas (3 h) y keepalive de
