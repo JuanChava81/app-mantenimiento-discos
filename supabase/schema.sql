@@ -10,7 +10,8 @@ create table if not exists locations (
   chain text not null,            -- 'Disco' | 'Devoto'
   name text not null,
   address text,
-  months int[] not null default '{}'  -- meses de visita planificados (1-12)
+  months int[] not null default '{}',  -- meses de visita planificados (1-12)
+  exported_at timestamptz             -- último "Exportar fotos y audios": marca el local como Completo
 );
 
 -- Un registro por equipo con su estado actual (fotos, audio, checklist,
@@ -52,6 +53,7 @@ alter table equipment_state enable row level security;
 alter table _keepalive enable row level security;
 
 create policy "Lectura pública de locations" on locations for select using (true);
+create policy "Marcar locations como exportadas" on locations for update using (true) with check (true);
 create policy "Lectura pública de equipment_state" on equipment_state for select using (true);
 create policy "Escritura pública de equipment_state" on equipment_state for insert with check (true);
 create policy "Actualización pública de equipment_state" on equipment_state for update using (true) with check (true);

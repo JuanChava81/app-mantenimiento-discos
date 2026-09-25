@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { CATEGORIES, categoryById } from "@/lib/categories";
 import { fetchAllEquipmentState, saveEquipmentState } from "@/lib/equipment-state";
 import { exportVisitZip } from "@/lib/export";
+import { fetchExportedAt, isVisitCompleted, saveExportedAt } from "@/lib/visit-completion";
 import { generateVisitExcel } from "@/lib/excel-report";
 import { generateEquipmentFor } from "@/lib/mock-data";
 import { MONTH_NAMES } from "@/lib/real-locations";
@@ -67,6 +68,18 @@ export default function MantenimientoApp({
   const [monthFilter, setMonthFilter] = useState<"Este mes" | "Todos">("Este mes");
   const [toast, setToast] = useState<string | null>(null);
   const [historyFor, setHistoryFor] = useState<string | null>(null);
+  // Fecha del último "Exportar fotos y audios" de cada local: lo que lo
+  // marca como Completo en el plan de visitas.
+  const [exportedAt, setExportedAt] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (dataSource !== "supabase") return;
+    fetchExportedAt().then((remote) => setExportedAt((local) => ({ ...remote, ...local })));
+  }, [dataSource]);
+
+  function isCompleted(loc: Location) {
+    return isVisitCompleted(loc, exportedAt[loc.id]);
+  }
 
   // Bloquea la interacción hasta que se sincronice con Supabase. Si se
   // dejara tocar la app antes, un cambio se guardaría con los datos de
@@ -212,7 +225,7 @@ export default function MantenimientoApp({
   }, [locations, search, chainFilter, monthFilter, currentMonth]);
 
   const planificados = locations.filter((l) => l.months.includes(currentMonth));
-  const completedThisMonth = planificados.filter((l) => visitDates[l.id]).length;
+  const completedThisMonth = planificados.filter(isCompleted).length;
   const monthLabel = MONTH_NAMES[currentMonth - 1];
 
   if (!ready) {
@@ -243,6 +256,7 @@ export default function MantenimientoApp({
           totalPlanificados={planificados.length}
           countsFor={countsFor}
           equipmentForLocation={equipmentForLocation}
+          isCompleted={isCompleted}
           onOpen={(id) => push({ screen: "location", locationId: id })}
         />
       )}
@@ -362,7 +376,10 @@ export default function MantenimientoApp({
               showToast("Generando ZIP…");
               try {
                 await exportVisitZip(location, visitDateFor(location.id), list, data);
-                showToast("ZIP descargado");
+                const iso = new Date().toISOString();
+                setExportedAt((d) => ({ ...d, [location.id]: iso }));
+                saveExportedAt(location.id, iso);
+                showToast("ZIP descargado · local completo");
               } catch {
                 showToast("No se pudo generar el ZIP");
               }
@@ -412,6 +429,7 @@ function LocationsScreen({
   totalPlanificados,
   countsFor,
   equipmentForLocation,
+  isCompleted,
   onOpen,
 }: {
   locations: Location[];
@@ -427,6 +445,7 @@ function LocationsScreen({
   totalPlanificados: number;
   countsFor: (list: Equipment[]) => { ok: number; falla: number; pendiente: number; total: number };
   equipmentForLocation: (id: string) => Equipment[];
+  isCompleted: (loc: Location) => boolean;
   onOpen: (id: string) => void;
 }) {
   return (
@@ -495,8 +514,10 @@ function LocationsScreen({
             const list = equipmentForLocation(loc.id);
             const counts = countsFor(list);
             const revisados = counts.ok + counts.falla;
-            const status =
-              counts.total === 0
+            const completo = isCompleted(loc);
+            const status = completo
+              ? "Completo"
+              : counts.total === 0
                 ? "Pendiente"
                 : revisados === counts.total
                 ? counts.falla > 0
@@ -539,7 +560,7 @@ function LocationsScreen({
                   <ProgressBar value={revisados} max={counts.total || 1} widthPx={110} />
                 </span>
                 <span className="flex flex-col items-end gap-1 shrink-0">
-                  <span className="chip chip-pendiente">{status}</span>
+                  <span className={`chip ${completo ? "chip-ok" : "chip-pendiente"}`}>{status}</span>
                   <span style={{ fontSize: 11, opacity: 0.6 }}>
                     {revisados}/{counts.total} revisados
                   </span>
