@@ -2,9 +2,9 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { CATEGORIES, categoryById } from "@/lib/categories";
-import { fetchAllEquipmentState, saveEquipmentState } from "@/lib/equipment-state";
+import { fetchAllEquipmentState, fetchEquipmentHistory, HistoryVisit, saveEquipmentState } from "@/lib/equipment-state";
 import { exportVisitZip } from "@/lib/export";
-import { fetchExportedAt, isVisitCompleted, saveExportedAt } from "@/lib/visit-completion";
+import { fetchExportedAt, fetchVisitDates, isVisitCompleted, saveExportedAt } from "@/lib/visit-completion";
 import { generateVisitExcel } from "@/lib/excel-report";
 import { generateEquipmentFor } from "@/lib/mock-data";
 import { MONTH_NAMES } from "@/lib/real-locations";
@@ -56,12 +56,6 @@ function editedRecently(id: string) {
   return Date.now() - (localEdits[id] ?? 0) < 15000;
 }
 
-const HISTORY_EXAMPLE = [
-  { date: "2026-06-04", status: "ok" as EquipmentStatus, comment: "Sin novedades." },
-  { date: "2026-05-03", status: "falla" as EquipmentStatus, comment: "Filtro sucio, se programó limpieza." },
-  { date: "2026-04-02", status: "ok" as EquipmentStatus, comment: "Revisado, funciona correctamente." },
-];
-
 export default function MantenimientoApp({
   locations,
   dataSource,
@@ -82,10 +76,15 @@ export default function MantenimientoApp({
   // Fecha del último "Exportar fotos y audios" de cada local: lo que lo
   // marca como Completo en el plan de visitas.
   const [exportedAt, setExportedAt] = useState<Record<string, string>>({});
+  // Fecha en que se abrió la visita en el bot de WhatsApp (la real), para
+  // que el export y el informe no salgan con la fecha del día en que se
+  // exporta.
+  const [botVisitDates, setBotVisitDates] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (dataSource !== "supabase") return;
     fetchExportedAt().then((remote) => setExportedAt((local) => ({ ...remote, ...local })));
+    fetchVisitDates().then(setBotVisitDates);
   }, [dataSource]);
 
   function isCompleted(loc: Location) {
@@ -158,7 +157,7 @@ export default function MantenimientoApp({
   }
 
   function visitDateFor(locationId: string) {
-    return visitDates[locationId] ?? todayISO();
+    return visitDates[locationId] ?? botVisitDates[locationId] ?? todayISO();
   }
 
   function equipmentForLocation(locationId: string) {
@@ -442,6 +441,7 @@ export default function MantenimientoApp({
 
       {historyFor && (
         <HistoryModal
+          equipmentId={historyFor}
           code={equipment.find((e) => e.id === historyFor)?.code ?? ""}
           onClose={() => setHistoryFor(null)}
         />
@@ -1148,21 +1148,45 @@ function SummaryScreen({
 
 // ---------- Modal: historial ----------
 
-function HistoryModal({ code, onClose }: { code: string; onClose: () => void }) {
+function HistoryModal({ equipmentId, code, onClose }: { equipmentId: string; code: string; onClose: () => void }) {
+  const [visits, setVisits] = useState<HistoryVisit[] | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchEquipmentHistory(equipmentId).then((h) => {
+      if (!cancelled) setVisits(h);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [equipmentId]);
+
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center" style={{ background: "rgba(29,31,32,0.4)" }} onClick={onClose}>
-      <div className="bg-white w-full sm:max-w-md p-4" style={{ boxShadow: "var(--shadow-lg)" }} onClick={(e) => e.stopPropagation()}>
+      <div className="bg-white w-full sm:max-w-md p-4" style={{ boxShadow: "var(--shadow-lg)", maxHeight: "80vh", overflowY: "auto" }} onClick={(e) => e.stopPropagation()}>
         <h5>Historial · {code}</h5>
         <div className="flex flex-col gap-2 mt-3">
-          {HISTORY_EXAMPLE.map((h, i) => (
-            <div key={i} className="hairline-b pb-2">
-              <div className="flex justify-between items-center">
-                <span style={{ fontSize: 13, fontWeight: 500 }}>{h.date}</span>
-                <StatusChip status={h.status} />
-              </div>
-              <div style={{ fontSize: 13, opacity: 0.7 }}>{h.comment}</div>
+          {visits === null && <div style={{ fontSize: 13, opacity: 0.6 }}>Cargando…</div>}
+          {visits?.length === 0 && (
+            <div style={{ fontSize: 13, opacity: 0.6 }}>
+              Todavía no hay visitas anteriores guardadas. Se guardan solas cuando empieza la visita siguiente del local.
             </div>
-          ))}
+          )}
+          {visits?.map((h) => {
+            const [yyyy, mm] = h.period.split("-");
+            return (
+              <div key={h.period} className="hairline-b pb-2">
+                <div className="flex justify-between items-center">
+                  <span style={{ fontSize: 13, fontWeight: 500 }}>
+                    {MONTH_NAMES[Number(mm) - 1]} {yyyy}
+                    {h.photos > 0 ? ` · ${h.photos} foto${h.photos === 1 ? "" : "s"}` : ""}
+                  </span>
+                  <StatusChip status={h.status} />
+                </div>
+                <div style={{ fontSize: 13, opacity: 0.7, whiteSpace: "pre-line" }}>{h.comment || "Sin comentario"}</div>
+              </div>
+            );
+          })}
         </div>
         <button className="btn btn-ghost btn-block mt-3" onClick={onClose}>
           Cerrar

@@ -41,8 +41,17 @@ simple, hacer los cambios uno mismo y probarlos antes de subir).
      la visita abierta. `BORRAR` solo descarta lo mandado sin
      código. El equipo se re-busca en Supabase en cada código (si se borró
      en la app, se crea otro).
-   - Confirma "✅ R_02 cargado (N fotos · M audios)" al técnico; el resumen
-     de cierre va al número de WPP_NOTIFY_TO.
+   - Confirma "✅ R_02 cargado (N fotos · M audios)" al técnico y avisa si
+     alguna foto/audio no se pudo subir (límite de 38 s por tanda, Vercel
+     corta a los 60 s). El resumen de cierre va al número de WPP_NOTIFY_TO.
+   - Equipo con material cargado pasa a OK solo; si el audio (pasado por un
+     modelo de Groq, `pulirObservacion`) reporta una falla, queda No OK.
+     `S07 FALLA` / `S07 OK` lo cambian a mano.
+   - Visitas por período (`lib/visitas.js`): al empezar el mes de visita
+     siguiente se archiva la visita en `equipment_history` y el equipo
+     queda limpio; el comentario viejo sigue hasta que llega uno nuevo
+     (`comment_period` vs `visit_period`). Las fotos se comprimen y las de
+     visitas archivadas hace +60 días se borran del Storage (cron diario).
    - Crons diarios: cerrar sesiones inactivas (3 h) y keepalive de
      Supabase (el plan gratis se pausa si no hay actividad).
    - Es un número de prueba de Meta: máx. 5 destinatarios permitidos, no se
@@ -50,14 +59,15 @@ simple, hacer los cambios uno mismo y probarlos antes de subir).
 
 ## Supabase
 
-Tablas: `locations` (suc, months int[], exported_at), `equipment_state`,
+Tablas: `locations` (suc, months int[], exported_at, visit_date),
+`equipment_state` (+ visit_period, comment_period), `equipment_history`,
 `_keepalive`. Buckets `photos` y `audios`. Esquema completo en
 `supabase/schema.sql`; las migraciones se corren a mano en el SQL Editor
 (Claude no tiene acceso directo — hay que darle el SQL a Juan).
 
 **Pendiente a septiembre 2026:** confirmar que Juan corrió
-`supabase/migrate_v7_completado_al_exportar.sql` (agrega `exported_at` para
-marcar "Completo" al exportar, e incluye el calendario de visitas completo).
+`supabase/migrate_v8_visitas.sql` (incluye la v7: `exported_at`, calendario
+completo; y lo nuevo: visitas por período, historial, `visit_date`).
 
 ## Reglas de la app
 
@@ -66,6 +76,9 @@ marcar "Completo" al exportar, e incluye el calendario de visitas completo).
   (`src/lib/visit-completion.ts`).
 - Calendario de visitas (2 meses por local): `src/lib/real-locations.ts` y
   `supabase/schema.sql`, confirmado contra el Excel de Juan.
+- Fecha de la visita = `locations.visit_date` (la anota el bot), salvo que
+  se cambie a mano en la pantalla del local. Historial real desde
+  `equipment_history`.
 - La app se re-sincroniza con Supabase cada 15 s y al volver a la
   pestaña (sin pisar equipos editados localmente en los últimos 15 s).
 - Estilo: verde oscuro + rojo Disco (`src/app/globals.css`), logo del splash.

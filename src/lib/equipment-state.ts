@@ -78,3 +78,32 @@ export function saveEquipmentState(equipment: Equipment, data: EquipmentData) {
       if (error) console.error("No se pudo guardar el equipo en Supabase:", error.message);
     });
 }
+
+export interface HistoryVisit {
+  period: string; // "2026-09"
+  status: EquipmentStatus;
+  comment: string;
+  photos: number;
+}
+
+/**
+ * Visitas anteriores de un equipo (las archiva el bot de WhatsApp cuando
+ * empieza la visita siguiente del local), de la más nueva a la más vieja.
+ */
+export async function fetchEquipmentHistory(equipmentId: string): Promise<HistoryVisit[]> {
+  if (!supabaseConfigured || !supabase) return [];
+  const { data, error } = await supabase
+    .from("equipment_history")
+    .select("period, status, comment, photos")
+    .eq("equipment_id", equipmentId)
+    .order("period", { ascending: false });
+  if (error || !data) return [];
+  return (data as { period: string; status: EquipmentStatus | null; comment: string | null; photos: string[] | null }[]).map(
+    (row) => ({
+      period: row.period,
+      status: row.status ?? "pendiente",
+      comment: row.comment ?? "",
+      photos: row.photos?.length ?? 0,
+    })
+  );
+}

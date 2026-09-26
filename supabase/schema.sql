@@ -11,7 +11,8 @@ create table if not exists locations (
   name text not null,
   address text,
   months int[] not null default '{}',  -- meses de visita planificados (1-12)
-  exported_at timestamptz             -- último "Exportar fotos y audios": marca el local como Completo
+  exported_at timestamptz,            -- último "Exportar fotos y audios": marca el local como Completo
+  visit_date date                     -- fecha de la visita actual (la anota el bot al abrir la sucursal)
 );
 
 -- Un registro por equipo con su estado actual (fotos, audio, checklist,
@@ -32,8 +33,40 @@ create table if not exists equipment_state (
   fields jsonb not null default '{}',
   photos text[] not null default '{}',       -- URLs públicas del bucket "photos"
   audios jsonb not null default '[]',        -- [{id, url, durationSecs, recordedAt}]
+  visit_period text,                         -- visita a la que pertenecen fotos/estado, ej. '2026-09'
+  comment_period text,                       -- visita del comentario (si es de una anterior, el próximo lo reemplaza)
   updated_at timestamptz not null default now()
 );
+
+-- Visitas anteriores de cada equipo (las archiva el bot al empezar la
+-- visita siguiente). Las fotos/audios se borran del Storage 60 días
+-- después (files_deleted); estado y comentario quedan.
+create table if not exists equipment_history (
+  id uuid primary key default gen_random_uuid(),
+  equipment_id text not null,
+  location_id uuid references locations(id) on delete cascade,
+  period text not null,
+  status text,
+  comment text,
+  checks jsonb,
+  fields jsonb,
+  photos text[] not null default '{}',
+  audios jsonb not null default '[]',
+  files_deleted boolean not null default false,
+  archived_at timestamptz not null default now()
+);
+create index if not exists equipment_history_equipment_idx on equipment_history (equipment_id);
+
+create or replace function marcar_periodo_comentario() returns trigger language plpgsql as $$
+begin
+  if new.comment is distinct from old.comment then
+    new.comment_period := new.visit_period;
+  end if;
+  return new;
+end;
+$$;
+create trigger marcar_periodo_comentario before update on equipment_state
+  for each row execute function marcar_periodo_comentario();
 
 -- Tabla mínima para el keepalive de Supabase (ver
 -- api/cron/keepalive-supabase.js en el repo wpp-mantenimiento): el plan
@@ -51,6 +84,7 @@ create table if not exists _keepalive (
 alter table locations enable row level security;
 alter table equipment_state enable row level security;
 alter table _keepalive enable row level security;
+alter table equipment_history enable row level security;
 
 create policy "Lectura pública de locations" on locations for select using (true);
 create policy "Marcar locations como exportadas" on locations for update using (true) with check (true);
@@ -58,6 +92,7 @@ create policy "Lectura pública de equipment_state" on equipment_state for selec
 create policy "Escritura pública de equipment_state" on equipment_state for insert with check (true);
 create policy "Actualización pública de equipment_state" on equipment_state for update using (true) with check (true);
 create policy "Keepalive escribible" on _keepalive for all using (true) with check (true);
+create policy "Historial público" on equipment_history for all using (true) with check (true);
 
 -- Buckets de Storage para fotos y notas de voz, públicos para lectura.
 insert into storage.buckets (id, name, public)

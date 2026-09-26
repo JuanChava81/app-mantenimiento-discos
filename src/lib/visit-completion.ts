@@ -53,3 +53,19 @@ export function isVisitCompleted(location: Location, exportedAt: string | undefi
   const inicio = inicioUltimaVisitaPlanificada(location.months, now);
   return inicio !== null && new Date(exportedAt) >= inicio;
 }
+
+/**
+ * Fecha de la visita actual de cada local ("YYYY-MM-DD"), la que anota el
+ * bot de WhatsApp al abrir la sucursal. Consulta aparte por el mismo
+ * motivo que fetchExportedAt (si falta la columna, no rompe nada).
+ */
+export async function fetchVisitDates(): Promise<Record<string, string>> {
+  if (!supabaseConfigured || !supabase) return {};
+  const { data, error } = await supabase.from("locations").select("id, visit_date");
+  if (error || !data) return {};
+  const result: Record<string, string> = {};
+  for (const row of data as { id: string; visit_date: string | null }[]) {
+    if (row.visit_date) result[row.id] = row.visit_date;
+  }
+  return result;
+}
