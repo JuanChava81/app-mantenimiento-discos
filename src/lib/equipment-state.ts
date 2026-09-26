@@ -17,6 +17,27 @@ interface EquipmentStateRow {
   audios: AudioNote[];
 }
 
+// Equipos que ya existen en Supabase: a esos se les guarda SOLO lo que se
+// cambió (ej. el comentario), no la fila entera. Guardar la fila entera
+// pisaba con la lista vieja de fotos las que el bot de WhatsApp había
+// subido mientras tanto.
+const savedIds = new Set<string>();
+
+export type EquipmentChange = Partial<Omit<EquipmentData, "updatedAt">> & Partial<Pick<Equipment, "subtype" | "number" | "code" | "active">>;
+
+const COLUMN_FOR: Record<string, string> = {
+  status: "status",
+  comment: "comment",
+  checks: "checks",
+  fields: "fields",
+  photos: "photos",
+  audios: "audios",
+  subtype: "subtype",
+  number: "number",
+  code: "code",
+  active: "active",
+};
+
 export async function fetchAllEquipmentState(): Promise<{
   equipment: Equipment[];
   data: Record<string, EquipmentData>;
@@ -30,6 +51,7 @@ export async function fetchAllEquipmentState(): Promise<{
   const data: Record<string, EquipmentData> = {};
 
   for (const row of rows as EquipmentStateRow[]) {
+    savedIds.add(row.id);
     equipment.push({
       id: row.id,
       locationId: row.location_id,
@@ -53,9 +75,25 @@ export async function fetchAllEquipmentState(): Promise<{
   return { equipment, data };
 }
 
-export function saveEquipmentState(equipment: Equipment, data: EquipmentData) {
+export function saveEquipmentState(equipment: Equipment, data: EquipmentData, change?: EquipmentChange) {
   if (!supabaseConfigured || !supabase) return;
 
+  const onError = ({ error }: { error: { message: string } | null }) => {
+    if (error) console.error("No se pudo guardar el equipo en Supabase:", error.message);
+  };
+
+  if (change && savedIds.has(equipment.id)) {
+    const update: Record<string, unknown> = { updated_at: new Date().toISOString() };
+    for (const [key, value] of Object.entries(change)) {
+      const column = COLUMN_FOR[key];
+      if (column) update[column] = value;
+    }
+    supabase.from("equipment_state").update(update).eq("id", equipment.id).then(onError);
+    return;
+  }
+
+  // Primera vez que se guarda este equipo: la fila entera.
+  savedIds.add(equipment.id);
   supabase
     .from("equipment_state")
     .upsert({
@@ -74,9 +112,7 @@ export function saveEquipmentState(equipment: Equipment, data: EquipmentData) {
       audios: data.audios,
       updated_at: new Date().toISOString(),
     })
-    .then(({ error }) => {
-      if (error) console.error("No se pudo guardar el equipo en Supabase:", error.message);
-    });
+    .then(onError);
 }
 
 export interface HistoryVisit {

@@ -217,7 +217,7 @@ export default function MantenimientoApp({
     setEquipment((eq) => {
       const updated = eq.map((e) => (e.id === eqId ? { ...e, active: false } : e));
       const target = updated.find((e) => e.id === eqId);
-      if (target && data[eqId]) saveEquipmentState(target, data[eqId]);
+      if (target && data[eqId]) saveEquipmentState(target, data[eqId], { active: false });
       return updated;
     });
     showToast("Equipo eliminado");
@@ -229,7 +229,7 @@ export default function MantenimientoApp({
     setData((d) => {
       const updated = { ...d[eqId], ...patch, updatedAt: nowLabel() };
       const eq = equipment.find((e) => e.id === eqId);
-      if (eq) saveEquipmentState(eq, updated);
+      if (eq) saveEquipmentState(eq, updated, patch);
       return { ...d, [eqId]: updated };
     });
   }
@@ -239,7 +239,7 @@ export default function MantenimientoApp({
     setEquipment((list) => {
       const updated = list.map((e) => (e.id === eqId ? { ...e, ...patch } : e));
       const eq = updated.find((e) => e.id === eqId);
-      if (eq && data[eqId]) saveEquipmentState(eq, data[eqId]);
+      if (eq && data[eqId]) saveEquipmentState(eq, data[eqId], patch);
       return updated;
     });
   }
