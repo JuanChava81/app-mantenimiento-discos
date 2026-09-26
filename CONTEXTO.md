@@ -50,7 +50,8 @@ simple, hacer los cambios uno mismo y probarlos antes de subir).
    - Visitas por período (`lib/visitas.js`): al empezar el mes de visita
      siguiente se archiva la visita en `equipment_history` y el equipo
      queda limpio; el comentario viejo sigue hasta que llega uno nuevo
-     (`comment_period` vs `visit_period`). Las fotos se comprimen y las de
+     (`comment_period` vs `visit_period`). No se reinicia un equipo cargado
+     en los últimos 20 días (se adopta el período). Las fotos se comprimen y las de
      visitas archivadas hace +60 días se borran del Storage (cron diario).
    - Crons diarios: cerrar sesiones inactivas (3 h) y keepalive de
      Supabase (el plan gratis se pausa si no hay actividad).
