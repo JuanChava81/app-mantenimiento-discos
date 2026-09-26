@@ -66,9 +66,8 @@ Tablas: `locations` (suc, months int[], exported_at, visit_date),
 `supabase/schema.sql`; las migraciones se corren a mano en el SQL Editor
 (Claude no tiene acceso directo — hay que darle el SQL a Juan).
 
-**Pendiente a septiembre 2026:** confirmar que Juan corrió
-`supabase/migrate_v8_visitas.sql` (incluye la v7: `exported_at`, calendario
-completo; y lo nuevo: visitas por período, historial, `visit_date`).
+Migraciones corridas por Juan hasta la v8 (`supabase/migrate_v8_visitas.sql`,
+confirmado el 26/09/2026).
 
 ## Reglas de la app
 
