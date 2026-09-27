@@ -1,0 +1,2043 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Juego para entender cortocircuito, sobrecorrientes y cálculo de demanda en los tableros de una sucursal.">
+</head>
+<body>
+<title>Tablero en Juego</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Big+Shoulders+Display:wght@700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root{
+  --bg:#E6E7E1; --sheet:#F3F3EE; --surface:#FBFBF8; --surface-2:#EFF0EA; --hover:rgba(29,34,39,.05);
+  --ink:#1C2126; --ink-2:#48515A; --ink-3:#77808A; --line:#CDD0C7; --wire:#3B434B;
+  --copper:#A9551F; --copper-ink:#8A4316; --copper-soft:#F3E1D3; --on-copper:#FFFFFF;
+  --fault:#D98200; --fault-soft:#FBEBCB;
+  --ok:#2E7A4B; --ok-soft:#DDEFE2; --bad:#C0392B; --bad-soft:#F7DEDA; --warn:#A8700F; --warn-soft:#F6E9CC;
+  --info:#1F6FAF; --info-soft:#DCE9F5;
+  --s1:#A9551F; --s2:#1F6FAF;
+  --L1:#7A4520; --L2:#16191C; --L3:#6F7780;
+  --shadow:0 1px 2px rgba(20,24,28,.06),0 4px 14px rgba(20,24,28,.05);
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#131618; --sheet:#181C1F; --surface:#1D2124; --surface-2:#252A2E; --hover:rgba(232,234,229,.05);
+    --ink:#E7E9E4; --ink-2:#B2B9BE; --ink-3:#848D94; --line:#343B40; --wire:#BFC6CB;
+    --copper:#D9803F; --copper-ink:#EBA06B; --copper-soft:#3A2819; --on-copper:#16191B;
+    --fault:#FFB81C; --fault-soft:#3A2E10;
+    --ok:#5DBB7E; --ok-soft:#1C3225; --bad:#F0685A; --bad-soft:#3E1F1B; --warn:#E3AA45; --warn-soft:#3A2D14;
+    --info:#5BA2E0; --info-soft:#18293A;
+    --s1:#C8712F; --s2:#3F8BD0;
+    --L1:#C08A5E; --L2:#D5DADE; --L3:#98A1A9;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 4px 14px rgba(0,0,0,.25);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#131618; --sheet:#181C1F; --surface:#1D2124; --surface-2:#252A2E; --hover:rgba(232,234,229,.05);
+  --ink:#E7E9E4; --ink-2:#B2B9BE; --ink-3:#848D94; --line:#343B40; --wire:#BFC6CB;
+  --copper:#D9803F; --copper-ink:#EBA06B; --copper-soft:#3A2819; --on-copper:#16191B;
+  --fault:#FFB81C; --fault-soft:#3A2E10;
+  --ok:#5DBB7E; --ok-soft:#1C3225; --bad:#F0685A; --bad-soft:#3E1F1B; --warn:#E3AA45; --warn-soft:#3A2D14;
+  --info:#5BA2E0; --info-soft:#18293A;
+  --s1:#C8712F; --s2:#3F8BD0;
+  --L1:#C08A5E; --L2:#D5DADE; --L3:#98A1A9;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 4px 14px rgba(0,0,0,.25);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{background:var(--bg)}
+body{margin:0;color:var(--ink);font:15px/1.45 'Barlow',system-ui,-apple-system,'Segoe UI',sans-serif;-webkit-font-smoothing:antialiased}
+[hidden]{display:none!important}
+button,select,input{font:inherit;color:inherit}
+code,.mono{font-family:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;font-size:.86em}
+h1,h2,h3{text-wrap:balance;margin:0}
+.app{max-width:1480px;margin:0 auto;padding-inline:16px;padding-block:14px 48px;display:flex;flex-direction:column;gap:14px}
+
+/* ---------- Encabezado ---------- */
+.top{display:flex;align-items:center;justify-content:space-between;gap:10px 16px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px}
+.brand svg{flex:none}
+.brand h1{font-family:'Big Shoulders Display','Barlow Condensed',Impact,sans-serif;font-weight:800;font-size:30px;line-height:1;letter-spacing:.03em;text-transform:uppercase}
+.brand small{display:block;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);margin-top:3px}
+.nav{display:flex;gap:6px;flex-wrap:wrap}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:7px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-weight:600;font-size:14px;line-height:1.2;transition:background .12s,border-color .12s}
+.btn:hover{background:var(--surface-2)}
+.btn:focus-visible,.seg button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid var(--copper);outline-offset:2px}
+.btn.pri{background:var(--copper);border-color:var(--copper);color:var(--on-copper)}
+.btn.pri:hover{background:var(--copper-ink);border-color:var(--copper-ink)}
+.btn.fault{background:var(--fault-soft);border-color:var(--fault);color:var(--ink)}
+.btn.fault:hover{background:var(--fault);color:#1C2126}
+.btn.sm{padding:5px 9px;font-size:13px}
+.btn[disabled]{opacity:.4;cursor:not-allowed}
+.btn.on{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+
+/* ---------- Misión ---------- */
+.mision{background:var(--surface);border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow);display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:0}
+.mision .m-a{padding:16px 18px;display:flex;flex-direction:column;gap:8px}
+.mision .m-b{padding:16px 18px;border-left:1px dashed var(--line);display:flex;flex-direction:column;gap:10px}
+.eyebrow{font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--copper-ink);font-weight:600}
+.mision h2{font-family:'Big Shoulders Display','Barlow Condensed',Impact,sans-serif;font-weight:800;font-size:28px;line-height:1.02;letter-spacing:.01em}
+.mision p{margin:0;color:var(--ink-2);max-width:62ch}
+.objs{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px}
+.objs li{display:flex;gap:9px;align-items:flex-start;font-weight:500}
+.objs .box{flex:none;width:20px;height:20px;border:2px solid var(--ink-3);border-radius:4px;display:grid;place-items:center;margin-top:1px}
+.objs li.ok .box{background:var(--ok);border-color:var(--ok)}
+.objs li.ok span:last-child{color:var(--ink-2);text-decoration:line-through;text-decoration-color:var(--ink-3)}
+.m-acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:auto}
+.pistas{margin:0;padding:10px 12px;background:var(--surface-2);border-radius:6px;font-size:14px;display:flex;flex-direction:column;gap:5px}
+.pistas b{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+.exito{background:var(--ok-soft);border:1px solid var(--ok);border-radius:6px;padding:10px 12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.exito strong{font-family:'Big Shoulders Display',Impact,sans-serif;font-size:22px;letter-spacing:.02em;text-transform:uppercase;color:var(--ok)}
+.mision.celebra .exito{animation:pop .5s ease-out}
+@keyframes pop{0%{transform:scale(.96);opacity:.3}60%{transform:scale(1.02)}100%{transform:scale(1);opacity:1}}
+
+/* ---------- Resumen ---------- */
+.resumen{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 14px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.tile .lb{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+.tile .v{font-family:'Big Shoulders Display',Impact,sans-serif;font-weight:800;font-size:30px;line-height:1.05;font-variant-numeric:tabular-nums}
+.tile .v small{font-size:18px;font-weight:700;margin-left:2px}
+.tile .s{font-size:13px;color:var(--ink-2)}
+.tile.bad{border-color:var(--bad);background:var(--bad-soft)} .tile.bad .v{color:var(--bad)}
+.tile.ok .v{color:var(--ok)}
+.meter{height:6px;border-radius:3px;background:var(--surface-2);overflow:hidden;margin-top:4px}
+.meter i{display:block;height:100%;background:var(--copper)}
+.meter i.over{background:var(--bad)}
+
+/* ---------- Zona de trabajo ---------- */
+.work{display:grid;grid-template-columns:minmax(0,1fr) 420px;gap:14px;align-items:start}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow);min-width:0}
+.simbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 12px;border-bottom:1px solid var(--line)}
+.simbar .who{font-weight:600;margin-right:4px}
+.simbar .who span{color:var(--ink-3);font-weight:500}
+.simbar .grp{display:flex;gap:5px;flex-wrap:wrap;align-items:center}
+.simbar .sp{flex:1}
+.simbar .hint{color:var(--ink-3);font-size:14px}
+.simres{margin:10px 12px 0;border:1.5px solid var(--fault);background:var(--fault-soft);border-radius:8px;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.simres h3{font-size:17px;display:flex;align-items:center;gap:8px}
+.simres .ic-rng{font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--ink-2)}
+.devs{display:flex;flex-direction:column;gap:5px;margin:0;padding:0;list-style:none}
+.devs li{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px;align-items:baseline;font-size:14px}
+.chip{font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;padding:2px 7px;border-radius:10px;white-space:nowrap;border:1px solid transparent}
+.chip.bad{background:var(--bad);color:#fff}
+.chip.warn{background:var(--warn-soft);color:var(--warn);border-color:var(--warn)}
+.chip.ok{background:var(--ok-soft);color:var(--ok);border-color:var(--ok)}
+.chip.mut{background:var(--surface);color:var(--ink-2);border-color:var(--line)}
+.chip.info{background:var(--info-soft);color:var(--info);border-color:var(--info)}
+.concl{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:5px}
+.concl li{display:flex;gap:8px;align-items:flex-start;font-size:14px}
+.concl li svg{flex:none;margin-top:2px}
+.diag{overflow:auto;max-height:78vh;background-color:var(--sheet);background-image:radial-gradient(var(--line) 1px,transparent 1.2px);background-size:18px 18px;border-radius:0 0 8px 8px;margin-top:10px}
+.diag svg{display:block;margin:0 auto}
+.leyenda{display:flex;gap:6px 14px;flex-wrap:wrap;padding:8px 12px 12px;font-size:12.5px;color:var(--ink-2);align-items:center}
+.leyenda span{display:inline-flex;align-items:center;gap:5px}
+.leyenda i{display:inline-block;width:10px;height:10px;border-radius:50%}
+
+/* ---------- Esquema unifilar (SVG) ---------- */
+.uni text{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:10.5px;fill:var(--ink-2)}
+.uni .nm{font-family:'Barlow',system-ui,sans-serif;font-weight:600;font-size:13px;fill:var(--ink)}
+.uni .src-t{font-family:'Barlow',system-ui,sans-serif;font-weight:700;font-size:13px;fill:var(--ink)}
+.uni .w{stroke:var(--wire);stroke-width:2;fill:none}
+.uni .cable{stroke-linecap:butt}
+.uni .bus{stroke:var(--copper);stroke-width:6;stroke-linecap:round}
+.uni .bushit{stroke:transparent;stroke-width:18}
+.uni .brk rect{fill:var(--surface);stroke:var(--ink);stroke-width:1.5}
+.uni .brk text{font-weight:600;fill:var(--ink);font-size:11px}
+.uni .brk.trip rect{fill:var(--bad);stroke:var(--bad)}
+.uni .brk.trip text{fill:#fff}
+.uni .brk.maybe rect{stroke:var(--warn);stroke-width:2.5;stroke-dasharray:4 2}
+.uni .rcd rect{fill:var(--info-soft);stroke:var(--info);stroke-width:1.2}
+.uni .rcd text{fill:var(--info);font-size:9.5px;font-weight:600}
+.uni .rcd.trip rect{fill:var(--bad);stroke:var(--bad)}
+.uni .rcd.trip text{fill:#fff}
+.uni .icu{font-size:9.5px;fill:var(--ink-3)}
+.uni .cab{font-size:10.5px;fill:var(--ink-2);font-weight:500}
+.uni .cab2{font-size:10px;fill:var(--ink-3)}
+.uni .sub{font-size:10.5px}
+.uni .nodo{cursor:pointer;outline:none}
+.uni .hit{fill:transparent;stroke:transparent}
+.uni .nodo:hover .hit{fill:var(--hover)}
+.uni .nodo.sel .hit{fill:var(--copper-soft);stroke:var(--copper);stroke-width:1.5}
+.uni .nodo:focus-visible .hit{stroke:var(--copper);stroke-width:2}
+.uni .sym{fill:var(--surface);stroke:var(--ink);stroke-width:1.8}
+.uni .symx{stroke:var(--ink);stroke-width:1.6}
+.uni .symt{font-family:'Barlow',system-ui,sans-serif;font-weight:700;font-size:15px;fill:var(--ink)}
+.uni .symt.sm{font-size:10px}
+.uni .symt.xs{font-size:8.5px;font-weight:600;fill:var(--ink-2)}
+.uni .nodo.bad .w{stroke:var(--bad)}
+.uni .nodo.bad .brk rect{stroke:var(--bad);stroke-width:2}
+.uni .nodo.warn .brk rect{stroke:var(--warn);stroke-width:2}
+.uni .badge circle{fill:var(--bad)}
+.uni .badge.warn circle{fill:var(--warn)}
+.uni .badge text{fill:#fff;font-weight:700;font-size:11px;font-family:'Barlow',sans-serif}
+.uni .dead{opacity:.28}
+.uni .nodo.hot .w{stroke:var(--fault);stroke-width:3.5}
+.uni .flow{stroke:var(--ink);stroke-width:1.2;stroke-dasharray:3 7;fill:none;animation:flow .6s linear infinite;opacity:.55}
+@keyframes flow{to{stroke-dashoffset:-10}}
+.uni .bolt{fill:var(--fault);stroke:var(--ink);stroke-width:1.2;stroke-linejoin:round}
+.uni .bolt-halo{fill:var(--fault);opacity:.28;animation:halo 1.1s ease-in-out infinite}
+@keyframes halo{50%{opacity:.08}}
+.uni .uc{font-family:'Barlow',sans-serif;font-weight:700;font-size:12px;fill:var(--bad)}
+.uni .halo{paint-order:stroke;stroke:var(--sheet);stroke-width:4px;stroke-linejoin:round}
+.uni .ph-L1{fill:var(--L1);font-weight:600}.uni .ph-L2{fill:var(--L2);font-weight:600}.uni .ph-L3{fill:var(--L3);font-weight:600}.uni .ph-3F{fill:var(--ink);font-weight:600}
+
+/* ---------- Inspector ---------- */
+.insp{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto;display:flex;flex-direction:column}
+.insp-h{padding:14px 16px 10px;display:flex;flex-direction:column;gap:6px;border-bottom:1px solid var(--line)}
+.insp-h .row{display:flex;align-items:center;gap:8px;justify-content:space-between}
+.insp-h h2{font-family:'Big Shoulders Display',Impact,sans-serif;font-weight:800;font-size:24px;line-height:1.05;letter-spacing:.01em}
+.insp-h .kind{font-size:13px;color:var(--ink-3)}
+.tabs{display:flex;gap:2px;padding:0 10px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--surface);z-index:2}
+.tabs button{border:0;background:none;padding:10px 10px 9px;font-weight:600;font-size:14px;color:var(--ink-3);border-bottom:2.5px solid transparent;cursor:pointer}
+.tabs button.on{color:var(--ink);border-bottom-color:var(--copper)}
+.insp-b{padding:14px 16px 18px;display:flex;flex-direction:column;gap:16px}
+.grp-t{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);font-weight:600;display:flex;align-items:center;gap:8px}
+.grp-t::after{content:"";flex:1;height:1px;background:var(--line)}
+.fields{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fld{display:flex;flex-direction:column;gap:3px;min-width:0}
+.fld.full{grid-column:1/-1}
+.fld>span{font-size:13px;font-weight:600;color:var(--ink-2)}
+.fld small{font-size:12px;color:var(--ink-3);line-height:1.3}
+.fld select,.fld input[type=number],.fld input[type=text]{width:100%;border:1px solid var(--line);background:var(--sheet);border-radius:5px;padding:7px 8px;font-size:14.5px;font-variant-numeric:tabular-nums}
+.fld input[type=checkbox]{width:18px;height:18px;accent-color:var(--copper)}
+.chk{display:flex;align-items:center;gap:8px;font-weight:500;font-size:14px}
+.seg{display:flex;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--sheet)}
+.seg button{flex:1;border:0;background:none;padding:7px 4px;font-weight:600;font-size:13.5px;cursor:pointer;border-right:1px solid var(--line);white-space:nowrap}
+.seg button:last-child{border-right:0}
+.seg button.on{background:var(--ink);color:var(--surface)}
+.seg button.ph-L1.on{background:var(--L1);color:#fff}
+.seg button.ph-L2.on{background:var(--L2);color:var(--surface)}
+.seg button.ph-L3.on{background:var(--L3);color:#fff}
+.acts{display:flex;gap:6px;flex-wrap:wrap}
+.checks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.ck{display:grid;grid-template-columns:22px minmax(0,1fr);gap:8px;padding:8px 10px;border-radius:6px;background:var(--surface-2)}
+.ck.bad{background:var(--bad-soft)} .ck.warn{background:var(--warn-soft)} .ck.info{background:var(--info-soft)}
+.ck b{font-weight:600;font-size:14px}
+.ck .f{font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--ink-3);margin-left:4px;white-space:nowrap}
+.ck .d{font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--ink-2);margin-top:2px}
+.ck details{margin-top:3px}
+.ck summary{font-size:12.5px;color:var(--copper-ink);cursor:pointer;font-weight:600}
+.ck details p{margin:4px 0 0;font-size:13.5px;color:var(--ink-2)}
+.guia{display:flex;flex-direction:column;gap:10px;font-size:14.5px;color:var(--ink-2)}
+.guia p{margin:0}
+.guia ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px}
+
+/* ---------- Cuentas ---------- */
+.sec{display:flex;flex-direction:column;gap:8px}
+.sec h3{font-size:16px;font-weight:700;display:flex;gap:8px;align-items:baseline}
+.sec h3 .n{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--copper-ink)}
+.sec p{margin:0;font-size:14px;color:var(--ink-2)}
+.fx{border-left:3px solid var(--copper);background:var(--sheet);border-radius:0 6px 6px 0;padding:8px 10px;display:flex;flex-direction:column;gap:1px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;overflow-x:auto}
+.fx .fx-n{font-family:'Barlow',sans-serif;font-weight:600;font-size:13.5px;color:var(--ink);margin-bottom:2px}
+.fx .fx-s{color:var(--ink)}
+.fx .fx-p{color:var(--ink-2);white-space:nowrap}
+.fx .fx-r{color:var(--copper-ink);font-weight:600;white-space:nowrap}
+.tblw{overflow-x:auto}
+table.t{border-collapse:collapse;width:100%;font-size:12.5px;font-variant-numeric:tabular-nums}
+table.t th,table.t td{padding:5px 6px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+table.t th{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);font-weight:600}
+table.t td:first-child,table.t th:first-child{text-align:left;white-space:normal}
+table.t tr.tot td{font-weight:700;border-top:1.5px solid var(--ink-3)}
+.ph{font-weight:700}
+.ph.L1{color:var(--L1)} .ph.L2{color:var(--L2)} .ph.L3{color:var(--L3)}
+
+/* ---------- Curva ---------- */
+.curva svg{width:100%;height:auto;display:block}
+.curva .ax{stroke:var(--ink-3);stroke-width:1}
+.curva .gr{stroke:var(--line);stroke-width:1}
+.curva .gr2{stroke:var(--line);stroke-width:.6;opacity:.6}
+.curva text{font-family:'IBM Plex Mono',monospace;font-size:9.5px;fill:var(--ink-3)}
+.curva .lbl{fill:var(--ink-2);font-size:9.5px;font-weight:500}
+.curva .band{fill:var(--s1);fill-opacity:.22;stroke:var(--s1);stroke-width:2;stroke-linejoin:round}
+.curva .band-up{fill:none;stroke:var(--s2);stroke-width:2;stroke-dasharray:6 3}
+.curva .cab-l{stroke:var(--ink);stroke-width:2;fill:none}
+.curva .cab-iz{stroke:var(--ink);stroke-width:1.2;stroke-dasharray:2 3}
+.curva .mk{stroke:var(--ink-2);stroke-width:1;stroke-dasharray:3 3}
+.curva .arr{stroke:var(--ink-2);stroke-width:2;fill:none}
+.curva .test{stroke:var(--fault);stroke-width:2.5}
+.curva .dot{fill:var(--fault);stroke:var(--ink);stroke-width:1.2}
+.curva .cap{fill:transparent;cursor:crosshair}
+.leg{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--ink-2)}
+.leg span{display:flex;align-items:center;gap:8px}
+.leg svg{flex:none}
+.probar{display:flex;flex-direction:column;gap:6px;background:var(--fault-soft);border:1px solid var(--fault);border-radius:6px;padding:10px 12px}
+.probar input[type=range]{width:100%;accent-color:var(--fault)}
+.probar .rd{font-size:14px}
+.probar .rd b{font-family:'IBM Plex Mono',monospace}
+
+/* ---------- Modal ---------- */
+.modal{position:fixed;inset:0;background:rgba(10,12,14,.45);display:grid;place-items:center;padding:16px;z-index:50}
+.modal-c{background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:0 20px 60px rgba(0,0,0,.3);width:min(760px,100%);max-height:calc(100vh - 32px);overflow:auto;display:flex;flex-direction:column}
+.modal-h{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--surface)}
+.modal-h h2{font-family:'Big Shoulders Display',Impact,sans-serif;font-weight:800;font-size:24px;letter-spacing:.01em}
+.modal-b{padding:14px 16px 18px;display:flex;flex-direction:column;gap:12px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.card-b{border:1px solid var(--line);background:var(--sheet);border-radius:8px;padding:10px;display:flex;flex-direction:column;align-items:flex-start;gap:4px;cursor:pointer;text-align:left}
+.card-b:hover{border-color:var(--copper);background:var(--copper-soft)}
+.card-b b{font-size:14px}
+.card-b small{font-size:12px;color:var(--ink-3);font-family:'IBM Plex Mono',monospace}
+.mlist{display:flex;flex-direction:column;gap:6px}
+.mitem{display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:10px;align-items:center;border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--sheet);cursor:pointer;text-align:left;width:100%}
+.mitem:hover{border-color:var(--copper)}
+.mitem .num{font-family:'Big Shoulders Display',Impact,sans-serif;font-weight:800;font-size:26px;color:var(--copper);text-align:center}
+.mitem b{display:block;font-size:15px}
+.mitem small{color:var(--ink-3);font-size:12.5px}
+.concepts{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px}
+.concepts article{border:1px solid var(--line);border-radius:8px;padding:12px 14px;background:var(--sheet);display:flex;flex-direction:column;gap:6px}
+.concepts h3{font-size:16px}
+.concepts p{margin:0;font-size:14px;color:var(--ink-2)}
+.concepts .fx{font-size:12px}
+.pie{font-size:12.5px;color:var(--ink-3);max-width:90ch}
+
+@media (max-width:1020px){
+  .work{grid-template-columns:minmax(0,1fr)}
+  .insp{position:static;max-height:none}
+  .mision{grid-template-columns:minmax(0,1fr)}
+  .mision .m-b{border-left:0;border-top:1px dashed var(--line)}
+}
+@media (max-width:560px){
+  .brand h1{font-size:25px}
+  .fields{grid-template-columns:1fr 1fr}
+  .tile .v{font-size:26px}
+  .diag{max-height:none}
+  .insp-b{padding:12px 12px 16px}
+}
+@media (prefers-reduced-motion:reduce){
+  .uni .flow,.uni .bolt-halo,.mision.celebra .exito{animation:none}
+}
+</style>
+
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <svg width="38" height="38" viewBox="0 0 40 40" aria-hidden="true"><path d="M20 3 38 35H2Z" fill="var(--fault)" stroke="var(--ink)" stroke-width="2.5" stroke-linejoin="round"/><path d="M22 12 15 25h6l-3 8 8-13h-6l3-8Z" fill="var(--ink)"/></svg>
+      <div><h1>Tablero en Juego</h1><small>Cortocircuito · sobrecorriente · demanda</small></div>
+    </div>
+    <nav class="nav" aria-label="Secciones">
+      <button class="btn" data-act="ver-misiones">Misiones</button>
+      <button class="btn" data-act="libre">Taller libre</button>
+      <button class="btn" data-act="ver-conceptos">Conceptos</button>
+    </nav>
+  </header>
+
+  <section id="mision" class="mision" aria-live="polite"></section>
+  <section id="resumen" class="resumen" aria-label="Resumen de la instalación"></section>
+
+  <main class="work">
+    <section class="panel" aria-label="Esquema unifilar">
+      <div id="simbar" class="simbar"></div>
+      <div id="simres" class="simres" hidden aria-live="polite"></div>
+      <div id="diag" class="diag"></div>
+      <div class="leyenda" aria-label="Referencias">
+        <span><svg width="26" height="14" aria-hidden="true"><rect x="1" y="1" width="24" height="12" rx="2" fill="var(--surface)" stroke="var(--ink)" stroke-width="1.5"/></svg>Disyuntor</span>
+        <span><svg width="26" height="14" aria-hidden="true"><rect x="1" y="2" width="24" height="10" rx="5" fill="var(--info-soft)" stroke="var(--info)"/></svg>Diferencial</span>
+        <span><svg width="26" height="10" aria-hidden="true"><line x1="1" y1="5" x2="25" y2="5" stroke="var(--copper)" stroke-width="6" stroke-linecap="round"/></svg>Barra del tablero</span>
+        <span>Grosor de la línea = sección del cable</span>
+        <span><i style="background:var(--L1)"></i>L1 marrón</span>
+        <span><i style="background:var(--L2)"></i>L2 negro</span>
+        <span><i style="background:var(--L3)"></i>L3 gris</span>
+        <span><svg width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="var(--bad)"/><text x="8" y="12" text-anchor="middle" fill="#fff" font-size="11" font-weight="700">!</text></svg>Algo no verifica</span>
+      </div>
+    </section>
+    <aside id="insp" class="panel insp" aria-label="Detalle del elemento"></aside>
+  </main>
+
+  <p class="pie">Cálculos por el método de impedancias (IEC 60909 simplificado), corrientes admisibles de IEC 60364-5-52 (cobre) y curvas típicas de IEC 60898 / IEC 60947-2. Son valores orientativos para entender cómo funciona; para un proyecto real se usan los datos del fabricante y el reglamento de UTE.</p>
+</div>
+
+<div id="modal" class="modal" hidden>
+  <div class="modal-c" role="dialog" aria-modal="true" aria-labelledby="modal-t">
+    <div class="modal-h"><h2 id="modal-t"></h2><button class="btn sm" data-act="cerrar-modal">Cerrar</button></div>
+    <div class="modal-b" id="modal-b"></div>
+  </div>
+</div>
+<script>
+(() => {
+"use strict";
+// ================================================================
+//  MOTOR DE CÁLCULO
+//  Cortocircuito (IEC 60909 simplificado), cables (IEC 60364-5-52),
+//  curvas de disparo (IEC 60898 / IEC 60947-2) y demanda.
+// ================================================================
+const UN = 400, U0 = 230, CMAX = 1.05, CMIN = 0.95, SQ3 = Math.sqrt(3);
+const RHO = 18.5;   // mΩ·mm²/m  → 0,0185 Ω·mm²/m (cobre a 20 °C)
+const XL = 0.08;    // mΩ/m     → reactancia típica de un cable
+const SECC = [1.5, 2.5, 4, 6, 10, 16, 25, 35, 50, 70, 95, 120, 150, 185, 240, 300];
+
+// Corriente admisible Iz (A), cobre, 30 °C aire / 20 °C suelo. [2 cargados, 3 cargados]
+const IZ = {
+  PVC: {
+    B2: { 2: [16.5, 23, 30, 38, 52, 69, 90, 111, 133, 168, 201, 232, 267, 306, 361, 415], 3: [15, 20, 27, 34, 46, 62, 80, 99, 118, 149, 179, 206, 238, 272, 321, 371] },
+    E:  { 2: [22, 30, 40, 51, 70, 94, 119, 148, 180, 232, 282, 328, 379, 434, 514, 593], 3: [18.5, 25, 34, 43, 60, 80, 101, 126, 153, 196, 238, 276, 319, 364, 430, 497] },
+    D:  { 2: [22, 29, 38, 47, 63, 81, 104, 125, 148, 183, 216, 246, 278, 312, 361, 408], 3: [18, 24, 31, 39, 52, 67, 86, 103, 122, 151, 179, 203, 230, 258, 297, 336] }
+  },
+  XLPE: {
+    B2: { 2: [22, 30, 40, 51, 69, 91, 119, 146, 175, 221, 265, 305, 350, 400, 472, 544], 3: [19.5, 26, 35, 44, 60, 80, 105, 128, 154, 194, 233, 268, 309, 353, 417, 481] },
+    E:  { 2: [26, 36, 49, 63, 86, 115, 149, 185, 225, 289, 352, 410, 473, 542, 641, 741], 3: [23, 32, 42, 54, 75, 100, 127, 158, 192, 246, 298, 346, 399, 456, 538, 621] },
+    D:  { 2: [26, 34, 44, 56, 73, 95, 121, 146, 173, 213, 252, 287, 324, 363, 419, 474], 3: [21, 28, 36, 44, 58, 75, 96, 116, 139, 174, 208, 237, 271, 304, 354, 401] }
+  }
+};
+const METODOS = { B2: 'Caño sobre pared (B2)', E: 'Bandeja perforada / aire (E)', D: 'Enterrado en caño (D)' };
+const FT = {
+  PVC:  { 20: 1.12, 25: 1.06, 30: 1, 35: 0.94, 40: 0.87, 45: 0.79, 50: 0.71 },
+  XLPE: { 20: 1.08, 25: 1.04, 30: 1, 35: 0.96, 40: 0.91, 45: 0.87, 50: 0.82 }
+};
+const FG = {
+  B2: { 1: 1, 2: 0.8, 3: 0.7, 4: 0.65, 5: 0.6, 6: 0.57, 9: 0.5 },
+  E:  { 1: 1, 2: 0.88, 3: 0.82, 4: 0.77, 5: 0.75, 6: 0.73, 9: 0.72 },
+  D:  { 1: 1, 2: 0.85, 3: 0.75, 4: 0.7, 5: 0.65, 6: 0.6, 9: 0.5 }
+};
+const AGRUP = [1, 2, 3, 4, 5, 6, 9];
+const KAD = { PVC: 115, XLPE: 143 }; // k de la fórmula t = (k·S/I)², cobre
+const TEMPS = [20, 25, 30, 35, 40, 45, 50];
+
+const MCB_IN = [2, 4, 6, 10, 13, 16, 20, 25, 32, 40, 50, 63, 80, 100, 125];
+const MCB_ICU = [4.5, 6, 10, 15, 25];
+const MCCB_IN = [100, 160, 250, 400, 630, 800, 1000, 1250, 1600];
+const MCCB_ICU = [16, 25, 36, 50, 70];
+const MCCB_IR = [0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95, 1];
+const MCCB_IM = [3, 4, 5, 6, 8, 10];
+const CURVAS = { B: [3, 5], C: [5, 10], D: [10, 20] };
+
+const TRAFO_KVA = [160, 250, 315, 400, 500, 630, 800, 1000, 1250, 1600];
+const PK = { 160: 2350, 250: 3250, 315: 3900, 400: 4600, 500: 5500, 630: 6500, 800: 8400, 1000: 10500, 1250: 13500, 1600: 17000 };
+const GEN_KVA = [30, 60, 100, 150, 250, 400, 500];
+const UTE_ICC = [3, 4.5, 6, 10, 15, 20];
+
+const TIPOS = {
+  split12:   { nombre: 'Split 12.000 BTU',     P: 1.2, fp: 0.9,  fases: 'mono', fu: 0.8, arr: 5, sim: 'M' },
+  split24:   { nombre: 'Split 24.000 BTU',     P: 2.4, fp: 0.9,  fases: 'mono', fu: 0.8, arr: 5, sim: 'M' },
+  split60:   { nombre: 'Split 60.000 BTU',     P: 5.5, fp: 0.88, fases: '3F',   fu: 0.8, arr: 6, sim: 'M' },
+  rooftop10: { nombre: 'Rooftop 10 TR',        P: 12,  fp: 0.85, fases: '3F',   fu: 0.8, arr: 6, sim: 'M' },
+  rooftop20: { nombre: 'Rooftop 20 TR',        P: 24,  fp: 0.85, fases: '3F',   fu: 0.8, arr: 5, sim: 'M' },
+  chiller:   { nombre: 'Chiller 40 TR',        P: 50,  fp: 0.88, fases: '3F',   fu: 0.8, arr: 3, sim: 'M' },
+  camara:    { nombre: 'Cámara frigorífica',   P: 4,   fp: 0.85, fases: '3F',   fu: 0.8, arr: 6, sim: 'M' },
+  gondola:   { nombre: 'Góndola refrigerada',  P: 1.5, fp: 0.85, fases: 'mono', fu: 0.8, arr: 5, sim: 'M' },
+  luz:       { nombre: 'Iluminación LED',      P: 2,   fp: 0.95, fases: 'mono', fu: 1,   arr: 1, sim: 'L', luz: true },
+  tomas:     { nombre: 'Tomacorrientes',       P: 2,   fp: 0.9,  fases: 'mono', fu: 0.5, arr: 1, sim: 'T' },
+  horno:     { nombre: 'Horno de panadería',   P: 15,  fp: 1,    fases: '3F',   fu: 0.8, arr: 1, sim: 'R' },
+  ups:       { nombre: 'UPS 10 kVA',           P: 9,   fp: 0.95, fases: '3F',   fu: 0.9, arr: 1, sim: 'U' },
+  bomba:     { nombre: 'Bomba de agua 7,5 kW', P: 8.5, fp: 0.85, fases: '3F',   fu: 0.7, arr: 7, sim: 'M' },
+  otro:      { nombre: 'Otra carga',           P: 1,   fp: 0.9,  fases: 'mono', fu: 1,   arr: 1, sim: 'C' }
+};
+
+// Curvas de disparo: [múltiplo de In, segundos]. up = tiempo máximo, lo = mínimo.
+const T_MCB = {
+  up: [[1.45, 3600], [2, 500], [2.55, 60], [3, 30], [4, 13], [5, 8], [7, 4], [10, 2], [20, 0.6], [50, 0.1]],
+  lo: [[1.13, 3600], [1.45, 120], [2, 12], [2.55, 1], [3, 0.7], [4, 0.4], [5, 0.25], [7, 0.13], [10, 0.07], [20, 0.02], [50, 0.004]],
+  inst: [0.004, 0.01]
+};
+const T_MCCB = {
+  up: [[1.3, 7200], [1.5, 1500], [2, 250], [3, 50], [4, 22], [5, 13], [6, 9], [8, 5], [10, 3], [20, 0.8], [50, 0.15]],
+  lo: [[1.05, 7200], [1.3, 300], [1.5, 90], [2, 20], [3, 6], [4, 3], [5, 2], [6, 1.4], [8, 0.8], [10, 0.5], [20, 0.12], [50, 0.03]],
+  inst: [0.01, 0.03]
+};
+
+// ---------------- Formato (es-UY: coma decimal) ----------------
+function fmt(x, d = 1) {
+  if (x === Infinity) return '∞';
+  if (!isFinite(x)) return '—';
+  return x.toLocaleString('es-UY', { minimumFractionDigits: d, maximumFractionDigits: d });
+}
+function fmtN(x) { // decimales automáticos
+  const a = Math.abs(x);
+  return fmt(x, a >= 100 ? 0 : a >= 10 ? 1 : a >= 1 ? 2 : 3);
+}
+function fA(I) {
+  if (!isFinite(I)) return '∞';
+  if (I >= 1000) return fmt(I / 1000, I >= 10000 ? 1 : 2) + ' kA';
+  return fmt(I, I < 10 ? 1 : 0) + ' A';
+}
+function fT(s) {
+  if (!isFinite(s)) return 'nunca';
+  if (s < 1) return fmt(s * 1000, 0) + ' ms';
+  if (s < 60) return fmt(s, s < 10 ? 1 : 0) + ' s';
+  if (s < 3600) return fmt(s / 60, 0) + ' min';
+  return fmt(s / 3600, 1) + ' h';
+}
+function fZ(mO) { return fmtN(mO) + ' mΩ'; }
+
+// ---------------- Disyuntores ----------------
+function brkIr(b) { return b.tipo === 'MCCB' ? b.In * b.ir : b.In; }
+function brkIm(b) {
+  if (b.tipo === 'MCB') { const c = CURVAS[b.curva]; return [c[0] * b.In, c[1] * b.In]; }
+  const Ir = brkIr(b); return [0.8 * b.im * Ir, 1.2 * b.im * Ir];
+}
+function brkNombre(b) {
+  if (b.tipo === 'MCB') return b.curva + b.In;
+  return 'Caja moldeada ' + b.In + ' A (Ir ' + fmt(brkIr(b), 0) + ' A)';
+}
+function brkCorto(b) { return b.tipo === 'MCB' ? b.curva + b.In : fmt(brkIr(b), 0) + ' A'; }
+function interpLL(pts, m) {
+  if (m < pts[0][0]) return Infinity;
+  const L = Math.log;
+  for (let i = 1; i < pts.length; i++) {
+    if (m <= pts[i][0]) {
+      const [x0, y0] = pts[i - 1], [x1, y1] = pts[i];
+      const f = (L(m) - L(x0)) / (L(x1) - L(x0));
+      return Math.exp(L(y0) + f * (L(y1) - L(y0)));
+    }
+  }
+  const [x0, y0] = pts[pts.length - 2], [x1, y1] = pts[pts.length - 1];
+  const s = (L(y1) - L(y0)) / (L(x1) - L(x0));
+  return Math.exp(L(y1) + s * (L(m) - L(x1)));
+}
+// Devuelve la zona y el rango de tiempo de disparo para una corriente I (A)
+function disparo(b, I) {
+  const Ir = brkIr(b), im = brkIm(b), T = b.tipo === 'MCB' ? T_MCB : T_MCCB;
+  const m = I / Ir;
+  let tmax = interpLL(T.up, m), tmin = interpLL(T.lo, m);
+  if (I >= im[1]) return { zona: 'mag', tmin: T.inst[0], tmax: T.inst[1] };
+  if (I >= im[0]) return { zona: 'mag?', tmin: T.inst[0], tmax: Math.max(tmax, T.inst[1]) };
+  if (!isFinite(tmin)) return { zona: 'no', tmin: Infinity, tmax: Infinity };
+  tmin = Math.max(tmin, T.inst[1]); tmax = Math.max(tmax, tmin);
+  return { zona: 'term', tmin, tmax };
+}
+
+// ---------------- Árbol ----------------
+function recorrerArbol(n, fn, padre = null) {
+  fn(n, padre);
+  if (n.hijos) for (const h of n.hijos) recorrerArbol(h, fn, n);
+}
+function buscar(st, id) { let r = null; recorrerArbol(st.root, n => { if (n.id === id) r = n; }); return r; }
+function buscarPadre(st, id) { let r = null; recorrerArbol(st.root, (n, p) => { if (n.id === id) r = p; }); return r; }
+function porClave(st, key) { let r = null; recorrerArbol(st.root, n => { if (n.key === key) r = n; }); return r; }
+
+// ---------------- Fuente ----------------
+function fuente(st) {
+  const s = st.src, U2 = UN * UN;
+  const f = { tipo: s.tipo, partes: [], Sn: 0 };
+  if (s.tipo === 'trafo') {
+    const ZQ = 1.1 * U2 / (s.scc * 1e6) * 1000, XQ = 0.995 * ZQ, RQ = 0.1 * XQ;
+    f.partes.push({ key: 'red', nombre: 'Red de media tensión', R: RQ, X: XQ, Z: ZQ, scc: s.scc });
+    const Sn = s.kva * 1000;
+    const ZT = s.ucc / 100 * U2 / Sn * 1000, RT = PK[s.kva] * U2 / (Sn * Sn) * 1000;
+    const XT = Math.sqrt(ZT * ZT - RT * RT);
+    f.partes.push({ key: 'trafo', nombre: 'Transformador ' + s.kva + ' kVA', R: RT, X: XT, Z: ZT, kva: s.kva, ucc: s.ucc, pk: PK[s.kva] });
+    f.Sn = Sn; f.nombre = 'Transformador ' + s.kva + ' kVA';
+  } else if (s.tipo === 'ute') {
+    const Z = CMAX * UN / (SQ3 * s.iccUte * 1000) * 1000;
+    const R = Z / Math.sqrt(5), X = 2 * R;
+    f.partes.push({ key: 'ute', nombre: 'Acometida UTE (Icc ' + fmt(s.iccUte, s.iccUte % 1 ? 1 : 0) + ' kA)', R, X, Z, icc: s.iccUte });
+    f.nombre = 'Acometida de UTE';
+  } else {
+    const Sn = s.gkva * 1000;
+    const Xd = s.xd / 100 * U2 / Sn * 1000, R = 0.15 * Xd;
+    f.partes.push({ key: 'gen', nombre: 'Grupo electrógeno ' + s.gkva + ' kVA', R, X: Xd, Z: Math.hypot(R, Xd), kva: s.gkva, xd: s.xd });
+    f.Sn = Sn; f.nombre = 'Grupo electrógeno ' + s.gkva + ' kVA';
+  }
+  f.R = f.partes.reduce((a, p) => a + p.R, 0);
+  f.X = f.partes.reduce((a, p) => a + p.X, 0);
+  f.Z = Math.hypot(f.R, f.X);
+  f.ik3 = CMAX * UN / (SQ3 * f.Z / 1000);
+  f.ik1 = CMAX * U0 / (f.Z / 1000);
+  f.kappa = 1.02 + 0.98 * Math.exp(-3 * f.R / f.X);
+  f.ip = f.kappa * Math.SQRT2 * f.ik3;
+  f.In = f.Sn ? f.Sn / (SQ3 * UN) : 0;
+  return f;
+}
+
+// ---------------- Demanda ----------------
+const ANG = [0, -2 * Math.PI / 3, 2 * Math.PI / 3];
+const FASES = ['L1', 'L2', 'L3'];
+function ksAuto(n) { return n <= 1 ? 1 : n <= 3 ? 0.9 : n <= 5 ? 0.8 : n <= 9 ? 0.7 : 0.6; }
+function demanda(n, R) {
+  const r = R[n.id] = { id: n.id };
+  if (n.kind === 'carga') {
+    const P = n.P * 1000, Q = P * Math.tan(Math.acos(Math.min(1, n.fp)));
+    const S = [[0, 0], [0, 0], [0, 0]];
+    if (n.fase === '3F') for (let k = 0; k < 3; k++) S[k] = [P / 3, Q / 3];
+    else S[FASES.indexOf(n.fase)] = [P, Q];
+    r.Snom = S;
+    r.Sdem = S.map(s => [s[0] * n.fu, s[1] * n.fu]);
+    r.Pinst = P; r.Pdem = P * n.fu; r.Qdem = Q * n.fu;
+    r.Ib = n.fase === '3F' ? P / (SQ3 * UN * n.fp) : P / (U0 * n.fp);
+    r.fp = n.fp;
+    r.Stot = Math.hypot(P, Q);
+    return r;
+  }
+  const suma = [[0, 0], [0, 0], [0, 0]];
+  let Pinst = 0;
+  const filas = [];
+  for (const h of n.hijos) {
+    const rh = demanda(h, R);
+    for (let k = 0; k < 3; k++) { suma[k][0] += rh.Sdem[k][0]; suma[k][1] += rh.Sdem[k][1]; }
+    Pinst += rh.Pinst;
+    filas.push(h.id);
+  }
+  const nc = n.hijos.length;
+  r.ksAuto = ksAuto(nc);
+  r.ks = n.ks === 'auto' ? r.ksAuto : +n.ks;
+  r.suma = suma;
+  r.Sdem = suma.map(s => [s[0] * r.ks, s[1] * r.ks]);
+  r.Iph = r.Sdem.map(s => Math.hypot(s[0], s[1]) / U0);
+  let re = 0, im = 0;
+  for (let k = 0; k < 3; k++) {
+    const a = ANG[k] - Math.atan2(r.Sdem[k][1], r.Sdem[k][0] || 1e-12);
+    re += r.Iph[k] * Math.cos(a); im += r.Iph[k] * Math.sin(a);
+  }
+  r.IN = Math.hypot(re, im);
+  r.Ib = Math.max(...r.Iph);
+  r.Pinst = Pinst;
+  r.Pdem = r.Sdem.reduce((a, s) => a + s[0], 0);
+  r.Qdem = r.Sdem.reduce((a, s) => a + s[1], 0);
+  r.Stot = Math.hypot(r.Pdem, r.Qdem);
+  r.fp = r.Stot > 0 ? r.Pdem / r.Stot : 1;
+  const prom = (r.Iph[0] + r.Iph[1] + r.Iph[2]) / 3;
+  r.Iprom = prom;
+  r.desb = prom > 0.01 ? (r.Ib - prom) / prom : 0;
+  r.filas = filas;
+  return r;
+}
+
+// ---------------- Impedancias, Icc y verificaciones ----------------
+function impedancias(n, acc, res, st) {
+  const r = res.nodos[n.id], c = n.cab;
+  const Sef = c.S * c.n;
+  const R20 = RHO * c.L / Sef, X = XL * c.L / c.n;
+  r.lin = { R20, X, Rcal: 1.5 * R20, Rdu: 1.25 * R20, Sef };
+  r.padre = acc.id;
+  r.cadena = acc.cadena.concat(n.id);
+  const a = { R: acc.R + R20, X: acc.X + X, Rm: acc.Rm + 1.5 * R20, Rl: acc.Rl + 2 * R20, Xl: acc.Xl + 2 * X, Rlm: acc.Rlm + 3 * R20 };
+  r.acc = a;
+  r.Z = Math.hypot(a.R, a.X); r.Zm = Math.hypot(a.Rm, a.X);
+  r.Zl = Math.hypot(a.Rl, a.Xl); r.Zlm = Math.hypot(a.Rlm, a.Xl);
+  r.ik3 = CMAX * UN / (SQ3 * r.Z / 1000);
+  r.ik2 = CMAX * UN / (2 * r.Z / 1000);
+  r.ik2min = CMIN * UN / (2 * r.Zm / 1000);
+  r.ik1 = CMAX * U0 / (r.Zl / 1000);
+  r.ik1min = CMIN * U0 / (r.Zlm / 1000);
+  r.kappa = 1.02 + 0.98 * Math.exp(-3 * a.R / a.X);
+  r.ip = r.kappa * Math.SQRT2 * r.ik3;
+  const mono = n.kind === 'carga' && n.fase !== '3F';
+  r.mono = mono;
+  r.iccBrk = mono ? acc.ik1 : acc.ik3;
+  r.iccBrkTipo = mono ? 'fase-neutro' : 'trifásica';
+  r.iccMin = (mono || n.kind === 'tablero') ? r.ik1min : r.ik2min;
+  r.iccMinTipo = (mono || n.kind === 'tablero') ? 'fase-neutro' : 'bifásica';
+  // Iz
+  const carg = mono ? 2 : 3;
+  const base = IZ[c.aisl][c.metodo][carg][SECC.indexOf(c.S)];
+  const ft = c.metodo === 'D' ? 1 : FT[c.aisl][st.temp];
+  const fg = FG[c.metodo][c.agrup] || 1;
+  r.iz = { base, ft, fg, n: c.n, carg, Iz: base * ft * fg * c.n };
+  // Caída de tensión
+  const cos = r.fp || 1, sin = Math.sqrt(Math.max(0, 1 - cos * cos));
+  const k = mono ? 2 : SQ3, Ubase = mono ? U0 : UN;
+  const dUv = k * r.Ib * (r.lin.Rdu * cos + X * sin) / 1000;
+  r.dU = { v: dUv, pct: dUv / Ubase * 100, k, Ubase, cos, sin };
+  r.dUprev = acc.dU;
+  r.dUacum = acc.dU + r.dU.pct;
+  // Diferenciales en el camino
+  r.rcdCamino = n.rcd ? acc.rcd.concat([{ id: n.id, mA: n.rcd }]) : acc.rcd;
+  r.brkArriba = acc.brk; r.brkArribaId = acc.id;
+  // Falla a tierra
+  const T = st.tierra;
+  if (T.esq === 'TT') { r.idT = U0 / (T.RA + T.RB); r.idTmax = r.idT; r.uc = r.idT * T.RA; }
+  else {
+    r.idT = r.ik1min; r.idTmax = r.ik1;
+    const Rpe = a.Rm - res.fuente.R, Xpe = a.X - res.fuente.X; // conductor de protección (misma sección)
+    r.uc = r.idT * Math.hypot(Rpe, Xpe) / 1000;
+  }
+  r.checks = verificar(n, r, st);
+  r.estado = r.checks.some(x => x.ok === false) ? 'bad' : r.checks.some(x => x.ok === 'warn') ? 'warn' : 'ok';
+  if (n.kind === 'tablero') {
+    const accH = { R: a.R, X: a.X, Rm: a.Rm, Rl: a.Rl, Xl: a.Xl, Rlm: a.Rlm, dU: r.dUacum, rcd: r.rcdCamino, ik3: r.ik3, ik1: r.ik1, brk: n.brk, id: n.id, cadena: r.cadena };
+    for (const h of n.hijos) impedancias(h, accH, res, st);
+  }
+}
+
+function verificar(n, r, st) {
+  const L = [], b = n.brk, Ir = brkIr(b), im = brkIm(b), bn = brkCorto(b);
+  const esM = b.tipo === 'MCB';
+  L.push({ id: 'ib', t: 'La protección deja pasar la corriente normal', f: 'Ib ≤ In',
+    ok: r.Ib <= Ir + 1e-9, d: fA(r.Ib) + (r.Ib <= Ir + 1e-9 ? ' ≤ ' : ' > ') + fA(Ir) + (esM ? '' : ' (Ir)') });
+  L.push({ id: 'iz', t: 'El cable aguanta lo que deja pasar la protección', f: 'In ≤ Iz',
+    ok: Ir <= r.iz.Iz + 1e-9, d: fA(Ir) + (Ir <= r.iz.Iz + 1e-9 ? ' ≤ ' : ' > ') + fA(r.iz.Iz) });
+  const pdcOk = b.icu * 1000 >= r.iccBrk;
+  L.push({ id: 'pdc', t: 'Poder de corte suficiente', f: 'Icu ≥ Icc máx',
+    ok: pdcOk, d: fmt(b.icu, b.icu % 1 ? 1 : 0) + ' kA' + (pdcOk ? ' ≥ ' : ' < ') + fA(r.iccBrk) + ' (' + r.iccBrkTipo + ' en el tablero)' });
+  const magOk = im[1] <= r.iccMin;
+  L.push({ id: 'mag', t: 'El magnético salta con la falla más chica', f: 'Im máx ≤ Icc mín',
+    ok: magOk, d: fA(im[1]) + (magOk ? ' ≤ ' : ' > ') + fA(r.iccMin) + ' (' + r.iccMinTipo + ' al final)' });
+  if (n.kind === 'carga' && n.arr > 1) {
+    const Ia = n.arr * r.Ib; r.Ia = Ia;
+    const ok = Ia < im[0];
+    L.push({ id: 'arr', t: 'No salta cuando arranca el motor', f: 'I arranque < Im mín',
+      ok, d: fA(Ia) + (ok ? ' < ' : ' ≥ ') + fA(im[0]) + ' (' + bn + ')' });
+  }
+  if (n.kind === 'carga') {
+    const lim = n.luz ? 3 : 5, ok = r.dUacum <= lim + 1e-9;
+    L.push({ id: 'du', t: 'Caída de tensión dentro del límite', f: 'ΔU ≤ ' + lim + ' %',
+      ok, d: fmt(r.dUacum, 2) + ' %' + (ok ? ' ≤ ' : ' > ') + lim + ' %', lim });
+    const T = st.tierra;
+    if (T.esq === 'TT') {
+      const best = r.rcdCamino.length ? Math.min(...r.rcdCamino.map(x => x.mA)) : 0;
+      if (best) {
+        const u = best / 1000 * T.RA, ok2 = u <= 50;
+        L.push({ id: 'ind', t: 'Protegido si se electrifica la carcasa', f: 'IΔn × RA ≤ 50 V',
+          ok: ok2, d: 'Diferencial ' + best + ' mA: ' + fmt(best / 1000, 2) + ' A × ' + T.RA + ' Ω = ' + fmt(u, 1) + ' V' });
+      } else {
+        L.push({ id: 'ind', t: 'Protegido si se electrifica la carcasa', f: 'Hace falta diferencial',
+          ok: false, d: 'Sin diferencial: la falla a tierra es de ' + fA(r.idT) + ' y el ' + bn + ' no salta. La carcasa queda a ' + fmt(r.uc, 0) + ' V' });
+      }
+    } else {
+      const ok2 = r.ik1min >= im[1] || r.rcdCamino.length > 0;
+      L.push({ id: 'ind', t: 'Protegido si se electrifica la carcasa', f: 'Icc fase-tierra ≥ Im máx',
+        ok: ok2, d: r.ik1min >= im[1] ? fA(r.ik1min) + ' ≥ ' + fA(im[1]) + ': salta el magnético'
+          : (r.rcdCamino.length ? 'Lo corta el diferencial' : fA(r.ik1min) + ' < ' + fA(im[1]) + ' y no hay diferencial') });
+    }
+  }
+  if (n.kind === 'tablero' && r.Iprom > 0.5) {
+    const ok = r.desb <= 0.2 || r.Ib - r.Iprom <= 6;
+    L.push({ id: 'bal', t: 'Fases equilibradas', f: 'Desbalance ≤ 20 %',
+      ok: ok ? true : 'warn', d: 'L1 ' + fA(r.Iph[0]) + ' · L2 ' + fA(r.Iph[1]) + ' · L3 ' + fA(r.Iph[2]) + ' → ' + fmt(r.desb * 100, 0) + ' %' });
+  }
+  if (r.brkArriba) {
+    const up = r.brkArriba, upIr = brkIr(up), upIm = brkIm(up);
+    if (upIr <= Ir) {
+      L.push({ id: 'sel', t: 'Selectividad con la protección de arriba', f: 'In arriba > In',
+        ok: 'warn', d: 'La de arriba (' + brkCorto(up) + ') no es más grande que esta (' + bn + '): puede saltar primero' });
+    } else if (upIm[0] > r.iccBrk) {
+      L.push({ id: 'sel', t: 'Selectividad con la protección de arriba', f: 'Im mín arriba > Icc máx',
+        ok: 'info', sel: 'total', d: 'Total: una falla acá (hasta ' + fA(r.iccBrk) + ') no llega a ' + fA(upIm[0]) + ' del ' + brkCorto(up) });
+    } else {
+      L.push({ id: 'sel', t: 'Selectividad con la protección de arriba', f: 'Im mín arriba > Icc máx',
+        ok: 'info', sel: 'parcial', d: 'Parcial: fallas de más de ' + fA(upIm[0]) + ' pueden hacer saltar también el ' + brkCorto(up) });
+    }
+  }
+  return L;
+}
+
+function calcular(st) {
+  const res = { nodos: {}, fuente: fuente(st) };
+  const f = res.fuente;
+  demanda(st.root, res.nodos);
+  const acc0 = { R: f.R, X: f.X, Rm: f.R, Rl: f.R, Xl: f.X, Rlm: f.R, dU: 0, rcd: [], ik3: f.ik3, ik1: f.ik1, brk: null, id: null, cadena: [] };
+  impedancias(st.root, acc0, res, st);
+  const rtg = res.nodos[st.root.id];
+  f.Sdem = rtg.Stot;
+  f.carga = f.Sn ? rtg.Stot / f.Sn : null;
+  f.checks = [];
+  if (f.Sn) {
+    const ok = f.carga <= 1;
+    f.checks.push({ id: 'fuente', t: 'La fuente alcanza para la demanda', f: 'S demanda ≤ S nominal',
+      ok, d: fmt(rtg.Stot / 1000, 1) + ' kVA' + (ok ? ' ≤ ' : ' > ') + fmt(f.Sn / 1000, 0) + ' kVA (' + fmt(f.carga * 100, 0) + ' %)' });
+  }
+  f.estado = f.checks.some(x => x.ok === false) ? 'bad' : 'ok';
+  let fallas = f.checks.filter(x => x.ok === false).length, avisos = 0;
+  for (const id in res.nodos) {
+    const ch = res.nodos[id].checks || [];
+    fallas += ch.filter(x => x.ok === false).length;
+    avisos += ch.filter(x => x.ok === 'warn').length;
+  }
+  res.fallas = fallas; res.avisos = avisos;
+  return res;
+}
+
+// ---------------- Construcción de escenarios ----------------
+let _uid = 0;
+function uid() { return 'n' + (++_uid) + Math.random().toString(36).slice(2, 5); }
+function mezclar(a, b) {
+  for (const k in b) {
+    if (b[k] && typeof b[k] === 'object' && !Array.isArray(b[k]) && a[k] && typeof a[k] === 'object') mezclar(a[k], b[k]);
+    else a[k] = b[k];
+  }
+  return a;
+}
+function mcb(txt, icu = 6) { return { tipo: 'MCB', curva: txt[0], In: +txt.slice(1), icu, ir: 1, im: 10 }; }
+function mccb(In, ir, im, icu) { return { tipo: 'MCCB', curva: 'C', In, ir, im, icu }; }
+function cab(S, L, aisl = 'PVC', metodo = 'B2', n = 1, agrup = 1) { return { S, L, aisl, metodo, n, agrup }; }
+function carga(tipo, over = {}) {
+  const t = TIPOS[tipo];
+  const n = { id: uid(), kind: 'carga', tipo, name: t.nombre, P: t.P, fp: t.fp, fase: t.fases === '3F' ? '3F' : 'L1',
+    fu: t.fu, arr: t.arr, luz: !!t.luz, brk: mcb('C16'), rcd: 0, cab: cab(2.5, 20) };
+  return mezclar(n, over);
+}
+function tablero(name, over = {}, hijos = []) {
+  const n = { id: uid(), kind: 'tablero', name, ks: 'auto', hijos, brk: mcb('C32'), rcd: 0, cab: cab(10, 20, 'XLPE') };
+  return mezclar(n, over);
+}
+function escenario(src, tierra, root, temp = 30) {
+  const base = { tipo: 'ute', iccUte: 6, kva: 400, ucc: 4, scc: 250, gkva: 150, xd: 15 };
+  return { src: Object.assign(base, src), tierra: Object.assign({ esq: 'TT', RA: 10, RB: 5 }, tierra), temp, root };
+}
+function clonar(o) { return JSON.parse(JSON.stringify(o)); }
+function rehacerIds(st) { recorrerArbol(st.root, n => { n.id = uid(); }); return st; }
+
+// Local chico alimentado por UTE en baja tensión
+function localChico(extra = []) {
+  return escenario({ tipo: 'ute', iccUte: 6 }, {}, tablero('Tablero general', { key: 'tg', brk: mcb('C63', 10), cab: cab(16, 10, 'XLPE') }, [
+    carga('gondola', { key: 'gondola', name: 'Góndola lácteos', fase: 'L1', rcd: 30, cab: cab(2.5, 18) }),
+    carga('luz', { key: 'luces', name: 'Luces salón', fase: 'L2', rcd: 30, cab: cab(2.5, 25) }),
+    carga('tomas', { key: 'tomas', name: 'Tomas cajas', fase: 'L3', rcd: 30, cab: cab(2.5, 20) }),
+    ...extra
+  ]));
+}
+
+// ---------------- Verificaciones para misiones ----------------
+function nodoOk(res, st, key) {
+  const n = porClave(st, key); if (!n) return false;
+  const r = res.nodos[n.id]; return r && !r.checks.some(c => c.ok === false);
+}
+function checkOk(res, st, key, cid) {
+  const n = porClave(st, key); if (!n) return false;
+  const c = res.nodos[n.id].checks.find(x => x.id === cid); return !!c && c.ok === true;
+}
+function todosCheck(res, cid) {
+  for (const id in res.nodos) { const c = res.nodos[id].checks.find(x => x.id === cid); if (c && c.ok === false) return false; }
+  return true;
+}
+function evTiene(ev, tipo, st, key, extra) {
+  const n = porClave(st, key); if (!n) return false;
+  return ev.some(e => e.tipo === tipo && e.id === n.id && (!extra || extra(e)));
+}
+
+const MISIONES = [
+  {
+    id: 'm1', tema: 'Cómo se juega', titulo: 'Primer cortocircuito',
+    historia: 'Este es el tablero de un local chico, alimentado por UTE en baja tensión. Cada línea que baja del tablero es un circuito: un disyuntor, un cable y un equipo. Vamos a romper algo a propósito.',
+    objetivos: [
+      { txt: 'Tocá la Góndola lácteos en el esquema', test: (st, res, ev) => evTiene(ev, 'sel', st, 'gondola') },
+      { txt: 'Simulá un cortocircuito en la góndola (botón Cortocircuito)', test: (st, res, ev) => evTiene(ev, 'sim', st, 'gondola') },
+      { txt: 'Abrí la pestaña Cuentas para ver de dónde sale la corriente', test: (st, res, ev) => evTiene(ev, 'tab', st, 'gondola', e => e.tab === 'cuentas') }
+    ],
+    pistas: ['La góndola está a la izquierda, colgada del Tablero general.', 'Cuando la tengas seleccionada, arriba del esquema aparecen los botones de falla: probá “Fase-neutro”.', 'Mirá qué disyuntor se abre (queda rojo) y qué parte del esquema se apaga.'],
+    foco: null,
+    build: () => localChico([carga('split12', { name: 'Split oficina', fase: 'L1', rcd: 30, cab: cab(2.5, 12) })])
+  },
+  {
+    id: 'm2', tema: 'Ib ≤ In ≤ Iz', titulo: 'El split y el cable finito',
+    historia: 'Un instalador conectó un split de 24.000 BTU con cable de 2,5 mm² y le puso un disyuntor de 32 A “para que no salte”. El split anda, pero algo está mal.',
+    objetivos: [
+      { txt: 'Todas las verificaciones del Split salón en verde', test: (st, res) => nodoOk(res, st, 'split') }
+    ],
+    pistas: ['Abrí el split y mirá la verificación “In ≤ Iz” en la pestaña Ajustes.', 'El cable de 2,5 mm² en caño aguanta 23 A. Un disyuntor de 32 A deja pasar más que eso sin saltar.', 'Bajá el disyuntor a C16 o C20. Probá también B16: vas a ver otro problema (el arranque).'],
+    foco: 'split',
+    build: () => localChico([carga('split24', { key: 'split', name: 'Split salón', fase: 'L1', brk: mcb('C32'), rcd: 30, cab: cab(2.5, 15) })])
+  },
+  {
+    id: 'm3', tema: 'Curvas B, C y D', titulo: '¿B, C o D?',
+    historia: 'El rooftop del salón salta cada vez que arranca el compresor. El técnico anterior dejó un B25. El cable (4 mm², 60 m hasta la azotea) está bien y no se puede cambiar.',
+    objetivos: [
+      { txt: 'Todas las verificaciones del Rooftop en verde', test: (st, res) => nodoOk(res, st, 'rooftop') },
+      { txt: 'Sin cambiar el cable (4 mm², 60 m)', test: st => { const n = porClave(st, 'rooftop'); return n && n.cab.S === 4 && n.cab.L === 60 && n.cab.n === 1; } }
+    ],
+    pistas: ['Mirá la pestaña Curva del rooftop: el escalón del arranque choca con la zona magnética del B25.', 'Una curva C salta recién entre 5 y 10 veces In. La D, entre 10 y 20.', 'Probá la D: ¿qué verificación se pone roja? Con 60 m de cable la falla al final es chica.'],
+    foco: 'rooftop',
+    build: () => localChico([carga('rooftop10', { key: 'rooftop', name: 'Rooftop salón', brk: mcb('B25'), rcd: 300, cab: cab(4, 60, 'XLPE', 'E') })])
+  },
+  {
+    id: 'm4', tema: 'Cables largos', titulo: 'Las luces del estacionamiento',
+    historia: 'Las luces del estacionamiento están a 90 m del tablero, con cable de 2,5 mm² enterrado. De noche se ven débiles y nadie sabe si el disyuntor saltaría ante un cortocircuito en la última columna.',
+    objetivos: [
+      { txt: 'Todas las verificaciones de Luces estacionamiento en verde', test: (st, res) => nodoOk(res, st, 'parking') }
+    ],
+    pistas: ['Hay dos problemas: la caída de tensión y el disparo magnético.', 'Los dos se arreglan con lo mismo: menos resistencia en el cable.', 'Subí la sección. Mirá en Cuentas cómo cambia la Icc mínima y la caída de tensión con cada paso.'],
+    foco: 'parking',
+    build: () => localChico([carga('luz', { key: 'parking', name: 'Luces estacionamiento', P: 2.2, fase: 'L3', rcd: 30, cab: cab(2.5, 90, 'PVC', 'D') })])
+  },
+  {
+    id: 'm5', tema: 'Cálculo de demanda', titulo: 'El tablero de frío',
+    historia: 'Todas las góndolas del Tablero Frío quedaron conectadas en la fase L1. El alimentador (C25 con cable de 4 mm²) no da para la demanda. No se puede cambiar el alimentador: hay que ordenar las cargas.',
+    objetivos: [
+      { txt: 'Fases equilibradas en el Tablero Frío (desbalance ≤ 20 %)', test: (st, res) => checkOk(res, st, 'frio', 'bal') },
+      { txt: 'Corriente de neutro del Tablero Frío menor a 5 A', test: (st, res) => { const n = porClave(st, 'frio'); return n && res.nodos[n.id].IN < 5; } },
+      { txt: 'El alimentador del Tablero Frío en verde, sin cambiarlo y con ks automático', test: (st, res) => { const n = porClave(st, 'frio'); return n && nodoOk(res, st, 'frio') && n.brk.tipo === 'MCB' && n.brk.In === 25 && n.cab.S === 4 && n.ks === 'auto'; } }
+    ],
+    pistas: ['Abrí el Tablero Frío y mirá la pestaña Cuentas: la tabla de demanda muestra la corriente de cada fase.', 'Tenés 9 kW monofásicos: 4 góndolas de 1,5, una isla de 2 y una vitrina de 1. Repartilos para que cada fase tenga 3 kW.', 'Cambiá la fase de cada góndola en Ajustes (L1, L2, L3).'],
+    foco: 'frio',
+    build: () => escenario({ tipo: 'ute', iccUte: 6 }, {}, tablero('Tablero general', { key: 'tg', brk: mcb('C63', 10), cab: cab(16, 10, 'XLPE') }, [
+      tablero('Tablero Frío', { key: 'frio', brk: mcb('C25'), cab: cab(4, 20, 'XLPE') }, [
+        carga('gondola', { name: 'Góndola lácteos', fase: 'L1', rcd: 30, cab: cab(2.5, 15) }),
+        carga('gondola', { name: 'Góndola fiambres', fase: 'L1', rcd: 30, cab: cab(2.5, 15) }),
+        carga('gondola', { name: 'Góndola bebidas', fase: 'L1', rcd: 30, cab: cab(2.5, 18) }),
+        carga('gondola', { name: 'Góndola postres', fase: 'L1', rcd: 30, cab: cab(2.5, 18) }),
+        carga('gondola', { name: 'Isla congelados', P: 2, fase: 'L1', rcd: 30, cab: cab(2.5, 20) }),
+        carga('gondola', { name: 'Vitrina quesos', P: 1, fase: 'L1', rcd: 30, cab: cab(2.5, 12) }),
+        carga('camara', { name: 'Cámara carnes', rcd: 300, cab: cab(2.5, 15) }),
+        carga('camara', { name: 'Cámara verduras', P: 3, rcd: 300, cab: cab(2.5, 15) })
+      ]),
+      carga('luz', { name: 'Luces salón', fase: 'L2', rcd: 30, cab: cab(2.5, 25) }),
+      carga('tomas', { name: 'Tomas cajas', fase: 'L3', rcd: 30, cab: cab(2.5, 20) })
+    ]))
+  },
+  {
+    id: 'm6', tema: 'Poder de corte', titulo: 'Transformador nuevo',
+    historia: 'El súper creció y ahora tiene transformador propio de 1000 kVA. Los tableros quedaron iguales. Más transformador = más corriente de cortocircuito. ¿Los disyuntores viejos la pueden cortar?',
+    objetivos: [
+      { txt: 'Todos los “poder de corte” en verde', test: (st, res) => todosCheck(res, 'pdc') },
+      { txt: 'Ninguna verificación en rojo en toda la instalación', test: (st, res) => res.fallas === 0 },
+      { txt: 'Sin cambiar el transformador', test: st => st.src.tipo === 'trafo' && st.src.kva === 1000 }
+    ],
+    pistas: ['Mirá la Icc en el Tablero general: pasó de unos 5 kA a más de 20 kA.', 'Los disyuntores del Tablero general necesitan Icu (poder de corte) mayor que esa Icc.', 'Fijate que los del Tablero Frío no tienen problema: los 40 m de cable frenan la corriente de falla.'],
+    foco: 'tg',
+    build: () => escenario({ tipo: 'trafo', kva: 1000, ucc: 6, scc: 250 }, { RB: 2 }, tablero('Tablero general', { key: 'tg', brk: mccb(1600, 0.9, 10, 50), cab: cab(240, 10, 'XLPE', 'E', 3) }, [
+      tablero('Tablero Frío', { key: 'frio', brk: mcb('C63', 10), cab: cab(16, 40, 'XLPE', 'E') }, [
+        carga('camara', { name: 'Cámara carnes', rcd: 300, cab: cab(2.5, 15) }),
+        carga('gondola', { name: 'Góndola lácteos', fase: 'L1', rcd: 30, cab: cab(2.5, 15) }),
+        carga('gondola', { name: 'Góndola bebidas', fase: 'L2', rcd: 30, cab: cab(2.5, 15) }),
+        carga('gondola', { name: 'Isla congelados', P: 2, fase: 'L3', rcd: 30, cab: cab(2.5, 15) })
+      ]),
+      carga('split24', { name: 'Split gerencia', fase: 'L1', brk: mcb('C16', 6), rcd: 30, cab: cab(2.5, 15) }),
+      carga('luz', { name: 'Luces salón', fase: 'L2', brk: mcb('C16', 6), rcd: 30, cab: cab(2.5, 25) }),
+      carga('tomas', { name: 'Tomas cajas', fase: 'L3', brk: mcb('C16', 6), rcd: 30, cab: cab(2.5, 20) })
+    ]))
+  },
+  {
+    id: 'm7', tema: 'Icc con generador', titulo: 'Se cortó UTE',
+    historia: 'Se cortó la luz y arrancó el grupo electrógeno de 150 kVA. Un generador da mucha menos corriente de cortocircuito que la red. Los disyuntores regulables siguen ajustados para la red… ¿saltarían a tiempo?',
+    objetivos: [
+      { txt: 'Todos los disparos magnéticos en verde', test: (st, res) => todosCheck(res, 'mag') },
+      { txt: 'Ninguna verificación en rojo', test: (st, res) => res.fallas === 0 },
+      { txt: 'Sin cambiar el generador (150 kVA)', test: st => st.src.tipo === 'gen' && st.src.gkva === 150 }
+    ],
+    pistas: ['Abrí el Tablero general y mirá “El magnético salta con la falla más chica”.', 'Las cajas moldeadas tienen el ajuste Im (veces Ir). Si lo bajás, el magnético salta con menos corriente.', 'No lo bajes de más: tiene que quedar por encima de los arranques. Probá 3 o 4 en el general y 5 en el Tablero Aire.'],
+    foco: 'tg',
+    build: () => escenario({ tipo: 'gen', gkva: 150, xd: 15 }, {}, tablero('Tablero general', { key: 'tg', brk: mccb(250, 0.9, 10, 25), cab: cab(95, 15, 'XLPE', 'E') }, [
+      tablero('Tablero Aire', { key: 'aire', brk: mccb(160, 0.8, 10, 25), cab: cab(50, 30, 'XLPE', 'E') }, [
+        carga('rooftop10', { name: 'Rooftop 1', brk: mcb('C32'), rcd: 300, cab: cab(6, 25, 'XLPE', 'E') }),
+        carga('rooftop10', { name: 'Rooftop 2', brk: mcb('C32'), rcd: 300, cab: cab(6, 30, 'XLPE', 'E') })
+      ]),
+      carga('gondola', { name: 'Góndola lácteos', fase: 'L1', rcd: 30, cab: cab(2.5, 15) }),
+      carga('gondola', { name: 'Góndola bebidas', fase: 'L2', rcd: 30, cab: cab(2.5, 15) }),
+      carga('luz', { name: 'Luces salón', fase: 'L3', rcd: 30, cab: cab(2.5, 25) })
+    ]))
+  },
+  {
+    id: 'm8', tema: 'Falla a tierra y diferencial', titulo: 'La carcasa con tensión',
+    historia: 'En este local (esquema TT, jabalina de 20 Ω) un cable pelado toca la chapa de la heladera exhibidora. El disyuntor no salta y nadie se da cuenta… hasta que alguien la toca.',
+    objetivos: [
+      { txt: 'Simulá una falla fase-tierra en la heladera', test: (st, res, ev) => evTiene(ev, 'sim', st, 'heladera', e => e.falla === 'T') },
+      { txt: 'Todos los circuitos protegidos contra contactos indirectos', test: (st, res) => todosCheck(res, 'ind') },
+      { txt: 'Ninguna verificación en rojo', test: (st, res) => res.fallas === 0 }
+    ],
+    pistas: ['La falla a tierra en TT vuelve por la tierra: 230 V / (20 Ω + 5 Ω) ≈ 9 A. Un C16 ni se entera.', 'El diferencial compara lo que sale por la fase con lo que vuelve por el neutro. Si falta algo, corta.', 'Agregá un diferencial de 30 mA en los circuitos que no tienen.'],
+    foco: 'heladera',
+    build: () => escenario({ tipo: 'ute', iccUte: 6 }, { esq: 'TT', RA: 20, RB: 5 }, tablero('Tablero general', { key: 'tg', brk: mcb('C63', 10), cab: cab(16, 10, 'XLPE') }, [
+      carga('gondola', { key: 'heladera', name: 'Heladera exhibidora', fase: 'L1', rcd: 0, cab: cab(2.5, 15) }),
+      carga('tomas', { name: 'Tomas depósito', fase: 'L2', rcd: 0, cab: cab(2.5, 20) }),
+      carga('luz', { name: 'Luces salón', fase: 'L3', rcd: 30, cab: cab(2.5, 25) })
+    ]))
+  }
+];
+
+// Taller libre: una sucursal completa para modificar a gusto
+function sucursalCompleta() {
+  return escenario({ tipo: 'trafo', kva: 400, ucc: 4, scc: 250 }, { RA: 10, RB: 2 }, tablero('Tablero general', { key: 'tg', brk: mccb(630, 0.95, 10, 25), cab: cab(240, 10, 'XLPE', 'E', 2) }, [
+    tablero('Tablero Aire', { brk: mccb(100, 0.8, 10, 25), cab: cab(25, 40, 'XLPE', 'E') }, [
+      carga('rooftop10', { name: 'Rooftop salón 1', brk: mcb('C32', 10), rcd: 300, cab: cab(6, 30, 'XLPE', 'E') }),
+      carga('rooftop10', { name: 'Rooftop salón 2', brk: mcb('C32', 10), rcd: 300, cab: cab(6, 35, 'XLPE', 'E') }),
+      carga('rooftop10', { name: 'Rooftop depósito', brk: mcb('C32', 10), rcd: 300, cab: cab(6, 40, 'XLPE', 'E') }),
+      carga('split60', { name: 'Split panadería', brk: mcb('C20', 10), rcd: 300, cab: cab(4, 20, 'XLPE', 'E') })
+    ]),
+    tablero('Tablero Frío', { brk: mccb(100, 0.6, 10, 25), cab: cab(16, 35, 'XLPE', 'E') }, [
+      carga('camara', { name: 'Cámara carnes', rcd: 300, cab: cab(2.5, 20) }),
+      carga('camara', { name: 'Cámara lácteos', rcd: 300, cab: cab(2.5, 22) }),
+      carga('gondola', { name: 'Góndola fiambres', fase: 'L1', rcd: 30, cab: cab(2.5, 15) }),
+      carga('gondola', { name: 'Góndola bebidas', fase: 'L2', rcd: 30, cab: cab(2.5, 18) }),
+      carga('gondola', { name: 'Góndola postres', fase: 'L3', rcd: 30, cab: cab(2.5, 18) }),
+      carga('gondola', { name: 'Isla congelados', P: 2, fase: 'L1', rcd: 30, cab: cab(2.5, 20) }),
+      carga('gondola', { name: 'Vitrina quesos', P: 1, fase: 'L2', rcd: 30, cab: cab(2.5, 12) })
+    ]),
+    tablero('Tablero Iluminación', { brk: mcb('C40', 15), cab: cab(10, 30, 'XLPE') }, [
+      carga('luz', { name: 'Luces salón A', P: 2.5, fase: 'L1', rcd: 30, cab: cab(4, 30) }),
+      carga('luz', { name: 'Luces salón B', P: 2.5, fase: 'L2', rcd: 30, cab: cab(4, 30) }),
+      carga('luz', { name: 'Luces depósito', P: 1.5, fase: 'L3', rcd: 30, cab: cab(2.5, 25) }),
+      carga('luz', { name: 'Luces estacionamiento', P: 1.5, fase: 'L3', rcd: 30, cab: cab(6, 70, 'PVC', 'D') })
+    ]),
+    carga('horno', { name: 'Horno panadería', brk: mcb('C32', 15), rcd: 300, cab: cab(6, 20, 'XLPE', 'E') }),
+    carga('ups', { name: 'UPS cajas', brk: mcb('C25', 15), rcd: 300, cab: cab(4, 15, 'XLPE', 'E') }),
+    carga('bomba', { name: 'Bomba de agua', brk: mcb('D25', 15), rcd: 300, cab: cab(4, 25, 'XLPE', 'E') })
+  ]));
+}
+
+// ================================================================
+//  INTERFAZ
+// ================================================================
+const $ = (s, el = document) => el.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const LS = {
+  get(k) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : null; } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* sin almacenamiento */ } }
+};
+const fmtS = s => s < 10 && s % 1 ? fmt(s, 1) : String(s);
+const corto = (s, n) => s.length > n ? s.slice(0, n - 1) + '…' : s;
+const kA = v => fmt(v, v % 1 ? 1 : 0) + ' kA';
+
+let S, RES, modo = { tipo: 'mision', id: 'm1' }, sel = null, tab = 'ajustes', ev = [], sim = null, prueba = null;
+let centrarSel = true, pistaN = 0, deshacer = [], ultimoSnap = 0, quitarPend = null, cumplidaAhora = false, celebrar = false, curvaGeo = null;
+const progreso = LS.get('tej-progreso') || { hechas: {} };
+
+// ---------------- Íconos ----------------
+function ic(k, s = 16) {
+  const c = { ok: 'var(--ok)', bad: 'var(--bad)', warn: 'var(--warn)', info: 'var(--info)' }[k];
+  const o = `<svg width="${s}" height="${s}" viewBox="0 0 16 16" aria-hidden="true">`;
+  if (k === 'ok') return o + `<circle cx="8" cy="8" r="7.5" fill="${c}"/><path d="M4.6 8.3 7 10.6l4.5-5" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  if (k === 'bad') return o + `<circle cx="8" cy="8" r="7.5" fill="${c}"/><path d="M5.3 5.3l5.4 5.4M10.7 5.3l-5.4 5.4" stroke="#fff" stroke-width="1.9" stroke-linecap="round"/></svg>`;
+  if (k === 'warn') return o + `<path d="M8 1.3 15.2 14.2H.8Z" fill="${c}" stroke="${c}" stroke-linejoin="round"/><path d="M8 5.9v3.8" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/><circle cx="8" cy="12" r="1" fill="#fff"/></svg>`;
+  return o + `<circle cx="8" cy="8" r="7.5" fill="${c}"/><path d="M8 7.2v4.2" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/><circle cx="8" cy="4.8" r="1.05" fill="#fff"/></svg>`;
+}
+const BOLT = '<svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M9.5 1 3 9h4.2L6 15l7-8.2H8.8Z" fill="currentColor"/></svg>';
+
+const POR_QUE = {
+  ib: 'El disyuntor tiene que dejar pasar la corriente normal del equipo (o la demanda del tablero) sin saltar.',
+  iz: 'Si el disyuntor es más grande que lo que aguanta el cable, puede circular una sobrecarga que recalienta el cable sin que nada salte. El cable se daña de a poco y puede prenderse fuego.',
+  pdc: 'Icu es la corriente más grande que el disyuntor puede cortar sin romperse. Se compara con la falla más grande posible justo a la salida del disyuntor (en la barra del tablero). Si la falla es mayor, puede no cortar, soldarse o explotar.',
+  mag: 'La falla más chica es fase-neutro (o bifásica en motores) al final del cable, con el cable caliente y la tensión baja. Aun así tiene que llegar a la zona magnética del disyuntor para que corte al instante. Si no llega, corta el térmico, que puede tardar segundos: el cable se daña.',
+  arr: 'Al arrancar, un motor pide varias veces su corriente durante un par de segundos. Si eso toca la zona magnética, el disyuntor salta cada vez que arranca. Por eso los compresores llevan curva C o D.',
+  du: 'Si el cable es largo o finito, la tensión llega baja: las luces bajan y los motores se calientan. Límite: 3 % en iluminación y 5 % en el resto, contando desde la fuente.',
+  ind: 'Si un cable pelado toca la carcasa, esa chapa queda con tensión. En TT la corriente vuelve por la tierra y es chica: el disyuntor no la ve y hace falta un diferencial. En TN-S vuelve por el cable de tierra y es grande: puede cortar el magnético.',
+  bal: 'Las cargas monofásicas se reparten entre L1, L2 y L3. Si todo cae en una fase, esa fase va cargada, el neutro lleva corriente y el alimentador tiene que ser más grande.',
+  sel: 'Selectividad: ante una falla tiene que saltar solo la protección más cercana, y el resto de la instalación sigue andando. Para eso la de arriba tiene que ser más grande o más lenta.',
+  fuente: 'La demanda del local no puede superar la potencia del transformador o del generador.'
+};
+
+// ---------------- Estado y ciclo ----------------
+function recalc() { RES = calcular(S); }
+function nodoSel() { return sel && sel !== 'fuente' ? buscar(S, sel) : null; }
+function snap(forzar) {
+  const t = Date.now();
+  if (!forzar && t - ultimoSnap < 1200) return;
+  ultimoSnap = t;
+  deshacer.push({ S: clonar(S), sel });
+  if (deshacer.length > 40) deshacer.shift();
+}
+let tGuardar = 0;
+function guardar() {
+  LS.set('tej-modo', modo);
+  if (modo.tipo === 'libre') { clearTimeout(tGuardar); tGuardar = setTimeout(() => LS.set('tej-libre', S), 400); }
+}
+function todo() {
+  recalc();
+  renderMision(); renderResumen(); renderSimbar(); renderSimres(); renderDiagrama(); renderInsp();
+  guardar();
+}
+function parcial() { // sin redibujar formularios (para no perder el foco al escribir)
+  recalc();
+  renderMision(); renderResumen(); renderSimbar(); renderSimres(); renderDiagrama(); renderInspEstado();
+  guardar();
+}
+
+function cargarMision(id) {
+  const m = MISIONES.find(x => x.id === id) || MISIONES[0];
+  modo = { tipo: 'mision', id: m.id };
+  S = m.build(); ev = []; sim = null; prueba = null; pistaN = 0; deshacer = []; quitarPend = null;
+  cumplidaAhora = false; celebrar = false;
+  const f = m.foco ? porClave(S, m.foco) : null;
+  sel = f ? f.id : null; tab = 'ajustes'; centrarSel = true;
+  cerrarModal();
+  todo();
+}
+function vacia() {
+  return escenario({ tipo: 'trafo', kva: 400, ucc: 4, scc: 250 }, { RA: 10, RB: 2 },
+    tablero('Tablero general', { key: 'tg', brk: mccb(630, 0.95, 10, 25), cab: cab(240, 10, 'XLPE', 'E', 2) }, []));
+}
+function cargarLibre(cual) {
+  modo = { tipo: 'libre' };
+  const g = LS.get('tej-libre');
+  if (cual === 'guardado' && g && g.root) S = g;
+  else if (cual === 'vacio') S = vacia();
+  else S = sucursalCompleta();
+  ev = []; sim = null; prueba = null; deshacer = []; quitarPend = null;
+  sel = S.root.id; tab = 'ajustes';
+  cerrarModal();
+  todo();
+}
+function seleccionar(id) {
+  if (sel !== id) quitarPend = null;
+  centrarSel = true;
+  sel = id;
+  if (id && id !== 'fuente') {
+    ev.push({ tipo: 'sel', id });
+    if (tab === 'cuentas') ev.push({ tipo: 'tab', id, tab });
+  } else if (tab === 'curva') tab = 'ajustes';
+  todo();
+}
+
+// ---------------- Misión ----------------
+function estadoMision() {
+  if (modo.tipo !== 'mision') return null;
+  const m = MISIONES.find(x => x.id === modo.id);
+  const est = m.objetivos.map(o => { try { return !!o.test(S, RES, ev); } catch (e) { return false; } });
+  const ok = est.every(Boolean);
+  if (ok && !cumplidaAhora) {
+    cumplidaAhora = true; celebrar = true;
+    progreso.hechas[m.id] = true; LS.set('tej-progreso', progreso);
+  }
+  return { m, est, ok };
+}
+function renderMision() {
+  const el = $('#mision');
+  if (modo.tipo === 'libre') {
+    el.className = 'mision';
+    el.innerHTML = `<div class="m-a"><span class="eyebrow">Taller libre</span><h2>Tu propia instalación</h2>
+      <p>Agregá o sacá tableros y equipos, cambiá cables y disyuntores, y mirá cómo se mueven las corrientes. Tocá cualquier parte del esquema para ver sus cuentas. Los cambios quedan guardados en este navegador.</p></div>
+      <div class="m-b"><p>¿Por dónde empezar?</p><ul class="objs" style="font-weight:400">
+        <li><span>· Subí el transformador a 1000 kVA y mirá qué disyuntores quedan cortos de poder de corte.</span></li>
+        <li><span>· Pasá la fuente a Generador y mirá qué magnéticos dejan de saltar.</span></li>
+        <li><span>· Alargá el cable de las luces del estacionamiento hasta que algo se ponga rojo.</span></li></ul>
+        <div class="m-acts"><button class="btn sm" data-act="libre-ejemplo">Sucursal de ejemplo</button><button class="btn sm" data-act="libre-vacio">Empezar de cero</button><button class="btn sm" data-act="ver-misiones">Ir a las misiones</button></div></div>`;
+    return;
+  }
+  const { m, est, ok } = estadoMision();
+  const idx = MISIONES.indexOf(m);
+  const sig = MISIONES[idx + 1];
+  el.className = 'mision' + (celebrar ? ' celebra' : '');
+  celebrar = false;
+  const pist = m.pistas.slice(0, pistaN);
+  el.innerHTML = `<div class="m-a"><span class="eyebrow">Misión ${idx + 1} de ${MISIONES.length} · ${esc(m.tema)}</span>
+      <h2>${esc(m.titulo)}</h2><p>${esc(m.historia)}</p>
+      ${pist.length ? `<div class="pistas"><b>Pistas</b>${pist.map(p => `<span>${esc(p)}</span>`).join('')}</div>` : ''}</div>
+    <div class="m-b">
+      <ul class="objs">${m.objetivos.map((o, i) => `<li class="${est[i] ? 'ok' : ''}"><span class="box">${est[i] ? '<svg width="12" height="12" viewBox="0 0 12 12"><path d="M2.2 6.3 4.8 8.8 9.8 3.4" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>' : ''}</span><span>${esc(o.txt)}</span></li>`).join('')}</ul>
+      ${ok ? `<div class="exito"><strong>¡Misión cumplida!</strong>${sig ? `<button class="btn pri sm" data-act="mision" data-id="${sig.id}">Siguiente: ${esc(sig.titulo)} →</button>` : `<span>Terminaste todas.</span><button class="btn pri sm" data-act="libre">Ir al taller libre →</button>`}</div>` : ''}
+      <div class="m-acts">
+        <button class="btn sm" data-act="pista" ${pistaN >= m.pistas.length ? 'disabled' : ''}>${pistaN ? 'Otra pista' : 'Pedir una pista'}</button>
+        <button class="btn sm" data-act="mision" data-id="${m.id}">Reiniciar</button>
+        <button class="btn sm" data-act="ver-misiones">Todas las misiones</button>
+      </div></div>`;
+}
+
+// ---------------- Resumen ----------------
+function renderResumen() {
+  const f = RES.fuente, tg = RES.nodos[S.root.id];
+  const t = [];
+  t.push(`<div class="tile"><span class="lb">Potencia instalada</span><span class="v">${fmt(tg.Pinst / 1000, 1)}<small>kW</small></span><span class="s">Suma de todo lo conectado</span></div>`);
+  t.push(`<div class="tile"><span class="lb">Demanda</span><span class="v">${fmt(tg.Pdem / 1000, 1)}<small>kW</small></span><span class="s">${fmt(tg.Stot / 1000, 1)} kVA · ${fA(tg.Ib)} en la fase más cargada</span></div>`);
+  if (f.Sn) {
+    const p = f.carga * 100;
+    t.push(`<div class="tile ${p > 100 ? 'bad' : ''}"><span class="lb">${f.tipo === 'gen' ? 'Generador' : 'Transformador'} ${fmt(f.Sn / 1000, 0)} kVA</span><span class="v">${fmt(p, 0)}<small>%</small></span><span class="meter"><i class="${p > 100 ? 'over' : ''}" style="width:${Math.min(100, p).toFixed(1)}%"></i></span><span class="s">cargado · In ${fA(f.In)}</span></div>`);
+  } else {
+    t.push(`<div class="tile"><span class="lb">Acometida UTE</span><span class="v">${fmt(S.src.iccUte, S.src.iccUte % 1 ? 1 : 0)}<small>kA</small></span><span class="s">Icc en el punto de conexión</span></div>`);
+  }
+  t.push(`<div class="tile"><span class="lb">Icc en el tablero general</span><span class="v">${fmt(tg.ik3 / 1000, tg.ik3 >= 10000 ? 1 : 2)}<small>kA</small></span><span class="s">pico ${fA(tg.ip)} · mínima ${fA(tg.ik1min)}</span></div>`);
+  const bad = RES.fallas, w = RES.avisos;
+  t.push(`<div class="tile ${bad ? 'bad' : 'ok'}"><span class="lb">Estado</span><span class="v">${bad ? bad + '<small>' + (bad === 1 ? 'problema' : 'problemas') + '</small>' : 'OK'}</span><span class="s">${bad ? 'Buscá los “!” rojos en el esquema' : 'Todas las verificaciones pasan'}${w ? ' · ' + w + (w === 1 ? ' aviso' : ' avisos') : ''}</span></div>`);
+  $('#resumen').innerHTML = t.join('');
+}
+
+// ---------------- Barra de simulación ----------------
+function panelDestino() {
+  const n = nodoSel();
+  if (!n) return S.root;
+  if (n.kind === 'tablero') return n;
+  return buscarPadre(S, n.id) || S.root;
+}
+function renderSimbar() {
+  const n = nodoSel();
+  const add = `<span class="grp"><button class="btn sm" data-act="modal-carga">+ Equipo</button><button class="btn sm" data-act="add-tablero">+ Tablero</button><button class="btn sm" data-act="deshacer" ${deshacer.length ? '' : 'disabled'}>Deshacer</button></span>`;
+  if (sim) {
+    $('#simbar').innerHTML = `<span class="who">Falla simulada <span>en ${esc(buscar(S, sim.id)?.name || '')}</span></span><span class="sp"></span><button class="btn pri sm" data-act="restablecer">Restablecer</button>`;
+    return;
+  }
+  if (!n) {
+    $('#simbar').innerHTML = `<span class="hint">Tocá un equipo o un tablero para simular una falla o ver sus cuentas.</span><span class="sp"></span>${add}`;
+    return;
+  }
+  const mono = n.kind === 'carga' && n.fase !== '3F';
+  const dis = mono ? 'disabled title="A este equipo llega una sola fase"' : '';
+  $('#simbar').innerHTML = `<span class="who">Cortocircuito <span>en ${esc(corto(n.name, 22))}:</span></span>
+    <span class="grp">
+      <button class="btn fault sm" data-act="sim" data-f="3F" ${dis}>${BOLT}Trifásico</button>
+      <button class="btn fault sm" data-act="sim" data-f="2F" ${dis}>${BOLT}Bifásico</button>
+      <button class="btn fault sm" data-act="sim" data-f="FN">${BOLT}Fase-neutro</button>
+      <button class="btn fault sm" data-act="sim" data-f="T">${BOLT}Fase-tierra</button>
+      ${n.kind === 'carga' ? '<button class="btn sm" data-act="sobrecarga">Sobrecarga</button>' : ''}
+    </span><span class="sp"></span>${add}`;
+}
+
+// ---------------- Simulación de fallas ----------------
+const NOMBRE_FALLA = { '3F': 'Cortocircuito trifásico', '2F': 'Cortocircuito bifásico', FN: 'Cortocircuito fase-neutro', T: 'Falla fase-tierra (a la carcasa)' };
+function simular(id, falla) {
+  const n = buscar(S, id), r = RES.nodos[id], T = S.tierra;
+  let Imax, Imin;
+  if (falla === '3F') { Imax = r.ik3; Imin = CMIN * UN / (SQ3 * r.Zm / 1000); }
+  else if (falla === '2F') { Imax = r.ik2; Imin = r.ik2min; }
+  else if (falla === 'FN') { Imax = r.ik1; Imin = r.ik1min; }
+  else { Imax = r.idTmax; Imin = r.idT; }
+  const cad = r.cadena.slice().reverse();
+  const disp = cad.map(cid => { const cn = buscar(S, cid); return { id: cid, n: cn, dmin: disparo(cn.brk, Imin), dmax: disparo(cn.brk, Imax) }; });
+  const cands = disp.map((d, i) => ({ id: d.id, kind: 'brk', t: d.dmin.tmax, tmin: d.dmin.tmin, i }));
+  const rcdVen = falla === 'T';
+  const rcds = [];
+  for (let i = 0; i < cad.length; i++) {
+    const cn = buscar(S, cad[i]);
+    if (cn.rcd) {
+      rcds.push({ id: cn.id, mA: cn.rcd, ve: rcdVen });
+      if (rcdVen && Imin >= cn.rcd / 1000) cands.push({ id: cn.id, kind: 'rcd', t: Imin >= 5 * cn.rcd / 1000 ? 0.04 : 0.3, tmin: 0.015, i: i + 0.5, mA: cn.rcd });
+    }
+  }
+  const fin = cands.filter(c => isFinite(c.t)).sort((a, b) => a.t - b.t || a.i - b.i);
+  const primero = fin[0] || null;
+  const quizas = new Set();
+  if (primero) for (const c of cands) if (c !== primero && c.kind === 'brk' && c.tmin <= primero.t + 1e-9 && c.i > primero.i) quizas.add(c.id);
+  const muertos = new Set();
+  if (primero) recorrerArbol(buscar(S, primero.id), x => muertos.add(x.id));
+  const k = KAD[n.cab.aisl], tCable = Math.pow(k * n.cab.S * n.cab.n / Imin, 2);
+  sim = { id, falla, Imax, Imin, disp, rcds, primero, quizas, muertos, camino: new Set(r.cadena), tCable, k };
+  ev.push({ tipo: 'sim', id, falla });
+}
+function describir(b, d, conQuien = true) {
+  const q = conQuien ? 'el ' + brkCorto(b) + ' ' : '';
+  if (d.zona === 'no') return q + 'no se entera: la corriente está dentro de lo que deja pasar';
+  if (d.zona === 'term') return isFinite(d.tmax) ? q + 'salta por térmico, entre ' + fT(d.tmin) + ' y ' + fT(d.tmax)
+    : q + 'puede saltar por térmico desde ' + fT(d.tmin) + ', o no saltar nunca (zona de tolerancia)';
+  if (d.zona === 'mag?') return q + 'está en la zona gris del magnético: puede saltar al instante o esperar al térmico (hasta ' + fT(d.tmax) + ')';
+  return q + 'salta por magnético en menos de ' + fT(d.tmax);
+}
+function renderSimres() {
+  const el = $('#simres');
+  if (!sim) { el.hidden = true; el.innerHTML = ''; return; }
+  const n = buscar(S, sim.id);
+  if (!n) { sim = null; el.hidden = true; return; }
+  const T = S.tierra, p = sim.primero, conc = [];
+  let rng;
+  if (sim.falla === 'T' && T.esq === 'TT') {
+    rng = `La corriente vuelve por la tierra: U₀ / (RA + RB) = 230 V / (${T.RA} Ω + ${T.RB} Ω) = <b>${fA(sim.Imin)}</b>. La carcasa queda a ${fA(sim.Imin)} × ${T.RA} Ω = <b>${fmt(sim.Imin * T.RA, 0)} V</b> mientras dure la falla.`;
+  } else {
+    rng = `Corriente de falla: entre <b>${fA(sim.Imin)}</b> (mínima: cable caliente, tensión baja) y <b>${fA(sim.Imax)}</b> (máxima).`;
+  }
+  const filas = [];
+  for (const d of sim.disp) {
+    const esP = p && p.id === d.id && p.kind === 'brk', q = sim.quizas.has(d.id);
+    const chip = esP ? '<span class="chip bad">Salta</span>' : q ? '<span class="chip warn">Puede saltar</span>' : '<span class="chip mut">Sigue</span>';
+    const txt = describir(d.n.brk, d.dmin, false);
+    const extra = d.dmax.zona !== d.dmin.zona && sim.Imax !== sim.Imin ? ` · con la máxima: ${describir(d.n.brk, d.dmax, false)}` : '';
+    filas.push(`<li>${chip}<span><b>${esc(brkCorto(d.n.brk))}</b> de ${esc(d.n.name)}: ${txt}${extra}.</span></li>`);
+  }
+  for (const rc of sim.rcds) {
+    const esP = p && p.id === rc.id && p.kind === 'rcd';
+    filas.push(`<li>${esP ? '<span class="chip bad">Salta</span>' : '<span class="chip mut">Sigue</span>'}<span><b>Diferencial ${rc.mA} mA</b> de ${esc(buscar(S, rc.id).name)}: ${rc.ve ? (esP ? 've que falta corriente en el neutro y corta en unos ' + fT(p.t) : 've la falla, pero ya cortó otro antes') : 'no ve esta falla: la corriente vuelve entera por el neutro'}.</span></li>`);
+  }
+  if (!p) {
+    if (sim.falla === 'T' && T.esq === 'TT') conc.push(['bad', `Nadie corta. La chapa queda a ${fmt(sim.Imin * T.RA, 0)} V: si alguien la toca, la corriente pasa por su cuerpo. Hace falta un diferencial.`]);
+    else conc.push(['bad', 'Ninguna protección corta la falla de forma segura. El cable se recalienta y puede haber incendio.']);
+  } else {
+    const pn = buscar(S, p.id);
+    if (p.id === sim.id) conc.push(['ok', 'Corta la protección del propio circuito: el resto de la instalación sigue andando.']);
+    else conc.push(['warn', `Corta la protección de ${pn.name}, que está más arriba: se apaga más de lo necesario.`]);
+    if (sim.quizas.size) conc.push(['warn', 'Falta selectividad: también puede saltar ' + [...sim.quizas].map(id => { const x = buscar(S, id); return 'el ' + brkCorto(x.brk) + ' de ' + x.name; }).join(' y ') + '. Pasa mucho con disyuntores chicos: ante una falla grande saltan los dos magnéticos.']);
+    if (p.t <= 0.1) conc.push(['ok', `Despeje rápido: en menos de ${fT(p.t)}.`]);
+    else if (sim.tCable < p.t) conc.push(['bad', `Tarda hasta ${fT(p.t)} y el cable de ${fmtS(n.cab.S)} mm² aguanta esa corriente solo ${fT(sim.tCable)} (t = (k·S/I)² con k = ${sim.k}). El aislante se daña.`]);
+    else conc.push(['warn', `Tarda hasta ${fT(p.t)}. El cable aguanta (${fT(sim.tCable)}), pero es un despeje lento.`]);
+    if (p.kind === 'brk') {
+      const icu = pn.brk.icu * 1000;
+      if (sim.Imax > icu) conc.push(['bad', `Con la corriente máxima (${fA(sim.Imax)}) se pasa del poder de corte del ${brkCorto(pn.brk)} (${kA(pn.brk.icu)}): puede no cortar y romperse.`]);
+      else conc.push(['ok', `El ${brkCorto(pn.brk)} puede cortar hasta ${kA(pn.brk.icu)}: la máxima (${fA(sim.Imax)}) está dentro.`]);
+    }
+  }
+  if (sim.falla === 'T' && T.esq === 'TN') conc.push(['info', `En TN-S la falla vuelve por el cable de tierra (PE), por eso es grande. Mientras dura, la carcasa queda a unos ${fmt(RES.nodos[sim.id].uc, 0)} V.`]);
+  el.hidden = false;
+  el.innerHTML = `<h3>${BOLT}${esc(NOMBRE_FALLA[sim.falla])} en ${esc(n.name)}</h3>
+    <div>${rng}</div>
+    <ul class="devs">${filas.join('')}</ul>
+    <ul class="concl">${conc.map(c => `<li>${ic(c[0])}<span>${esc(c[1])}</span></li>`).join('')}</ul>
+    <div class="acts"><button class="btn sm" data-act="ver-cuentas-sim">Ver las cuentas</button><button class="btn pri sm" data-act="restablecer">Restablecer</button></div>`;
+}
+
+// ---------------- Esquema unifilar ----------------
+const COLW = 128, DROP = 158, TOP = 96;
+function medir(n) {
+  if (n.kind === 'carga' || !n.hijos.length) return (n._w = COLW);
+  let w = 0; for (const h of n.hijos) w += medir(h);
+  return (n._w = Math.max(w, COLW));
+}
+function ubicar(n, x0, yTop) {
+  n._y0 = yTop; n._y1 = yTop + DROP;
+  if (n.kind === 'carga' || !n.hijos.length) {
+    n._x = x0 + n._w / 2;
+    if (n.kind === 'tablero') { n._bx0 = n._x - 44; n._bx1 = n._x + 44; }
+    return;
+  }
+  const suma = n.hijos.reduce((a, h) => a + h._w, 0);
+  let x = x0 + (n._w - suma) / 2;
+  for (const h of n.hijos) { ubicar(h, x, n._y1); x += h._w; }
+  const a = n.hijos[0]._x, b = n.hijos[n.hijos.length - 1]._x;
+  n._x = (a + b) / 2;
+  n._bx0 = Math.min(a, n._x - 44) - 20; n._bx1 = Math.max(b, n._x + 44) + 20;
+}
+function simboloCarga(n, x, y) {
+  const t = TIPOS[n.tipo] || TIPOS.otro;
+  let s = `<circle class="sym" cx="${x}" cy="${y}" r="16"/>`;
+  if (t.sim === 'L') s += `<path class="symx" d="M${x - 11} ${y - 11}L${x + 11} ${y + 11}M${x + 11} ${y - 11}L${x - 11} ${y + 11}"/>`;
+  else if (t.sim === 'M') s += `<text class="symt" x="${x}" y="${y + 3}" text-anchor="middle">M</text><text class="symt xs" x="${x}" y="${y + 12}" text-anchor="middle">${n.fase === '3F' ? '3~' : '1~'}</text>`;
+  else s += `<text class="symt ${t.sim === 'U' ? 'sm' : ''}" x="${x}" y="${y + (t.sim === 'U' ? 4 : 5)}" text-anchor="middle">${{ T: 'T', R: 'R', U: 'UPS', C: '~' }[t.sim]}</text>`;
+  return s;
+}
+function rayo(x, y) {
+  return `<circle class="bolt-halo" cx="${x}" cy="${y}" r="20"/><path class="bolt" d="M${x + 3} ${y - 15}L${x - 9} ${y + 2}H${x - 1}L${x - 4} ${y + 15}L${x + 9} ${y - 3}H${x + 1}Z"/>`;
+}
+function dibujarFuente(x) {
+  const f = RES.fuente, s = S.src;
+  let g = `<g class="nodo fuente ${sel === 'fuente' ? 'sel' : ''}" data-sel="fuente" tabindex="0" role="button" aria-label="Fuente: ${esc(f.nombre)}">`;
+  g += `<rect class="hit" x="${x - 54}" y="4" width="${COLW + 60}" height="${TOP - 8}" rx="6"/>`;
+  let t1, t2;
+  if (s.tipo === 'trafo') {
+    g += `<circle class="sym" cx="${x}" cy="30" r="14"/><circle class="sym" cx="${x}" cy="50" r="14" style="fill-opacity:.6"/><text class="symt xs" x="${x}" y="27" text-anchor="middle">Δ</text><text class="symt xs" x="${x}" y="58" text-anchor="middle">Y</text>`;
+    t1 = 'Trafo ' + s.kva + ' kVA'; t2 = 'ucc ' + fmt(s.ucc, s.ucc % 1 ? 1 : 0) + ' % · ' + fA(f.ik3);
+  } else if (s.tipo === 'ute') {
+    g += `<rect class="sym" x="${x - 21}" y="22" width="42" height="34" rx="4"/><text class="symt sm" x="${x}" y="43" text-anchor="middle">UTE</text>`;
+    t1 = 'Acometida UTE'; t2 = 'Icc ' + fA(f.ik3);
+  } else {
+    g += `<circle class="sym" cx="${x}" cy="40" r="19"/><text class="symt" x="${x}" y="42" text-anchor="middle">G</text><text class="symt xs" x="${x}" y="52" text-anchor="middle">3~</text>`;
+    t1 = 'Grupo ' + s.gkva + ' kVA'; t2 = 'x"d ' + s.xd + ' % · ' + fA(f.ik3);
+  }
+  g += `<line class="w" x1="${x}" y1="${s.tipo === 'gen' ? 59 : s.tipo === 'ute' ? 56 : 64}" x2="${x}" y2="${TOP}"/>`;
+  g += `<text class="src-t halo" x="${x + 26}" y="34">${esc(t1)}</text><text class="halo" x="${x + 26}" y="49">${esc(t2)}</text>`;
+  if (f.estado === 'bad') g += `<g class="badge"><circle cx="${x - 30}" cy="40" r="8"/><text x="${x - 30}" y="44" text-anchor="middle">!</text></g>`;
+  return g + '</g>';
+}
+function dibujarNodo(n) {
+  const r = RES.nodos[n.id], x = n._x, y0 = n._y0, y1 = n._y1, b = n.brk;
+  const dead = sim && sim.muertos.has(n.id) && sim.id !== n.id;
+  const hot = sim && sim.camino.has(n.id);
+  const trip = sim && sim.primero && sim.primero.id === n.id && sim.primero.kind === 'brk';
+  const rcdTrip = sim && sim.primero && sim.primero.id === n.id && sim.primero.kind === 'rcd';
+  const maybe = sim && sim.quizas.has(n.id);
+  const cls = ['nodo', r.estado, sel === n.id ? 'sel' : '', dead ? 'dead' : '', hot ? 'hot' : ''].join(' ');
+  let g = `<g class="${cls}" data-sel="${n.id}" tabindex="0" role="button" aria-label="${esc(n.name)}">`;
+  const hitH = n.kind === 'carga' ? DROP + 66 : DROP - 8;
+  g += `<rect class="hit" x="${x - COLW / 2 + 5}" y="${y0 + 3}" width="${COLW - 10}" height="${hitH}" rx="6"/>`;
+  if (n.kind === 'tablero') g += `<line class="bushit" x1="${n._bx0}" y1="${y1}" x2="${n._bx1}" y2="${y1}"/>`;
+  g += `<line class="w" x1="${x}" y1="${y0}" x2="${x}" y2="${y0 + 20}"/>`;
+  g += `<g class="brk ${trip ? 'trip' : ''} ${maybe ? 'maybe' : ''}"><rect x="${x - 26}" y="${y0 + 20}" width="52" height="22" rx="3"/><text x="${x}" y="${y0 + 35}" text-anchor="middle">${esc(trip ? 'SALTÓ' : brkCorto(b))}</text></g>`;
+  g += `<text class="icu" x="${x + 30}" y="${y0 + 35}">${kA(b.icu)}</text>`;
+  let yc = y0 + 42;
+  if (n.rcd) {
+    g += `<line class="w" x1="${x}" y1="${yc}" x2="${x}" y2="${yc + 5}"/><g class="rcd ${rcdTrip ? 'trip' : ''}"><rect x="${x - 24}" y="${yc + 5}" width="48" height="16" rx="8"/><text x="${x}" y="${yc + 16.5}" text-anchor="middle">${rcdTrip ? 'SALTÓ' : 'Δ ' + n.rcd + ' mA'}</text></g>`;
+    yc += 21;
+  }
+  if (r.estado !== 'ok') g += `<g class="badge ${r.estado}"><circle cx="${x - 36}" cy="${y0 + 31}" r="8"/><text x="${x - 36}" y="${y0 + 35}" text-anchor="middle">!</text></g>`;
+  const yEnd = n.kind === 'carga' ? y1 - 16 : y1;
+  const sw = Math.min(6.5, 1.6 + Math.log2(n.cab.S * n.cab.n / 1.5) * 0.55);
+  g += `<line class="w cable" x1="${x}" y1="${yc}" x2="${x}" y2="${yEnd}" style="stroke-width:${sw.toFixed(1)}px"/>`;
+  if (hot) g += `<line class="flow" x1="${x}" y1="${y0}" x2="${x}" y2="${yEnd}"/>`;
+  g += `<text class="cab halo" x="${x + 8}" y="${yc + 22}">${n.cab.n > 1 ? n.cab.n + '×' : ''}${fmtS(n.cab.S)} mm²</text><text class="cab2 halo" x="${x + 8}" y="${yc + 35}">${fmt(n.cab.L, 0)} m · ${n.cab.aisl}</text>`;
+  if (n.kind === 'carga') {
+    g += simboloCarga(n, x, y1);
+    g += `<text class="nm halo" x="${x}" y="${y1 + 33}" text-anchor="middle">${esc(corto(n.name, 18))}</text>`;
+    g += `<text class="sub halo" x="${x}" y="${y1 + 47}" text-anchor="middle">${fmt(n.P, n.P % 1 ? 1 : 0)} kW · <tspan class="ph-${n.fase}">${n.fase}</tspan></text>`;
+    g += `<text class="sub halo" x="${x}" y="${y1 + 61}" text-anchor="middle">Ib ${fA(r.Ib)}</text>`;
+    if (sim && sim.id === n.id) {
+      g += rayo(x + 22, y1 - 12);
+      if (sim.falla === 'T' && !sim.primero) g += `<text class="uc halo" x="${x}" y="${y1 + 76}" text-anchor="middle">${fmt(sim.Imin * S.tierra.RA, 0)} V en la carcasa</text>`;
+    }
+  } else {
+    g += `<line class="bus" x1="${n._bx0}" y1="${y1}" x2="${n._bx1}" y2="${y1}"/>`;
+    g += `<text class="nm halo" x="${n._bx0}" y="${y1 - 22}">${esc(n.name)}</text><text class="sub halo" x="${n._bx0}" y="${y1 - 8}">Icc ${fA(r.ik3)} · Ib ${fA(r.Ib)}</text>`;
+    if (sim && sim.id === n.id) g += rayo(n._bx1 - 10, y1);
+  }
+  return g + '</g>';
+}
+function renderDiagrama() {
+  const root = S.root;
+  medir(root);
+  const PADX = 18;
+  ubicar(root, PADX, TOP);
+  let maxY = 0;
+  recorrerArbol(root, n => { maxY = Math.max(maxY, n._y1 + (n.kind === 'carga' ? 84 : 40)); });
+  const W = Math.max(root._w + PADX * 2, 330), H = maxY;
+  const partes = [dibujarFuente(root._x)];
+  recorrerArbol(root, n => partes.push(dibujarNodo(n)));
+  const d = $('#diag');
+  d.innerHTML = `<svg class="uni" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="group" aria-label="Esquema unifilar de la instalación">${partes.join('')}</svg>`;
+  // En pantallas chicas, que el elemento elegido quede a la vista
+  const n = nodoSel();
+  if (centrarSel && n && d.scrollWidth > d.clientWidth && (n._x < d.scrollLeft + 50 || n._x > d.scrollLeft + d.clientWidth - 50)) {
+    d.scrollLeft = Math.max(0, n._x - d.clientWidth / 2);
+  }
+  centrarSel = false;
+}
+
+// ---------------- Inspector ----------------
+function kindTxt(n) {
+  if (n.kind === 'tablero') return n === S.root ? 'Tablero general · alimentado desde la fuente' : 'Tablero seccional · ' + n.hijos.length + ' circuitos';
+  return (TIPOS[n.tipo]?.nombre || 'Carga') + ' · ' + (n.fase === '3F' ? 'trifásico 400 V' : 'monofásico 230 V en ' + n.fase);
+}
+function pillEstado(checks) {
+  const b = checks.filter(c => c.ok === false).length, w = checks.filter(c => c.ok === 'warn').length;
+  if (b) return `<span class="chip bad">${b} en rojo</span>`;
+  if (w) return `<span class="chip warn">${w} aviso${w > 1 ? 's' : ''}</span>`;
+  return '<span class="chip ok">Todo bien</span>';
+}
+const GRAV = { false: 0, warn: 1, true: 2, info: 3 };
+function checksHTML(checks, ordenar) {
+  const lista = ordenar ? checks.slice().sort((a, b) => GRAV[a.ok] - GRAV[b.ok]) : checks;
+  return `<ul class="checks">${lista.map(c => {
+    const k = c.ok === true ? 'ok' : c.ok === false ? 'bad' : c.ok;
+    return `<li class="ck ${k}">${ic(k, 18)}<div><b>${esc(c.t)}</b><span class="f">${esc(c.f)}</span><div class="d">${esc(c.d)}</div>${POR_QUE[c.id] ? `<details><summary>¿Por qué importa?</summary><p>${esc(POR_QUE[c.id])}</p></details>` : ''}</div></li>`;
+  }).join('')}</ul>`;
+}
+function renderInspEstado() {
+  const pill = $('#insp-pill'), ck = $('#insp-checks');
+  if (!pill || !ck) return renderInsp();
+  const checks = sel === 'fuente' ? RES.fuente.checks : (RES.nodos[sel] || {}).checks || [];
+  pill.innerHTML = pillEstado(checks);
+  ck.innerHTML = checksHTML(checks, true);
+}
+function renderInsp() {
+  const el = $('#insp');
+  const n = nodoSel();
+  if (sel && sel !== 'fuente' && !n) sel = null;
+  if (!sel) { el.innerHTML = guiaHTML(); return; }
+  const checks = sel === 'fuente' ? RES.fuente.checks : RES.nodos[sel].checks;
+  const nombre = sel === 'fuente' ? RES.fuente.nombre : n.name;
+  const kind = sel === 'fuente' ? 'Fuente de la instalación · de acá sale toda la corriente de cortocircuito' : kindTxt(n);
+  const tabs = [['ajustes', 'Ajustes'], ['cuentas', 'Cuentas']];
+  if (n) tabs.push(['curva', 'Curva']);
+  if (!tabs.some(t => t[0] === tab)) tab = 'ajustes';
+  let body;
+  if (tab === 'ajustes') body = sel === 'fuente' ? ajustesFuente() : ajustesNodo(n);
+  else if (tab === 'cuentas') body = sel === 'fuente' ? cuentasFuente() : cuentasNodo(n);
+  else body = curvaHTML(n);
+  el.innerHTML = `<div class="insp-h"><div class="row"><h2>${esc(nombre)}</h2><span id="insp-pill">${pillEstado(checks)}</span></div><span class="kind">${esc(kind)}</span></div>
+    <div class="tabs" role="tablist">${tabs.map(t => `<button role="tab" aria-selected="${tab === t[0]}" class="${tab === t[0] ? 'on' : ''}" data-act="tab" data-tab="${t[0]}">${t[1]}</button>`).join('')}</div>
+    <div class="insp-b">${body}</div>`;
+}
+function guiaHTML() {
+  return `<div class="insp-h"><h2>Cómo leer el esquema</h2><span class="kind">Esquema unifilar: cada línea representa las 3 fases (o fase y neutro)</span></div>
+  <div class="insp-b guia">
+    <p>Arriba está la <b>fuente</b> (UTE, transformador o generador). Debajo, cada <b>barra de cobre</b> es un tablero. De cada barra baja un circuito: <b>disyuntor</b> → <b>cable</b> → <b>equipo</b> o otro tablero.</p>
+    <ul>
+      <li>El recuadro dice el disyuntor: <code>C16</code> es curva C de 16 A. Al lado, su poder de corte en kA.</li>
+      <li>La pastilla azul <code>Δ 30 mA</code> es un diferencial.</li>
+      <li>Junto al cable: sección, largo y aislación. Más grueso el trazo, más sección.</li>
+      <li>Un <b style="color:var(--bad)">!</b> rojo quiere decir que algo no verifica. Tocalo para ver qué.</li>
+    </ul>
+    <p>Tocá cualquier parte: vas a poder cambiarla (<b>Ajustes</b>), ver todas las fórmulas con los números (<b>Cuentas</b>) y la curva del disyuntor contra el cable (<b>Curva</b>).</p>
+    <div class="acts"><button class="btn sm" data-act="sel-fuente">Ver la fuente</button><button class="btn sm" data-act="sel-tg">Ver el tablero general</button><button class="btn sm" data-act="ver-conceptos">Conceptos</button></div>
+  </div>`;
+}
+
+// ---- Campos de formulario ----
+function opt(v, t, cur) { return `<option value="${esc(v)}" ${String(v) === String(cur) ? 'selected' : ''}>${esc(t)}</option>`; }
+function fSel(path, label, opts, cur, help, full) {
+  return `<label class="fld ${full ? 'full' : ''}"><span>${label}</span><select data-f="${path}" id="f-${path.replace(/[^a-z0-9]/gi, '-')}">${opts.map(o => opt(o[0], o[1], cur)).join('')}</select>${help ? `<small>${help}</small>` : ''}</label>`;
+}
+function fNum(path, label, cur, a, help) {
+  return `<label class="fld"><span>${label}</span><input type="number" inputmode="decimal" data-f="${path}" id="f-${path.replace(/[^a-z0-9]/gi, '-')}" value="${cur}" min="${a.min}" max="${a.max}" step="${a.step}">${help ? `<small>${help}</small>` : ''}</label>`;
+}
+function fSeg(path, label, opts, cur, full, extraCls) {
+  return `<div class="fld ${full ? 'full' : ''}"><span>${label}</span><div class="seg" role="radiogroup" aria-label="${esc(label)}">${opts.map(o => `<button type="button" role="radio" aria-checked="${String(o[0]) === String(cur)}" class="${String(o[0]) === String(cur) ? 'on' : ''} ${extraCls ? extraCls(o[0]) : ''}" data-set="${path}" data-v="${esc(o[0])}">${o[1]}</button>`).join('')}</div></div>`;
+}
+function camposProteccion(n) {
+  const b = n.brk, r = RES.nodos[n.id];
+  let h = `<div class="grp-t">Protección</div><div class="fields">`;
+  h += fSeg('n:brk.tipo', 'Tipo de disyuntor', [['MCB', 'Termomagnética'], ['MCCB', 'Caja moldeada']], b.tipo, true);
+  if (b.tipo === 'MCB') {
+    h += fSeg('n:brk.curva', 'Curva', [['B', 'B'], ['C', 'C'], ['D', 'D']], b.curva, false);
+    h += fSel('n:brk.In', 'Corriente nominal In', MCB_IN.map(v => [v, v + ' A']), b.In);
+  } else {
+    h += fSel('n:brk.In', 'Calibre', MCCB_IN.map(v => [v, v + ' A']), b.In);
+    h += fSel('n:brk.ir', 'Térmico Ir', MCCB_IR.map(v => [v, fmt(v, 2) + ' × In = ' + fmt(v * b.In, 0) + ' A']), b.ir);
+    h += fSel('n:brk.im', 'Magnético Im', MCCB_IM.map(v => [v, v + ' × Ir = ' + fA(v * brkIr(b))]), b.im, 'Tolerancia ±20 %');
+  }
+  const icus = b.tipo === 'MCB' ? MCB_ICU : MCCB_ICU;
+  h += fSel('n:brk.icu', 'Poder de corte Icu', icus.map(v => [v, kA(v)]), b.icu, 'Icc en la barra: ' + fA(r.iccBrk));
+  h += fSel('n:rcd', 'Diferencial', [[0, 'Sin diferencial'], [30, '30 mA'], [300, '300 mA']], n.rcd);
+  const im = brkIm(b);
+  h += `<div class="fld full"><small>Magnético entre ${fA(im[0])} y ${fA(im[1])} · Icc mínima al final: ${fA(r.iccMin)}</small></div>`;
+  return h + '</div>';
+}
+function camposCable(n) {
+  const c = n.cab, r = RES.nodos[n.id];
+  let h = `<div class="grp-t">Cable</div><div class="fields">`;
+  h += fSel('n:cab.S', 'Sección', SECC.map(v => [v, fmtS(v) + ' mm²']), c.S, 'Aguanta ' + fA(r.iz.Iz));
+  h += fNum('n:cab.L', 'Largo (m)', c.L, { min: 1, max: 1000, step: 1 });
+  h += fSel('n:cab.aisl', 'Aislación', [['PVC', 'PVC (70 °C)'], ['XLPE', 'XLPE (90 °C)']], c.aisl);
+  h += fSel('n:cab.metodo', 'Instalación', Object.entries(METODOS), c.metodo);
+  h += fSel('n:cab.n', 'Cables por fase', [1, 2, 3, 4].map(v => [v, v === 1 ? '1 (normal)' : v + ' en paralelo']), c.n);
+  h += fSel('n:cab.agrup', 'Circuitos agrupados', AGRUP.map(v => [v, v === 1 ? 'Solo' : v + ' juntos']), c.agrup);
+  return h + '</div>';
+}
+function camposMover(n) {
+  const opts = [];
+  const excl = new Set(); recorrerArbol(n, x => excl.add(x.id));
+  const padre = buscarPadre(S, n.id);
+  recorrerArbol(S.root, x => { if (x.kind === 'tablero' && !excl.has(x.id)) opts.push([x.id, x.name]); });
+  if (opts.length < 2) return '';
+  return `<div class="fields">${fSel('n:mover', 'Colgado de', opts, padre ? padre.id : '', null, true)}</div>`;
+}
+function ajustesNodo(n) {
+  const r = RES.nodos[n.id];
+  let h = `<div id="insp-checks">${checksHTML(r.checks, true)}</div>`;
+  if (n.kind === 'carga') {
+    h += `<div class="grp-t">Equipo</div><div class="fields">`;
+    h += `<label class="fld full"><span>Nombre</span><input type="text" data-f="n:name" id="f-name" value="${esc(n.name)}" maxlength="40"></label>`;
+    h += fSel('n:tipo', 'Tipo de equipo', Object.entries(TIPOS).map(([k, t]) => [k, t.nombre]), n.tipo, null, true);
+    h += fNum('n:P', 'Potencia eléctrica (kW)', n.P, { min: 0.1, max: 500, step: 0.1 }, 'La que consume de la red');
+    h += fNum('n:fp', 'cos φ', n.fp, { min: 0.5, max: 1, step: 0.01 });
+    h += fSeg('n:fase', 'Conexión', [['L1', 'L1'], ['L2', 'L2'], ['L3', 'L3'], ['3F', 'Trifásico']], n.fase, true, v => 'ph-' + v);
+    h += fNum('n:fu', 'Factor de uso (fu)', n.fu, { min: 0.1, max: 1, step: 0.05 }, 'Qué parte de su potencia usa en promedio');
+    h += fNum('n:arr', 'Arranque (× Ib)', n.arr, { min: 1, max: 12, step: 0.5 }, n.arr > 1 ? 'Motor: pide ' + fA(n.arr * r.Ib) + ' al arrancar' : 'Sin pico de arranque');
+    h += `<label class="fld full chk"><input type="checkbox" data-f="n:luz" id="f-luz" ${n.luz ? 'checked' : ''}> Es iluminación (caída de tensión máxima 3 %)</label>`;
+    h += `</div>`;
+  } else {
+    h += `<div class="grp-t">Tablero</div><div class="fields">`;
+    h += `<label class="fld full"><span>Nombre</span><input type="text" data-f="n:name" id="f-name" value="${esc(n.name)}" maxlength="40"></label>`;
+    h += fSel('n:ks', 'Factor de simultaneidad ks', [['auto', 'Automático (' + fmt(r.ksAuto, 1) + ')'], ...[1, 0.9, 0.8, 0.7, 0.6, 0.5].map(v => [v, fmt(v, 1)])], n.ks, 'Qué parte de los circuitos anda a la vez');
+    h += `</div>`;
+  }
+  h += camposProteccion(n) + camposCable(n);
+  if (n !== S.root) h += camposMover(n);
+  const acts = [];
+  if (n.kind === 'tablero') acts.push('<button class="btn sm" data-act="modal-carga">+ Equipo en este tablero</button>', '<button class="btn sm" data-act="add-tablero">+ Tablero dentro</button>');
+  if (n.kind === 'carga') acts.push('<button class="btn sm" data-act="duplicar">Duplicar</button>');
+  if (modo.tipo === 'libre') acts.push('<button class="btn sm" data-act="auto" title="Elige disyuntor y sección para que todo verifique">Dimensionar solo</button>');
+  if (n !== S.root) acts.push(`<button class="btn sm ${quitarPend === n.id ? 'pri' : ''}" data-act="quitar">${quitarPend === n.id ? '¿Seguro? Tocá de nuevo' : n.kind === 'tablero' ? 'Quitar tablero y lo que cuelga' : 'Quitar'}</button>`);
+  h += `<div class="acts">${acts.join('')}</div>`;
+  return h;
+}
+function ajustesFuente() {
+  const s = S.src, T = S.tierra;
+  let h = `<div id="insp-checks">${checksHTML(RES.fuente.checks, true)}</div>`;
+  h += `<div class="grp-t">Fuente</div><div class="fields">`;
+  h += fSeg('s:src.tipo', 'De dónde viene la energía', [['ute', 'UTE en baja'], ['trafo', 'Transformador'], ['gen', 'Generador']], s.tipo, true);
+  if (s.tipo === 'trafo') {
+    h += fSel('s:src.kva', 'Potencia', TRAFO_KVA.map(v => [v, v + ' kVA']), s.kva);
+    h += fSel('s:src.ucc', 'Tensión de cortocircuito ucc', [4, 4.5, 5, 6].map(v => [v, fmt(v, v % 1 ? 1 : 0) + ' %']), s.ucc, 'Menos ucc = más Icc');
+    h += fSel('s:src.scc', 'Potencia de cortocircuito de la red', [100, 250, 500].map(v => [v, v + ' MVA']), s.scc, 'Lo fuerte que es la red de media tensión', true);
+  } else if (s.tipo === 'ute') {
+    h += fSel('s:src.iccUte', 'Icc en la acometida', UTE_ICC.map(v => [v, kA(v)]), s.iccUte, 'El dato lo da UTE', true);
+  } else {
+    h += fSel('s:src.gkva', 'Potencia', GEN_KVA.map(v => [v, v + ' kVA']), s.gkva);
+    h += fSel('s:src.xd', 'Reactancia x"d', [10, 12, 15, 18, 20].map(v => [v, v + ' %']), s.xd, 'Más x"d = menos Icc');
+  }
+  h += `</div><div class="grp-t">Puesta a tierra</div><div class="fields">`;
+  h += fSeg('s:tierra.esq', 'Esquema', [['TT', 'TT (lo común con UTE)'], ['TN', 'TN-S']], T.esq, true);
+  if (T.esq === 'TT') {
+    h += fSel('s:tierra.RA', 'Jabalina del local RA', [1, 2, 5, 10, 20, 50, 100].map(v => [v, v + ' Ω']), T.RA);
+    h += fSel('s:tierra.RB', 'Tierra del neutro RB', [1, 2, 5, 10].map(v => [v, v + ' Ω']), T.RB);
+  }
+  h += `</div><div class="grp-t">Ambiente</div><div class="fields">`;
+  h += fSel('s:temp', 'Temperatura ambiente', TEMPS.map(v => [v, v + ' °C']), S.temp, 'Cables al aire o en caño. En la azotea al sol puede pasar de 45 °C.', true);
+  h += `</div><div class="acts"><button class="btn sm" data-act="modal-carga">+ Equipo en el tablero general</button><button class="btn sm" data-act="add-tablero">+ Tablero</button></div>`;
+  return h;
+}
+
+// ---------------- Cuentas ----------------
+const fx = (nombre, simb, pasos, resu) => `<div class="fx">${nombre ? `<div class="fx-n">${nombre}</div>` : ''}<div class="fx-s">${simb}</div>${pasos.map(p => `<div class="fx-p">= ${p}</div>`).join('')}${resu != null ? `<div class="fx-r">= ${resu}</div>` : ''}</div>`;
+const sec = (n, t, cuerpo) => `<section class="sec"><h3><span class="n">${n}</span>${t}</h3>${cuerpo}</section>`;
+const kW = w => fmt(w / 1000, 2) + ' kW';
+function cuentasFuente() {
+  const f = RES.fuente, s = S.src, T = S.tierra, h = [];
+  let b = '<p>Toda falla empieza en la fuente. Su impedancia (R y X) es lo que limita la corriente cuando el cortocircuito es cerca. Trabajamos en miliohm (mΩ).</p>';
+  for (const p of f.partes) {
+    if (p.key === 'red') b += fx('Red de media tensión (lo que hay antes del transformador)', 'Z<sub>Q</sub> = c · U² / S<sub>cc</sub>', [`1,1 × (400 V)² / ${s.scc} MVA`], fZ(p.Z)) + fx(null, 'X<sub>Q</sub> = 0,995 · Z<sub>Q</sub> ; R<sub>Q</sub> = 0,1 · X<sub>Q</sub>', [], 'X ' + fZ(p.X) + ' · R ' + fZ(p.R));
+    if (p.key === 'trafo') b += fx('Transformador ' + p.kva + ' kVA', 'Z<sub>T</sub> = u<sub>cc</sub> · U² / S<sub>n</sub>', [`${fmt(p.ucc, p.ucc % 1 ? 1 : 0)} % × (400 V)² / ${p.kva} kVA`], fZ(p.Z))
+      + fx(null, 'R<sub>T</sub> = P<sub>cu</sub> · U² / S<sub>n</sub>²', [`${fmt(p.pk, 0)} W × (400 V)² / (${p.kva} kVA)²`], fZ(p.R))
+      + fx(null, 'X<sub>T</sub> = √(Z<sub>T</sub>² − R<sub>T</sub>²)', [`√(${fmtN(p.Z)}² − ${fmtN(p.R)}²)`], fZ(p.X))
+      + '<p>P<sub>cu</sub> son las pérdidas en el cobre del transformador a plena carga (dato de placa; acá usamos valores típicos).</p>';
+    if (p.key === 'ute') b += fx('Acometida de UTE', 'Z = c · U / (√3 · I<sub>cc</sub>)', [`1,05 × 400 V / (1,732 × ${kA(p.icc)})`], fZ(p.Z))
+      + '<p>No sabemos cómo se reparte entre R y X; suponemos X = 2 · R, típico de una red de baja tensión.</p>'
+      + fx(null, 'R = Z / √5 ; X = 2 · R', [], 'R ' + fZ(p.R) + ' · X ' + fZ(p.X));
+    if (p.key === 'gen') b += fx('Generador ' + p.kva + ' kVA', 'X″<sub>d</sub> = x″<sub>d</sub> · U² / S<sub>n</sub>', [`${p.xd} % × (400 V)² / ${p.kva} kVA`], fZ(p.X))
+      + fx(null, 'R<sub>G</sub> = 0,15 · X″<sub>d</sub>', [], fZ(p.R))
+      + '<p>Un generador tiene mucha más reactancia que un transformador del mismo tamaño: da poca corriente de cortocircuito. Y a los pocos ciclos baja todavía más.</p>';
+  }
+  b += fx('Total de la fuente', 'Z = √(R² + X²)', [`√(${fmtN(f.R)}² + ${fmtN(f.X)}²)`], fZ(f.Z));
+  h.push(sec('1', 'Impedancia de la fuente', b));
+  h.push(sec('2', 'Cortocircuito en los bornes', fx('Trifásico máximo', 'I<sub>k3</sub> = c · U / (√3 · Z)', [`1,05 × 400 V / (1,732 × ${fZ(f.Z)})`], fA(f.ik3))
+    + fx('Valor pico (el primer medio ciclo)', 'κ = 1,02 + 0,98 · e<sup>−3R/X</sup> ; i<sub>p</sub> = κ · √2 · I<sub>k3</sub>', [`κ = 1,02 + 0,98 · e<sup>−3 × ${fmtN(f.R)} / ${fmtN(f.X)}</sup> = ${fmt(f.kappa, 2)}`, `${fmt(f.kappa, 2)} × 1,414 × ${fA(f.ik3)}`], fA(f.ip))
+    + '<p>c = 1,05 es el factor de tensión de la norma: la tensión puede estar un 5 % alta, y eso da la corriente máxima.</p>'));
+  if (f.Sn) h.push(sec('3', '¿Alcanza la potencia?', fx('Corriente nominal', 'I<sub>n</sub> = S<sub>n</sub> / (√3 · U)', [`${fmt(f.Sn / 1000, 0)} kVA / (1,732 × 400 V)`], fA(f.In))
+    + fx('Carga con la demanda actual', 'S<sub>demanda</sub> / S<sub>n</sub>', [`${fmt(f.Sdem / 1000, 1)} kVA / ${fmt(f.Sn / 1000, 0)} kVA`], fmt(f.carga * 100, 0) + ' %')));
+  h.push(sec(f.Sn ? '4' : '3', 'Puesta a tierra', T.esq === 'TT'
+    ? '<p>En <b>TT</b> las carcasas van a la jabalina del local (RA) y el neutro a la tierra de UTE o del transformador (RB). Una falla a masa vuelve por la tierra:</p>' + fx(null, 'I<sub>d</sub> = U<sub>0</sub> / (R<sub>A</sub> + R<sub>B</sub>)', [`230 V / (${T.RA} Ω + ${T.RB} Ω)`], fA(U0 / (T.RA + T.RB))) + fx(null, 'U<sub>contacto</sub> = I<sub>d</sub> · R<sub>A</sub>', [`${fA(U0 / (T.RA + T.RB))} × ${T.RA} Ω`], fmt(U0 / (T.RA + T.RB) * T.RA, 0) + ' V') + '<p>Es una corriente chica: ningún disyuntor la ve rápido. Por eso en TT es obligatorio el diferencial, con I<sub>Δn</sub> × R<sub>A</sub> ≤ 50 V.</p>'
+    : '<p>En <b>TN-S</b> las carcasas van con un cable de tierra (PE) hasta el neutro del transformador. Una falla a masa es casi un cortocircuito fase-neutro: grande, y la corta el magnético.</p>'));
+  return h.join('');
+}
+function tablaImpedancias(n, r) {
+  const f = RES.fuente;
+  let filas = f.partes.map(p => `<tr><td>${esc(p.nombre)}</td><td>${fmtN(p.R)}</td><td>${fmtN(p.X)}</td></tr>`).join('');
+  let sR = 0, sX = 0;
+  for (const id of r.cadena) {
+    const x = buscar(S, id), rx = RES.nodos[id];
+    sR += rx.lin.R20; sX += rx.lin.X;
+    filas += `<tr><td>Cable a ${esc(x.name)} <span class="mono">(${x.cab.n > 1 ? x.cab.n + '×' : ''}${fmtS(x.cab.S)} mm², ${fmt(x.cab.L, 0)} m)</span></td><td>${fmtN(rx.lin.R20)}</td><td>${fmtN(rx.lin.X)}</td></tr>`;
+  }
+  filas += `<tr class="tot"><td>Total por fase</td><td>${fmtN(r.acc.R)}</td><td>${fmtN(r.acc.X)}</td></tr>`;
+  const c = n.cab;
+  return `<div class="tblw"><table class="t"><thead><tr><th>Tramo</th><th>R (mΩ)</th><th>X (mΩ)</th></tr></thead><tbody>${filas}</tbody></table></div>`
+    + fx('Cable de este circuito', 'R = ρ · L / S', [`0,0185 Ω·mm²/m × ${fmt(c.L, 0)} m / ${fmtS(c.S * c.n)} mm²`], fZ(r.lin.R20))
+    + fx(null, 'X = 0,08 mΩ/m × L / n', [`0,08 × ${fmt(c.L, 0)} / ${c.n}`], fZ(r.lin.X))
+    + fx('Impedancia total hasta acá', 'Z = √(R² + X²)', [`√(${fmtN(r.acc.R)}² + ${fmtN(r.acc.X)}²)`], fZ(r.Z))
+    + '<p>Cada metro de cable suma resistencia. Por eso, cuanto más lejos de la fuente, menor es la corriente de cortocircuito.</p>';
+}
+function tablaDemanda(n, r) {
+  const filas = n.hijos.map(h => {
+    const rh = RES.nodos[h.id];
+    const ph = h.kind === 'carga' ? (h.fase === '3F' ? '3F' : `<span class="ph ${h.fase}">${h.fase}</span>`) : '3F';
+    return `<tr><td>${esc(h.name)}</td><td>${ph}</td><td>${fmt(rh.Pinst / 1000, 2)}</td><td>${h.kind === 'carga' ? fmt(h.fu, 2) : 'tablero'}</td><td>${fmt(rh.Pdem / 1000, 2)}</td><td>${fmt(rh.fp, 2)}</td></tr>`;
+  }).join('');
+  const sumDem = n.hijos.reduce((a, h) => a + RES.nodos[h.id].Pdem, 0);
+  let t = `<p><b>Potencia instalada</b>: todo lo conectado. <b>Demanda</b>: lo que se usa a la vez. Cada equipo se multiplica por su factor de uso (fu); de los tableros de abajo se toma su demanda.</p>`;
+  if (!n.hijos.length) return t + '<p>Este tablero está vacío. Agregale equipos para ver el cálculo.</p>';
+  t += `<div class="tblw"><table class="t"><thead><tr><th>Circuito</th><th>Fase</th><th>P inst. kW</th><th>fu</th><th>P dem. kW</th><th>cos φ</th></tr></thead><tbody>${filas}<tr class="tot"><td>Suma</td><td></td><td>${fmt(r.Pinst / 1000, 2)}</td><td></td><td>${fmt(sumDem / 1000, 2)}</td><td></td></tr></tbody></table></div>`;
+  t += fx('Factor de simultaneidad', `k<sub>s</sub> = ${fmt(r.ks, 2)}`, [n.ks === 'auto' ? `${n.hijos.length} circuito${n.hijos.length > 1 ? 's' : ''} → tabla (2-3: 0,9 · 4-5: 0,8 · 6-9: 0,7 · 10 o más: 0,6)` : 'elegido a mano'], null);
+  const fil2 = [0, 1, 2].map(k => {
+    const sb = Math.hypot(r.suma[k][0], r.suma[k][1]), sd = Math.hypot(r.Sdem[k][0], r.Sdem[k][1]);
+    return `<tr><td><span class="ph ${FASES[k]}">${FASES[k]}</span></td><td>${fmt(r.suma[k][0] / 1000, 2)}</td><td>${fmt(sb / 1000, 2)}</td><td>${fmt(sd / 1000, 2)}</td><td>${fA(r.Iph[k])}</td></tr>`;
+  }).join('');
+  t += `<div class="tblw"><table class="t"><thead><tr><th>Fase</th><th>P kW</th><th>S kVA</th><th>S × ks</th><th>Corriente</th></tr></thead><tbody>${fil2}</tbody></table></div>`;
+  t += '<p>Los equipos trifásicos reparten su potencia en partes iguales entre las tres fases; los monofásicos cargan solo la suya.</p>';
+  t += fx('Corriente por fase', 'I = S<sub>fase</sub> × k<sub>s</sub> / U<sub>0</sub>', [0, 1, 2].map(k => `${FASES[k]}: ${fmt(Math.hypot(r.Sdem[k][0], r.Sdem[k][1]), 0)} VA / 230 V = ${fA(r.Iph[k])}`), `I<sub>b</sub> = la mayor = ${fA(r.Ib)}`);
+  t += fx('Corriente de neutro', 'I<sub>N</sub> = |I<sub>L1</sub> + I<sub>L2</sub> + I<sub>L3</sub>| (sumadas como vectores, a 120°)', [], fA(r.IN)) + '<p>Si las tres fases llevan lo mismo, las corrientes se anulan en el neutro. Cuanto más desparejo, más corriente por el neutro.</p>';
+  t += fx('Potencia de demanda', 'P = Σ P<sub>dem</sub> × k<sub>s</sub> ; S = √(P² + Q²)', [`P = ${kW(r.Pdem)} ; Q = ${fmt(r.Qdem / 1000, 2)} kvar`], `${fmt(r.Stot / 1000, 2)} kVA (cos φ ${fmt(r.fp, 2)})`);
+  return t;
+}
+function cuentasNodo(n) {
+  const r = RES.nodos[n.id], f = RES.fuente, T = S.tierra, h = [];
+  const mono = n.kind === 'carga' && n.fase !== '3F';
+  if (n.kind === 'carga') {
+    h.push(sec('1', 'Corriente del equipo (Ib)', (mono
+      ? fx('Monofásico: fase y neutro, 230 V', 'I<sub>b</sub> = P / (U<sub>0</sub> · cos φ)', [`${fmt(n.P * 1000, 0)} W / (230 V × ${fmt(n.fp, 2)})`], fA(r.Ib))
+      : fx('Trifásico: 400 V entre fases', 'I<sub>b</sub> = P / (√3 · U · cos φ)', [`${fmt(n.P * 1000, 0)} W / (1,732 × 400 V × ${fmt(n.fp, 2)})`], fA(r.Ib)))
+      + `<p>Para su propio circuito se usa la corriente completa. El factor de uso (fu = ${fmt(n.fu, 2)}) se aplica recién en la demanda del tablero.</p>`
+      + (n.arr > 1 ? fx('Corriente de arranque', 'I<sub>a</sub> = k · I<sub>b</sub>', [`${fmt(n.arr, 1)} × ${fA(r.Ib)}`], fA(n.arr * r.Ib) + ' durante 1 a 3 s') : '')));
+  } else h.push(sec('1', 'Cálculo de demanda', tablaDemanda(n, r)));
+  const c = n.cab, iz = r.iz;
+  h.push(sec('2', 'Lo que aguanta el cable (Iz)', `<p>Tabla IEC 60364-5-52 · cobre · ${c.aisl} · ${esc(METODOS[c.metodo])} · ${iz.carg} conductores cargados · ${fmtS(c.S)} mm² → <b>${fmtN(iz.base)} A</b></p>`
+    + fx(null, 'I<sub>z</sub> = I<sub>tabla</sub> × f<sub>temp</sub> × f<sub>agrup</sub> × n', [`${fmtN(iz.base)} A × ${fmt(iz.ft, 2)} × ${fmt(iz.fg, 2)} × ${iz.n}`], fA(iz.Iz))
+    + `<p>f<sub>temp</sub>: ${c.metodo === 'D' ? 'enterrado, suelo a 20 °C, sin corrección' : S.temp + ' °C de ambiente'}. f<sub>agrup</sub>: ${c.agrup === 1 ? 'circuito solo' : c.agrup + ' circuitos juntos se calientan entre sí'}. n: cables por fase.</p>`));
+  h.push(sec('3', 'Impedancia desde la fuente hasta acá', tablaImpedancias(n, r)));
+  let cc = '';
+  if (!mono) {
+    cc += fx('Trifásico (el más grande)', 'I<sub>k3</sub> = c<sub>máx</sub> · U / (√3 · Z)', [`1,05 × 400 V / (1,732 × ${fZ(r.Z)})`], fA(r.ik3))
+      + fx('Valor pico', 'κ = 1,02 + 0,98 · e<sup>−3R/X</sup> ; i<sub>p</sub> = κ · √2 · I<sub>k3</sub>', [`κ = 1,02 + 0,98 · e<sup>−3 × ${fmtN(r.acc.R)} / ${fmtN(r.acc.X)}</sup> = ${fmt(r.kappa, 2)}`, `${fmt(r.kappa, 2)} × 1,414 × ${fA(r.ik3)}`], fA(r.ip))
+      + fx('Bifásico', 'I<sub>k2</sub> = c<sub>máx</sub> · U / (2 · Z)  (≈ 87 % de la trifásica)', [`1,05 × 400 V / (2 × ${fZ(r.Z)})`], fA(r.ik2));
+  } else cc += '<p>A este equipo llega una sola fase con su neutro: acá no puede haber falla trifásica ni bifásica.</p>';
+  cc += fx('Fase-neutro máxima', 'I<sub>k1</sub> = c<sub>máx</sub> · U<sub>0</sub> / Z<sub>bucle</sub>', [
+    `Z<sub>bucle</sub> = fuente + ida por la fase + vuelta por el neutro`,
+    `R = ${fmtN(f.R)} + 2 × ${fmtN(r.acc.R - f.R)} = ${fmtN(r.acc.Rl)} mΩ ; X = ${fmtN(r.acc.Xl)} mΩ → Z = ${fZ(r.Zl)}`,
+    `1,05 × 230 V / ${fZ(r.Zl)}`], fA(r.ik1));
+  cc += fx('Fase-neutro mínima (al final, cable caliente)', 'I<sub>k1 mín</sub> = c<sub>mín</sub> · U<sub>0</sub> / Z<sub>bucle caliente</sub>', [
+    `El cable caliente tiene 1,5 veces más resistencia: R = ${fmtN(f.R)} + 3 × ${fmtN(r.acc.R - f.R)} = ${fmtN(r.acc.Rlm)} mΩ`,
+    `Z = √(${fmtN(r.acc.Rlm)}² + ${fmtN(r.acc.Xl)}²) = ${fZ(r.Zlm)}`,
+    `0,95 × 230 V / ${fZ(r.Zlm)}`], fA(r.ik1min));
+  if (n.kind === 'carga' && !mono) cc += fx('Bifásica mínima (el motor no lleva neutro)', 'I<sub>k2 mín</sub> = c<sub>mín</sub> · U / (2 · Z<sub>caliente</sub>)', [`Z = √(${fmtN(r.acc.Rm)}² + ${fmtN(r.acc.X)}²) = ${fZ(r.Zm)}`, `0,95 × 400 V / (2 × ${fZ(r.Zm)})`], fA(r.ik2min));
+  cc += T.esq === 'TT'
+    ? fx('Falla a tierra (TT)', 'I<sub>d</sub> = U<sub>0</sub> / (R<sub>A</sub> + R<sub>B</sub>) ; U<sub>c</sub> = I<sub>d</sub> · R<sub>A</sub>', [`230 V / (${T.RA} Ω + ${T.RB} Ω) = ${fA(r.idT)}`, `${fA(r.idT)} × ${T.RA} Ω`], fmt(r.uc, 0) + ' V en la carcasa')
+    : fx('Falla a tierra (TN-S)', 'Vuelve por el cable de tierra: igual que la fase-neutro', [], `entre ${fA(r.ik1min)} y ${fA(r.ik1)}`);
+  cc += `<p>La <b>máxima</b> sirve para elegir el poder de corte (Icu). La <b>mínima</b> sirve para comprobar que el magnético salte. Acá: ${fA(r.iccBrk)} en la barra (${r.iccBrkTipo}) y ${fA(r.iccMin)} al final (${r.iccMinTipo}).</p>`;
+  h.push(sec('4', 'Corrientes de cortocircuito', cc));
+  const d = r.dU;
+  h.push(sec('5', 'Caída de tensión', fx(mono ? 'Monofásico' : 'Trifásico', 'ΔU = k · I<sub>b</sub> · (R · cos φ + X · sen φ)', [
+    `k = ${mono ? '2 (ida y vuelta)' : '√3'} ; R = 1,25 × ${fZ(r.lin.R20)} = ${fZ(r.lin.Rdu)} (cable trabajando caliente)`,
+    `${mono ? '2' : '1,732'} × ${fA(r.Ib)} × (${fmtN(r.lin.Rdu)} mΩ × ${fmt(d.cos, 2)} + ${fmtN(r.lin.X)} mΩ × ${fmt(d.sin, 2)})`],
+    `${fmt(d.v, 2)} V = ${fmt(d.pct, 2)} % de ${d.Ubase} V`)
+    + `<p>Acumulada desde la fuente: ${fmt(r.dUprev, 2)} % + ${fmt(d.pct, 2)} % = <b>${fmt(r.dUacum, 2)} %</b>${n.kind === 'carga' ? ' (límite ' + (n.luz ? 3 : 5) + ' %)' : ''}.</p>`));
+  const b = n.brk, im = brkIm(b), k = KAD[c.aisl];
+  const tc = Math.pow(k * c.S * c.n / r.iccMin, 2);
+  let pr = b.tipo === 'MCB'
+    ? fx('Zona magnética', `Curva ${b.curva}: entre ${CURVAS[b.curva][0]} y ${CURVAS[b.curva][1]} × I<sub>n</sub>`, [`${CURVAS[b.curva][0]} × ${b.In} A … ${CURVAS[b.curva][1]} × ${b.In} A`], `${fA(im[0])} … ${fA(im[1])}`)
+    : fx('Ajustes', 'I<sub>r</sub> = ir × I<sub>n</sub> ; I<sub>m</sub> = im × I<sub>r</sub> ± 20 %', [`I<sub>r</sub> = ${fmt(b.ir, 2)} × ${b.In} A = ${fA(brkIr(b))}`, `${b.im} × ${fA(brkIr(b))} ± 20 %`], `${fA(im[0])} … ${fA(im[1])}`);
+  pr += fx('Cuánto aguanta el cable un cortocircuito', 't = (k · S / I)²', [`k = ${k} (cobre ${c.aisl}) ; con la mínima: (${k} × ${fmtS(c.S * c.n)} mm² / ${fA(r.iccMin)})²`], fT(tc));
+  pr += checksHTML(r.checks);
+  h.push(sec('6', 'Protección', pr));
+  return h.join('');
+}
+
+// ---------------- Curva tiempo-corriente ----------------
+function rangoCurva(n) {
+  const r = RES.nodos[n.id], Ir = brkIr(n.brk);
+  let lo = Math.pow(10, Math.floor(Math.log10(Math.max(0.5, Math.min(r.Ib || Ir, Ir) * 0.6))));
+  const top = Math.max(r.iccBrk, (r.Ia || 0), brkIm(n.brk)[1]) * 1.6;
+  let hi = Math.pow(10, Math.ceil(Math.log10(top)));
+  if (Math.log10(hi / lo) > 6) lo = hi / 1e6;
+  if (Math.log10(hi / lo) < 3) hi = lo * 1000;
+  return { lo, hi };
+}
+function bandaPath(b, X, Y, lo, hi, contorno) {
+  const Ir = brkIr(b), im = brkIm(b);
+  const I0 = Math.max(lo, (b.tipo === 'MCB' ? 1.13 : 1.05) * Ir * 1.0005);
+  if (I0 >= hi) return '';
+  const set = new Set();
+  for (let i = 0; i <= 150; i++) set.add(I0 * Math.pow(hi / I0, i / 150));
+  for (const v of [im[0] * 0.999, im[0] * 1.001, im[1] * 0.999, im[1] * 1.001]) if (v > I0 && v < hi) set.add(v);
+  const Is = [...set].sort((a, c) => a - c);
+  const up = [], dn = [];
+  for (const I of Is) {
+    const d = disparo(b, I);
+    if (!isFinite(d.tmin)) continue;
+    up.push(X(I).toFixed(1) + ',' + Y(d.tmax).toFixed(1));
+    dn.push(X(I).toFixed(1) + ',' + Y(d.tmin).toFixed(1));
+  }
+  if (!up.length) return '';
+  if (contorno) return 'M' + up.join('L') + 'M' + dn.join('L');
+  return 'M' + up.join('L') + 'L' + dn.reverse().join('L') + 'Z';
+}
+function pruebaI(n) {
+  const r = RES.nodos[n.id];
+  if (prueba && prueba.id === n.id) return prueba.I;
+  return r.Ia || brkIr(n.brk) * 3;
+}
+function curvaSVG(n) {
+  const r = RES.nodos[n.id], b = n.brk, W = 380, H = 284, M = { l: 44, r: 12, t: 16, b: 32 };
+  const { lo, hi } = rangoCurva(n), ylo = 0.001, yhi = 10000, L = Math.log10;
+  const X = I => M.l + (L(I) - L(lo)) / (L(hi) - L(lo)) * (W - M.l - M.r);
+  const Y = t => M.t + (L(yhi) - L(Math.min(yhi, Math.max(ylo, t)))) / (L(yhi) - L(ylo)) * (H - M.t - M.b);
+  curvaGeo = { W, M, lo, hi, id: n.id };
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Curva de disparo del ${esc(brkCorto(b))} y límites del cable">`;
+  for (let e = Math.round(L(lo)); e <= Math.round(L(hi)); e++) {
+    const I = Math.pow(10, e), x = X(I);
+    s += `<line class="gr" x1="${x}" y1="${M.t}" x2="${x}" y2="${H - M.b}"/>`;
+    for (const k of [2, 5]) if (I * k < hi) s += `<line class="gr2" x1="${X(I * k)}" y1="${M.t}" x2="${X(I * k)}" y2="${H - M.b}"/>`;
+    s += `<text x="${x}" y="${H - M.b + 13}" text-anchor="middle">${I >= 1000 ? fmt(I / 1000, 0) + ' kA' : fmt(I, I < 1 ? 1 : 0) + ' A'}</text>`;
+  }
+  const ylab = { '-3': '1 ms', '-2': '10 ms', '-1': '0,1 s', 0: '1 s', 1: '10 s', 2: '100 s', 3: '1000 s', 4: '10⁴ s' };
+  for (let e = -3; e <= 4; e++) { const y = Y(Math.pow(10, e)); s += `<line class="gr" x1="${M.l}" y1="${y}" x2="${W - M.r}" y2="${y}"/><text x="${M.l - 4}" y="${y + 3}" text-anchor="end">${ylab[e]}</text>`; }
+  s += `<line class="ax" x1="${M.l}" y1="${H - M.b}" x2="${W - M.r}" y2="${H - M.b}"/><line class="ax" x1="${M.l}" y1="${M.t}" x2="${M.l}" y2="${H - M.b}"/>`;
+  s += `<text x="${W - M.r}" y="${H - 3}" text-anchor="end">corriente →</text><text x="2" y="9">↑ tiempo</text>`;
+  s += `<defs><clipPath id="clipc"><rect x="${M.l}" y="${M.t}" width="${W - M.l - M.r}" height="${H - M.t - M.b}"/></clipPath></defs><g clip-path="url(#clipc)">`;
+  if (r.brkArriba) s += `<path class="band-up" d="${bandaPath(r.brkArriba, X, Y, lo, hi, true)}"/>`;
+  s += `<path class="band" d="${bandaPath(b, X, Y, lo, hi, false)}"/>`;
+  const k = KAD[n.cab.aisl], kS = k * n.cab.S * n.cab.n;
+  const pts = [];
+  for (let e = L(5); e >= L(0.01) - 1e-9; e -= 0.1) { const t = Math.pow(10, e); pts.push(X(kS / Math.sqrt(t)).toFixed(1) + ',' + Y(t).toFixed(1)); }
+  s += `<path class="cab-l" d="M${pts.join('L')}"/>`;
+  s += `<line class="cab-iz" x1="${X(r.iz.Iz)}" y1="${M.t}" x2="${X(r.iz.Iz)}" y2="${H - M.b}"/>`;
+  const mk = (I, txt, arriba) => {
+    const x = X(I);
+    if (x < M.l || x > W - M.r) return '';
+    return `<line class="mk" x1="${x}" y1="${M.t}" x2="${x}" y2="${H - M.b}"/><text class="lbl" transform="translate(${x - 3},${arriba ? M.t + 3 : H - M.b - 4}) rotate(-90)" text-anchor="${arriba ? 'end' : 'start'}">${txt}</text>`;
+  };
+  s += mk(r.Ib, 'Ib ' + fA(r.Ib), true);
+  s += `<text class="lbl" transform="translate(${X(r.iz.Iz) + 10},${M.t + 3}) rotate(-90)" text-anchor="end">Iz ${fA(r.iz.Iz)}</text>`;
+  s += mk(r.iccMin, 'Icc mín ' + fA(r.iccMin), false);
+  s += mk(r.iccBrk, 'Icc máx ' + fA(r.iccBrk), false);
+  if (r.Ia) {
+    const ts = 2, xa = X(r.Ia), xb = X(r.Ib);
+    s += `<path class="arr" d="M${xa} ${Y(ylo)}V${Y(ts)}H${xb}V${M.t}"/><text class="lbl" x="${xa + 4}" y="${Y(ts) - 5}">arranque</text>`;
+  }
+  const It = pruebaI(n), dt = disparo(b, It), xt = X(Math.min(hi, Math.max(lo, It)));
+  s += `<line class="test" x1="${xt}" y1="${M.t}" x2="${xt}" y2="${H - M.b}"/>`;
+  if (isFinite(dt.tmax)) s += `<circle class="dot" cx="${xt}" cy="${Y(dt.tmax)}" r="4.5"/>`;
+  if (isFinite(dt.tmin)) s += `<circle class="dot" cx="${xt}" cy="${Y(dt.tmin)}" r="4.5"/>`;
+  s += `</g><rect class="cap" data-cap="1" x="${M.l}" y="${M.t}" width="${W - M.l - M.r}" height="${H - M.t - M.b}"/></svg>`;
+  return s;
+}
+function lecturaPrueba(n) {
+  const r = RES.nodos[n.id], I = pruebaI(n), d = disparo(n.brk, I);
+  let t = `Con <b>${fA(I)}</b> (${fmt(I / r.Ib, 1)} × Ib): ${describir(n.brk, d)}.`;
+  const pc = I / r.iz.Iz * 100;
+  t += pc > 100 ? ` El cable va al <b>${fmt(pc, 0)} %</b> de lo que aguanta.` : ` El cable va al ${fmt(pc, 0)} % de lo que aguanta.`;
+  if (r.brkArriba) t += ` Arriba, ${describir(r.brkArriba, disparo(r.brkArriba, I))}.`;
+  return t;
+}
+function sliderVal(n) { const g = rangoCurva(n), I = pruebaI(n); return Math.round(Math.log(I / g.lo) / Math.log(g.hi / g.lo) * 1000); }
+function curvaHTML(n) {
+  const r = RES.nodos[n.id], b = n.brk;
+  const sobre = n.kind === 'carga'
+    ? `<div class="acts">${[[1.3, 'Filtros sucios ×1,3'], [2, 'Algo forzado ×2'], ...(n.arr > 1 ? [[n.arr, 'Rotor trabado ×' + fmt(n.arr, 1)]] : []), [0, 'Icc mínima']].map(([f, t]) => `<button class="btn sm" data-act="prueba" data-k="${f}">${t}</button>`).join('')}</div>` : '';
+  return `<p style="margin:0;font-size:14px;color:var(--ink-2)">Cada disyuntor tiene una <b>zona de disparo</b>: a la izquierda el térmico (sobrecargas, lento) y abajo a la derecha el magnético (cortocircuitos, instantáneo). El cable tiene que quedar protegido: su límite tiene que estar a la derecha de la zona.</p>
+    <div class="curva" id="curva-box">${curvaSVG(n)}</div>
+    <div class="leg">
+      <span><svg width="26" height="12"><rect x="1" y="1" width="24" height="10" fill="var(--s1)" fill-opacity=".22" stroke="var(--s1)" stroke-width="2"/></svg>${esc(brkCorto(b))} de este circuito (entre la línea de arriba y la de abajo)</span>
+      ${r.brkArriba ? `<span><svg width="26" height="12"><line x1="1" y1="6" x2="25" y2="6" stroke="var(--s2)" stroke-width="2" stroke-dasharray="6 3"/></svg>${esc(brkCorto(r.brkArriba))} de arriba</span>` : ''}
+      <span><svg width="26" height="12"><line x1="1" y1="6" x2="25" y2="6" stroke="var(--ink)" stroke-width="2"/></svg>Cable: cuánto aguanta un cortocircuito · punteado: Iz</span>
+      ${r.Ia ? '<span><svg width="26" height="12"><path d="M3 11V3H23" stroke="var(--ink-2)" stroke-width="2" fill="none"/></svg>Arranque del motor (unos 2 s)</span>' : ''}
+    </div>
+    <div class="probar"><label for="prueba"><b>Probar una corriente</b> (o tocá la curva)</label>
+      <input type="range" id="prueba" min="0" max="1000" value="${sliderVal(n)}">
+      <div class="rd" id="prueba-rd">${lecturaPrueba(n)}</div>${sobre}</div>`;
+}
+function actualizarCurva() {
+  const n = nodoSel(); if (!n || tab !== 'curva') return;
+  const box = $('#curva-box'), rd = $('#prueba-rd'), sl = $('#prueba');
+  if (box) box.innerHTML = curvaSVG(n);
+  if (rd) rd.innerHTML = lecturaPrueba(n);
+  if (sl && document.activeElement !== sl) sl.value = sliderVal(n);
+}
+
+// ---------------- Edición ----------------
+function leerRuta(obj, path) { return path.split('.').reduce((o, k) => o[k], obj); }
+function escribirRuta(obj, path, v) { const ks = path.split('.'); const last = ks.pop(); ks.reduce((o, k) => o[k], obj)[last] = v; }
+const LIMITES = { P: [0.05, 2000], fp: [0.3, 1], fu: [0.05, 1], arr: [1, 12], 'cab.L': [1, 2000] };
+function aplicarCampo(path, raw, el) {
+  const [ambito, ruta] = path.split(':');
+  const obj = ambito === 's' ? S : nodoSel();
+  if (!obj) return false;
+  if (ruta === 'mover') {
+    const n = obj, viejo = buscarPadre(S, n.id), nuevo = buscar(S, raw);
+    if (!viejo || !nuevo || viejo === nuevo) return false;
+    viejo.hijos.splice(viejo.hijos.indexOf(n), 1); nuevo.hijos.push(n);
+    return 'full';
+  }
+  const actual = leerRuta(obj, ruta);
+  let v;
+  if (el && el.type === 'checkbox') v = el.checked;
+  else if (ruta === 'ks') v = raw === 'auto' ? 'auto' : +raw;
+  else if (typeof actual === 'number') {
+    v = parseFloat(String(raw).replace(',', '.'));
+    if (!isFinite(v)) return false;
+    const lim = LIMITES[ruta]; if (lim) v = Math.min(lim[1], Math.max(lim[0], v));
+  } else v = raw;
+  if (v === actual) return false;
+  escribirRuta(obj, ruta, v);
+  // efectos secundarios
+  if (ruta === 'brk.tipo') {
+    const b = obj.brk;
+    if (v === 'MCCB') { const prev = b.In; b.In = MCCB_IN.find(x => x >= prev) || 1600; b.ir = MCCB_IR.find(x => x * b.In >= prev) || 1; b.im = 10; b.icu = MCCB_ICU.find(x => x >= b.icu) || 25; }
+    else { const prev = b.In * b.ir; b.In = MCB_IN.find(x => x >= prev) || 125; b.curva = 'C'; b.icu = MCB_ICU.find(x => x >= Math.min(b.icu, 25)) || 25; b.ir = 1; }
+    return 'full';
+  }
+  if (ruta === 'tipo') {
+    const t = TIPOS[v];
+    Object.assign(obj, { P: t.P, fp: t.fp, fu: t.fu, arr: t.arr, luz: !!t.luz });
+    if (t.fases === '3F') obj.fase = '3F'; else if (obj.fase === '3F') obj.fase = 'L1';
+    if (Object.values(TIPOS).some(x => x.nombre === obj.name)) obj.name = t.nombre;
+    return 'full';
+  }
+  if (ruta === 'src.kva') S.src.ucc = v <= 630 ? 4 : 6;
+  if (el && el.tagName === 'INPUT' && el.type !== 'checkbox') return 'parcial';
+  return 'full';
+}
+function conDeshacer(fin, fn) {
+  const antes = { S: clonar(S), sel };
+  const res = fn();
+  if (!res) return res;
+  const t = Date.now();
+  if (fin || t - ultimoSnap > 1200) { deshacer.push(antes); if (deshacer.length > 40) deshacer.shift(); }
+  ultimoSnap = t;
+  return res;
+}
+function onCampo(el, fin) {
+  const res = conDeshacer(fin, () => aplicarCampo(el.dataset.f, el.value, el));
+  if (!res) return;
+  sim = null;
+  if (res === 'full' || fin) { recalc(); todo(); } else parcial();
+}
+function nuevaCargaEn(panel, tipo) {
+  const t = TIPOS[tipo];
+  let fase = '3F';
+  if (t.fases !== '3F') {
+    const rp = RES.nodos[panel.id];
+    const I = rp && rp.Iph ? rp.Iph : [0, 0, 0];
+    fase = FASES[I.indexOf(Math.min(...I))];
+  }
+  const n = carga(tipo, { fase, cab: cab(2.5, 20, t.fases === '3F' ? 'XLPE' : 'PVC', t.fases === '3F' ? 'E' : 'B2') });
+  panel.hijos.push(n);
+  autoDimensionar(n.id);
+  return n;
+}
+function autoDimensionar(id) {
+  const n = buscar(S, id); if (!n) return false;
+  const r0 = calcular(S).nodos[id];
+  if (S.tierra.esq === 'TT' && n.kind === 'carga' && !r0.rcdCamino.length) n.rcd = n.fase === '3F' ? 300 : 30;
+  const Ib = r0.Ib, need = r0.iccBrk / 1000;
+  const cands = [];
+  const icuMcb = MCB_ICU.find(v => v >= need);
+  if (icuMcb) for (const In of MCB_IN) if (In >= Ib) for (const c of ['C', 'B', 'D']) cands.push({ tipo: 'MCB', curva: c, In, icu: icuMcb, ir: 1, im: 10 });
+  const icuM = MCCB_ICU.find(v => v >= need) || 70;
+  for (const In of MCCB_IN) for (const ir of MCCB_IR) if (In * ir >= Ib && In * ir > 63) for (const im of [10, 8, 6, 5, 4, 3]) cands.push({ tipo: 'MCCB', curva: 'C', In, ir, im, icu: icuM });
+  cands.sort((a, b) => brkIr(a) - brkIr(b) || (a.tipo === b.tipo ? 0 : a.tipo === 'MCB' ? -1 : 1));
+  const orig = clonar({ brk: n.brk, cab: n.cab });
+  const carg = n.kind === 'carga' && n.fase !== '3F' ? 2 : 3;
+  for (const np of [1, 2, 3, 4]) for (const Sx of SECC) {
+    if (np > 1 && Sx < 95) continue;
+    const Iz = IZ[n.cab.aisl][n.cab.metodo][carg][SECC.indexOf(Sx)] * (n.cab.metodo === 'D' ? 1 : FT[n.cab.aisl][S.temp]) * (FG[n.cab.metodo][n.cab.agrup] || 1) * np;
+    if (Iz < Ib) continue;
+    n.cab.n = np; n.cab.S = Sx;
+    for (const b of cands) {
+      if (brkIr(b) > Iz) break;
+      n.brk = Object.assign({}, b);
+      const rr = calcular(S).nodos[id];
+      if (!rr.checks.some(c => c.ok === false)) return true;
+    }
+  }
+  n.brk = orig.brk; n.cab = orig.cab;
+  return false;
+}
+
+// ---------------- Modales ----------------
+function abrirModal(titulo, html) { $('#modal-t').textContent = titulo; $('#modal-b').innerHTML = html; $('#modal').hidden = false; $('#modal [data-act="cerrar-modal"]').focus(); }
+function cerrarModal() { $('#modal').hidden = true; }
+function modalMisiones() {
+  const items = MISIONES.map((m, i) => `<button class="mitem" data-act="mision" data-id="${m.id}"><span class="num">${i + 1}</span><span><b>${esc(m.titulo)}</b><small>${esc(m.tema)}</small></span>${progreso.hechas[m.id] ? '<span class="chip ok">Hecha</span>' : '<span class="chip mut">Pendiente</span>'}</button>`).join('');
+  abrirModal('Misiones', `<p style="margin:0;color:var(--ink-2)">Cada misión es un problema real de una sucursal. Arreglalo cambiando disyuntores, cables o la conexión, y mirá las cuentas para entender por qué.</p><div class="mlist">${items}<button class="mitem" data-act="libre"><span class="num">∞</span><span><b>Taller libre</b><small>Una sucursal completa para modificar a gusto</small></span><span></span></button></div>`);
+}
+function modalCarga() {
+  const p = panelDestino();
+  const cards = Object.entries(TIPOS).map(([k, t]) => `<button class="card-b" data-act="add-carga" data-tipo="${k}"><b>${esc(t.nombre)}</b><small>${fmt(t.P, t.P % 1 ? 1 : 0)} kW · ${t.fases === '3F' ? 'trifásico' : 'monofásico'}${t.arr > 1 ? ' · arranque ×' + fmt(t.arr, 0) : ''}</small></button>`).join('');
+  abrirModal('Agregar equipo', `<p style="margin:0;color:var(--ink-2)">Se conecta en <b>${esc(p.name)}</b>. Le elegimos un disyuntor y un cable que verifiquen; después cambialos como quieras.</p><div class="cards">${cards}</div>`);
+}
+const CONCEPTOS = [
+  ['Sobrecorriente', '<p>Cualquier corriente mayor a la que el circuito está pensado para llevar. Hay dos tipos muy distintos: la <b>sobrecarga</b> y el <b>cortocircuito</b>. El disyuntor termomagnético tiene una parte para cada una.</p>'],
+  ['Sobrecarga', '<p>Un poco más de corriente de lo normal (1,2 a 5 veces) durante mucho tiempo: un compresor forzado, filtros sucios, demasiados equipos en un toma. Calienta el cable de a poco. La corta el <b>térmico</b>: tarda segundos o minutos, y cuanto más corriente, más rápido.</p>'],
+  ['Cortocircuito', '<p>Se tocan dos conductores con tensión (o una fase con tierra). La corriente solo la frenan la impedancia de la red, del transformador y de los cables: cientos o miles de amperes. La corta el <b>magnético</b> en milisegundos.</p>' + fx(null, 'I<sub>cc</sub> = c · U / (√3 · Z)', [], null)],
+  ['Los cuatro cortocircuitos', '<p><b>Trifásico</b>: las tres fases juntas. El más grande; con él se elige el poder de corte. <b>Bifásico</b>: dos fases, un 87 % del trifásico. <b>Fase-neutro</b>: la corriente va y vuelve por el cable, así que depende mucho del largo; suele ser la más chica. <b>Fase-tierra</b>: en TN-S parecida a la fase-neutro; en TT muy chica (la limita la jabalina).</p>'],
+  ['Icc máxima e Icc mínima', '<p>La <b>máxima</b> es trifásica, en la barra del tablero, con tensión alta (c = 1,05) y cable frío. Sirve para elegir el poder de corte. La <b>mínima</b> es fase-neutro al final del cable, con tensión baja (c = 0,95) y el cable caliente (1,5 veces más resistencia). Sirve para comprobar que el magnético salte.</p>'],
+  ['Valor pico', '<p>En el primer medio ciclo la corriente llega a κ · √2 · Icc, hasta 2,5 veces la Icc. Es el golpe mecánico que sufren barras y contactos. κ depende de R/X: con mucha reactancia (cerca del transformador) el pico es mayor.</p>' + fx(null, 'κ = 1,02 + 0,98 · e<sup>−3R/X</sup>', [], null)],
+  ['Poder de corte (Icu)', '<p>La corriente más grande que el disyuntor puede cortar sin romperse: 6 kA, 10 kA, 25 kA… Tiene que ser mayor que la Icc máxima donde está instalado. Cerca de un transformador grande hacen falta disyuntores de más kA; lejos, con cable de por medio, alcanza con menos.</p>'],
+  ['Curvas B, C y D', '<p>Dicen a partir de cuántas veces In salta el magnético. <b>B</b>: 3 a 5 × In (cables largos, iluminación). <b>C</b>: 5 a 10 × In (uso general, splits). <b>D</b>: 10 a 20 × In (motores con arranque fuerte, transformadores). Más alta la curva, más aguanta arranques, pero necesita más Icc para saltar rápido.</p>'],
+  ['Ib ≤ In ≤ Iz', '<p>La regla de oro. <b>Ib</b>: la corriente que usa el circuito. <b>In</b>: la del disyuntor. <b>Iz</b>: la que aguanta el cable. El disyuntor tiene que dejar pasar lo normal y saltar antes de que el cable se recaliente.</p>'],
+  ['Demanda y simultaneidad', '<p><b>Potencia instalada</b>: la suma de todo. <b>Factor de uso (fu)</b>: qué parte de su potencia usa cada equipo (un compresor que corta y arranca, 0,8). <b>Factor de simultaneidad (ks)</b>: qué parte de los circuitos anda a la vez. Demanda = Σ P × fu × ks. Con eso se elige el alimentador y el transformador.</p>'],
+  ['Fases y neutro', '<p>Los equipos monofásicos van entre una fase y el neutro. Si se reparten parejo entre L1, L2 y L3, las corrientes se anulan en el neutro. Si todo va a una fase, esa fase manda: el alimentador se dimensiona por la fase más cargada.</p>'],
+  ['Caída de tensión', '<p>El cable tiene resistencia: cuanto más largo y fino, más tensión se pierde. Límite: 3 % para iluminación y 5 % para lo demás, contando desde la fuente.</p>' + fx(null, 'ΔU = k · I · (R · cos φ + X · sen φ)', [], null)],
+  ['TT, TN-S y diferencial', '<p>En <b>TT</b> (lo común con UTE) una falla a la carcasa vuelve por la tierra: son pocos amperes y el disyuntor no se entera. El <b>diferencial</b> compara lo que sale por la fase con lo que vuelve por el neutro; si falta algo (se fue a tierra o por una persona), corta. Condición: I<sub>Δn</sub> × R<sub>A</sub> ≤ 50 V. El diferencial no ve un cortocircuito fase-neutro.</p>'],
+  ['Selectividad', '<p>Ante una falla tiene que saltar solo la protección más cercana, para no apagar todo el súper. Para lograrlo la de arriba tiene que ser bastante más grande o tener retardo. Entre disyuntores chicos es difícil: ante una falla grande saltan los dos magnéticos.</p>'],
+  ['Transformador y generador', '<p>Un transformador da una Icc de unas 1/ucc veces su corriente nominal (con ucc 4 %, unas 25 veces). Un generador da mucho menos (x″d 15 %: unas 7 veces, y baja enseguida). Por eso con el grupo electrógeno hay que revisar que los magnéticos sigan saltando.</p>'],
+  ['De dónde salen los números', '<p>Método de impedancias (IEC 60909 simplificado), corrientes admisibles de IEC 60364-5-52 para cobre, curvas típicas de IEC 60898 (termomagnéticas) e IEC 60947-2 (cajas moldeadas). Son valores orientativos para aprender; en un proyecto real se usan los datos del fabricante y el reglamento de UTE.</p>']
+];
+function modalConceptos() {
+  abrirModal('Conceptos', `<div class="concepts">${CONCEPTOS.map(c => `<article><h3>${c[0]}</h3>${c[1]}</article>`).join('')}</div>`);
+}
+
+// ---------------- Eventos ----------------
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-act],[data-sel],[data-set]');
+  if (!t) { if (e.target.id === 'modal') cerrarModal(); return; }
+  if (t.dataset.set) {
+    const r = conDeshacer(true, () => aplicarCampo(t.dataset.set, t.dataset.v));
+    if (r) { sim = null; todo(); }
+    return;
+  }
+  if (t.dataset.sel) { seleccionar(t.dataset.sel); return; }
+  const a = t.dataset.act;
+  const n = nodoSel();
+  switch (a) {
+    case 'ver-misiones': modalMisiones(); break;
+    case 'ver-conceptos': modalConceptos(); break;
+    case 'cerrar-modal': cerrarModal(); break;
+    case 'mision': cargarMision(t.dataset.id); break;
+    case 'libre': cargarLibre('guardado'); break;
+    case 'libre-ejemplo': cargarLibre('ejemplo'); break;
+    case 'libre-vacio': cargarLibre('vacio'); break;
+    case 'pista': pistaN++; renderMision(); break;
+    case 'tab':
+      tab = t.dataset.tab;
+      if (n) ev.push({ tipo: 'tab', id: n.id, tab });
+      renderInsp(); renderMision();
+      break;
+    case 'sel-fuente': seleccionar('fuente'); break;
+    case 'sel-tg': seleccionar(S.root.id); break;
+    case 'sim':
+      if (!n) break;
+      simular(n.id, t.dataset.f); todo();
+      $('#simres').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      break;
+    case 'restablecer': sim = null; todo(); break;
+    case 'ver-cuentas-sim':
+      if (sim) { const id = sim.id; sel = id; tab = 'cuentas'; ev.push({ tipo: 'tab', id, tab }); todo(); $('#insp').scrollIntoView({ block: 'start', behavior: 'smooth' }); }
+      break;
+    case 'sobrecarga':
+      if (!n) break;
+      tab = 'curva'; prueba = { id: n.id, I: RES.nodos[n.id].Ib * 1.3 }; todo();
+      $('#insp').scrollIntoView({ block: 'start', behavior: 'smooth' });
+      break;
+    case 'prueba': {
+      if (!n) break;
+      const k = +t.dataset.k, r = RES.nodos[n.id];
+      prueba = { id: n.id, I: k ? r.Ib * k : r.iccMin };
+      actualizarCurva();
+      break;
+    }
+    case 'modal-carga': modalCarga(); break;
+    case 'add-carga': {
+      snap(true);
+      const p = panelDestino(); sim = null;
+      const nuevo = nuevaCargaEn(p, t.dataset.tipo);
+      cerrarModal(); sel = nuevo.id; tab = 'ajustes'; centrarSel = true; todo();
+      break;
+    }
+    case 'add-tablero': {
+      snap(true);
+      const p = panelDestino(); sim = null;
+      const cant = []; recorrerArbol(S.root, x => { if (x.kind === 'tablero') cant.push(x); });
+      const nuevo = tablero('Tablero ' + (cant.length + 1), { brk: mcb('C32', MCB_ICU.find(v => v * 1000 >= RES.nodos[p.id].ik3) || 25), cab: cab(10, 20, 'XLPE', 'B2') });
+      p.hijos.push(nuevo); sel = nuevo.id; tab = 'ajustes'; todo();
+      break;
+    }
+    case 'duplicar': {
+      if (!n || n.kind !== 'carga') break;
+      snap(true);
+      const p = buscarPadre(S, n.id), c2 = clonar(n);
+      c2.id = uid(); delete c2.key; c2.name = corto(n.name, 34) + ' (2)';
+      p.hijos.splice(p.hijos.indexOf(n) + 1, 0, c2); sel = c2.id; sim = null; todo();
+      break;
+    }
+    case 'quitar': {
+      if (!n || n === S.root) break;
+      if (quitarPend !== n.id) { quitarPend = n.id; renderInsp(); break; }
+      snap(true);
+      const p = buscarPadre(S, n.id);
+      p.hijos.splice(p.hijos.indexOf(n), 1);
+      quitarPend = null; sel = p.id; sim = null; todo();
+      break;
+    }
+    case 'auto': {
+      if (!n) break;
+      snap(true); sim = null;
+      const ok = autoDimensionar(n.id); todo();
+      if (!ok) { const c = $('#insp-checks'); if (c) c.insertAdjacentHTML('afterbegin', '<p class="ck warn" style="display:block;margin:0 0 6px">No encontré una combinación que verifique todo. Probá con otro tipo de instalación, menos largo o cables en paralelo.</p>'); }
+      break;
+    }
+    case 'deshacer': {
+      const u = deshacer.pop(); if (!u) break;
+      S = u.S; sel = u.sel; sim = null; quitarPend = null; ultimoSnap = 0; todo();
+      break;
+    }
+  }
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && !$('#modal').hidden) { cerrarModal(); return; }
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('[data-sel]')) { e.preventDefault(); seleccionar(e.target.dataset.sel); }
+});
+document.addEventListener('input', e => {
+  const el = e.target;
+  if (el.id === 'prueba') {
+    const n = nodoSel(); if (!n) return;
+    const g = rangoCurva(n);
+    prueba = { id: n.id, I: g.lo * Math.pow(g.hi / g.lo, el.value / 1000) };
+    actualizarCurva();
+    return;
+  }
+  if (el.matches('input[data-f]') && el.type !== 'checkbox') onCampo(el, false);
+});
+document.addEventListener('change', e => {
+  const el = e.target;
+  if (el.matches('[data-f]')) onCampo(el, true);
+});
+function pruebaDesdePuntero(e) {
+  const cap = e.target.closest && e.target.closest('[data-cap]');
+  if (!cap || !curvaGeo) return;
+  const svg = cap.ownerSVGElement, rc = svg.getBoundingClientRect();
+  const xs = (e.clientX - rc.left) * curvaGeo.W / rc.width;
+  const { M, W, lo, hi } = curvaGeo;
+  const f = Math.min(1, Math.max(0, (xs - M.l) / (W - M.l - M.r)));
+  prueba = { id: curvaGeo.id, I: lo * Math.pow(hi / lo, f) };
+  actualizarCurva();
+}
+let arrastrando = false;
+document.addEventListener('pointerdown', e => { if (e.target.closest && e.target.closest('[data-cap]')) { arrastrando = true; pruebaDesdePuntero(e); } });
+document.addEventListener('pointermove', e => { if (arrastrando) pruebaDesdePuntero(e); });
+document.addEventListener('pointerup', () => { arrastrando = false; });
+
+// ---------------- Arranque ----------------
+function iniciar(data) {
+  if (data && data.S && data.S.root) {
+    S = data.S; modo = data.modo || modo; sel = data.sel || null; tab = data.tab || 'ajustes'; ev = data.ev || [];
+    pistaN = data.pistaN || 0; deshacer = [];
+    todo();
+    return;
+  }
+  const m = LS.get('tej-modo');
+  if (m && m.tipo === 'libre') cargarLibre('guardado');
+  else cargarMision(m && m.id ? m.id : 'm1');
+}
+if (window.claude && window.claude.hot && window.claude.hot.snapshot) {
+  window.claude.hot.snapshot(() => ({ S, modo, sel, tab, ev, pistaN }));
+}
+if (window.claude && window.claude.hot && window.claude.hot.ready) window.claude.hot.ready(iniciar);
+else iniciar(window.claude && window.claude.hot ? window.claude.hot.data || {} : {});
+})();
+</script>
+</body>
+</html>

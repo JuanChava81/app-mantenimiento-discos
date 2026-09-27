@@ -87,3 +87,13 @@ confirmado el 26/09/2026).
 
 Juan arma el informe mensual en Excel con la skill `mantenimiento-informes`
 a partir del export de la app.
+
+## Juego educativo "Tablero en Juego"
+
+`public/tablero-en-juego.html` (página suelta, sin tocar la app; en Vercel queda
+en `/tablero-en-juego.html`). Simulador de tableros para aprender cortocircuito
+(trifásico, bifásico, fase-neutro, fase-tierra, pico, Icc máx/mín), sobrecorriente
+(curvas B/C/D y cajas moldeadas), cálculo de demanda (fu, ks, fases, neutro),
+caída de tensión y TT/diferencial. 8 misiones + taller libre; se pueden agregar
+y sacar equipos y tableros, y cada elemento muestra sus cuentas paso a paso.
+Todo el código está dentro del HTML (motor de cálculo + interfaz).
