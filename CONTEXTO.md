@@ -51,8 +51,13 @@ simple, hacer los cambios uno mismo y probarlos antes de subir).
      siguiente se archiva la visita en `equipment_history` y el equipo
      queda limpio; el comentario viejo sigue hasta que llega uno nuevo
      (`comment_period` vs `visit_period`). No se reinicia un equipo cargado
-     en los últimos 20 días (se adopta el período). Las fotos se comprimen y las de
-     visitas archivadas hace +60 días se borran del Storage (cron diario).
+     en los últimos 20 días (se adopta el período). Las fotos se comprimen.
+   - Limpieza del Storage (`limpiarStorage`, cron diario; plan gratis 1 GB):
+     desde el día 10 de cada mes se borran fotos/audios de meses anteriores
+     SOLO de locales exportados después de subirlos; todo lo anterior al
+     01/09/2026 (confirmado por Juan) y los archivos huérfanos. Nunca lo
+     subido en las últimas 24 h. Usa `archivos_storage()`
+     (`supabase/limpiar_storage.sql`).
    - Crons diarios: cerrar sesiones inactivas (3 h) y keepalive de
      Supabase (el plan gratis se pausa si no hay actividad).
    - Es un número de prueba de Meta: máx. 5 destinatarios permitidos, no se
@@ -66,9 +71,9 @@ Tablas: `locations` (suc, months int[], exported_at, visit_date),
 `supabase/schema.sql`; las migraciones se corren a mano en el SQL Editor
 (Claude no tiene acceso directo — hay que darle el SQL a Juan).
 
-**URGENTE (28/09/2026):** Supabase avisa que la organización se pasó de la
-cuota del plan gratis y se restringe el 30/09. Falta ver en Usage si es
-Storage o Egress y decidir (borrar fotos viejas / bajar egress / plan Pro).
+**URGENTE (28/09/2026):** Storage 1,36 GB de 1 GB del plan gratis; se
+restringe el 30/09 si sigue arriba. Solución: `limpiarStorage` (ver arriba).
+Juan tiene que correr `supabase/limpiar_storage.sql` y el cron a mano.
 
 Comentarios de informes viejos: se cargan con `supabase/funcion_cargar_comentario.sql`
 (`select cargar_comentario('D 01','ac','Rooftop',1,$c$texto$c$);`), que crea el
