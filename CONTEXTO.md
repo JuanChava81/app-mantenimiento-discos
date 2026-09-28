@@ -49,8 +49,10 @@ simple, hacer los cambios uno mismo y probarlos antes de subir).
      `S07 FALLA` / `S07 OK` lo cambian a mano.
    - Visitas por período (`lib/visitas.js`): al empezar el mes de visita
      siguiente se archiva la visita en `equipment_history` y el equipo
-     queda limpio; el comentario viejo sigue hasta que llega uno nuevo
-     (`comment_period` vs `visit_period`). No se reinicia un equipo cargado
+     queda limpio; los comentarios viejos (visita anterior o `'informe'`)
+     se siguen viendo hasta que llega el PRIMER comentario nuevo de la visita
+     a cualquier equipo del local: ahí se borran todos los viejos del local
+     (`borrarComentariosViejos`). Abrir la sucursal no borra nada. No se reinicia un equipo cargado
      en los últimos 20 días (se adopta el período). Las fotos se comprimen.
    - Limpieza del Storage (`limpiarStorage`, cron diario; plan gratis 1 GB):
      desde el día 10 de cada mes se borran fotos/audios de meses anteriores
