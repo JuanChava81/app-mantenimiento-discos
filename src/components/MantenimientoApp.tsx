@@ -63,7 +63,14 @@ export default function MantenimientoApp({
   locations: Location[];
   dataSource: "supabase" | "mock";
 }) {
-  const initial = useMemo(() => generateEquipmentFor(locations), [locations]);
+  // Los equipos de ejemplo (inventados, con estados y comentarios al azar)
+  // son solo para cuando no hay Supabase. Con Supabase se muestran únicamente
+  // los equipos reales: antes se mezclaban, así que cada local mostraba
+  // equipos que no existían y "revisados" que nadie revisó.
+  const initial = useMemo(
+    () => (dataSource === "supabase" ? { equipment: [], data: {} } : generateEquipmentFor(locations)),
+    [locations, dataSource]
+  );
   const [stack, setStack] = useState<View[]>([{ screen: "locations" }]);
   const [equipment, setEquipment] = useState<Equipment[]>(initial.equipment);
   const [data, setData] = useState<Record<string, EquipmentData>>(initial.data);
