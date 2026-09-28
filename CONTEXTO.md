@@ -66,6 +66,14 @@ Tablas: `locations` (suc, months int[], exported_at, visit_date),
 `supabase/schema.sql`; las migraciones se corren a mano en el SQL Editor
 (Claude no tiene acceso directo — hay que darle el SQL a Juan).
 
+**URGENTE (28/09/2026):** Supabase avisa que la organización se pasó de la
+cuota del plan gratis y se restringe el 30/09. Falta ver en Usage si es
+Storage o Egress y decidir (borrar fotos viejas / bajar egress / plan Pro).
+
+Comentarios de informes viejos: se cargan con `supabase/funcion_cargar_comentario.sql`
+(`select cargar_comentario('D 01','ac','Rooftop',1,$c$texto$c$);`), que crea el
+equipo si no existe. Con Supabase la app ya no muestra equipos de ejemplo.
+
 Migraciones corridas por Juan hasta la v8 (`supabase/migrate_v8_visitas.sql`,
 confirmado el 26/09/2026).
 
