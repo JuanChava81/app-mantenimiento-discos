@@ -73,9 +73,10 @@ Tablas: `locations` (suc, months int[], exported_at, visit_date),
 `supabase/schema.sql`; las migraciones se corren a mano en el SQL Editor
 (Claude no tiene acceso directo — hay que darle el SQL a Juan).
 
-**URGENTE (28/09/2026):** Storage 1,36 GB de 1 GB del plan gratis; se
-restringe el 30/09 si sigue arriba. Solución: `limpiarStorage` (ver arriba).
-Juan tiene que correr `supabase/limpiar_storage.sql` y el cron a mano.
+Storage: el 28/09/2026 se pasó del 1 GB gratis (1,94 GB). Juan corrió
+`supabase/limpiar_storage.sql` y el cron a mano: bajó a ~525 MB (quedan
+~446 MB de fotos de Setiembre, que se borran desde el 10/10 si el local
+está exportado).
 
 Comentarios de informes viejos: se cargan con `supabase/funcion_cargar_comentario.sql`
 (`select cargar_comentario('D 01','ac','Rooftop',1,$c$texto$c$);`), que crea el
