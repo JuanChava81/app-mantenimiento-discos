@@ -177,14 +177,19 @@ export default function MantenimientoApp({
   }
 
   function countsFor(list: Equipment[]) {
-    let ok = 0, falla = 0, pendiente = 0;
+    let ok = 0, falla = 0, pendiente = 0, total = 0;
     for (const e of list) {
       const st = data[e.id]?.status ?? "pendiente";
+      // "Comentarios generales" es opcional: no todos los locales tienen.
+      // Si no se cargó nada no cuenta como pendiente (no frena el
+      // "revisados" ni el Completo); si se cargó, cuenta como revisado.
+      if (e.category === "cg" && st === "pendiente") continue;
+      total++;
       if (st === "ok") ok++;
       else if (st === "falla") falla++;
       else pendiente++;
     }
-    return { ok, falla, pendiente, total: list.length };
+    return { ok, falla, pendiente, total };
   }
 
   function addEquipment(locationId: string, categoryId: CategoryId) {
@@ -693,7 +698,7 @@ function LocationScreen({
                 </span>
                 <h5>{cat.name}</h5>
                 <span style={{ fontSize: 12, opacity: 0.7 }}>
-                  {c.ok + c.falla}/{c.total} revisados
+                  {cat.id === "cg" && c.total === 0 ? "Opcional" : `${c.ok + c.falla}/${c.total} revisados`}
                 </span>
                 <ProgressBar value={c.ok + c.falla} max={c.total || 1} />
                 {c.falla > 0 && <span className="chip chip-falla">{c.falla} no OK</span>}
