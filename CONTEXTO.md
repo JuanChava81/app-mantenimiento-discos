@@ -66,6 +66,15 @@ simple, hacer los cambios uno mismo y probarlos antes de subir).
    - Es un número de prueba de Meta: máx. 5 destinatarios permitidos, no se
      le puede cambiar la foto de perfil.
 
+## Cosas que vencen o tienen límite
+
+- Token de WhatsApp (WPP_ACCESS_TOKEN): verificar que sea de usuario del
+  sistema "Nunca vence" (si es de 60 días, hay que renovarlo).
+- API de Meta v26.0 (~2 años de vida): cambiar con WPP_GRAPH_VERSION.
+- Modelos de Groq: GROQ_WHISPER_MODEL / GROQ_CHAT_MODEL si los dan de baja.
+- Supabase gratis: pausa por inactividad (keepalive diario) y 1 GB de
+  Storage (limpiarStorage).
+
 ## Supabase
 
 Tablas: `locations` (suc, months int[], exported_at, visit_date),
