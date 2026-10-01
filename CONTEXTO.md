@@ -31,6 +31,7 @@ simple, hacer los cambios uno mismo y probarlos antes de subir).
    - `Fin D24` cierra solo la parte de quien lo manda (se le confirma lo
      que cargó); la sucursal se cierra del todo, con el resumen a
      WPP_NOTIFY_TO, cuando manda Fin el último técnico (`sesion.participantes`).
+     `FIN D24 TODO` la cierra para todos en el momento.
      El cron de inactividad cierra todo. Si alguien manda material sin
      visita abierta, el bot le avisa (máx. un aviso cada 5 min).
    - Al mandar el código de sucursal, le contesta "🔓 Se abrió la visita de
