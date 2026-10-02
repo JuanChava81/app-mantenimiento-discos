@@ -1,0 +1,18 @@
+{
+  "id": "/herreria",
+  "name": "Herrería · Creative",
+  "short_name": "Herrería",
+  "description": "Auditorías anuales de herrería en cubierta (sistemas anticaída).",
+  "start_url": "/herreria",
+  "scope": "/herreria",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1c2a33",
+  "theme_color": "#1c2a33",
+  "icons": [
+    { "src": "/herreria/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/herreria/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/herreria/icon-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/herreria/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
