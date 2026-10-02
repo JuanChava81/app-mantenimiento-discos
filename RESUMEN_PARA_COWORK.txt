@@ -1,0 +1,84 @@
+RESUMEN DEL SISTEMA DE MANTENIMIENTO DISCO / DEVOTO (actualizado 02/10/2026)
+
+== PIEZAS ==
+1) Bot de WhatsApp "Disco Informes" (repo GitHub JuanChava81/wpp-mantenimiento, corre en Vercel).
+   Los técnicos le mandan fotos, audios y códigos; el bot sube todo a Supabase.
+2) App web "Control de mantenimiento · Disco / Devoto" (repo JuanChava81/app-mantenimiento-discos,
+   Vercel, se instala en el celular como app). Muestra el plan de visitas, los equipos, fotos,
+   comentarios y estados; exporta ZIP de fotos/audios y un Excel.
+3) Supabase (base de datos + archivos). Plan gratis: 1 GB de espacio para fotos.
+4) Informes: Juan los arma con Claude Cowork (skill "mantenimiento-informes") a partir del
+   export de la app y del Excel del informe anterior de esa sucursal.
+52 sucursales (28 Disco "D 01".."D 28", 24 Devoto "DV 01".."DV 25"), 2 visitas por año cada una
+según el calendario cargado en la app.
+
+== FLUJO DEL TÉCNICO EN WHATSAPP ==
+1. Manda el código de sucursal: D24, DV23. El bot contesta "Se abrió la visita de D24" y muestra
+   los comentarios guardados de cada equipo (los del último informe / visita anterior).
+   Abrir la sucursal solo para leer NO borra ni cambia nada.
+2. Por cada equipo: manda las fotos y/o audios (o texto) y AL FINAL el código del equipo.
+   Códigos: S (split), R (rooftop), CH (chiller), M (manejadora), UE (unidad exterior),
+   UI (unidad interior), GEN (generador), TAB (tablero), GAS, UPS, CG (comentarios generales)
+   + número (R02, S10). Sin número vale 01.
+   El bot contesta "✅ R_02 cargado (N fotos · M audios)" y avisa si alguna foto no se pudo subir.
+3. Al terminar: "FIN D24" cierra SOLO la parte de quien lo manda. Cuando cierra el último técnico,
+   se cierra la visita y llega el resumen a Juan. "FIN D24 TODO" la cierra para todos en el momento.
+   Si nadie la cierra, se cierra sola por inactividad (chequeo diario a las 6 a.m.).
+Otros comandos:
+- "codigos": lista de códigos.
+- "BORRAR": descarta lo que mandaste y todavía no tiene código.
+- "BORRAR S07": saca de S07 lo que se le cargó en esta visita (queda Pendiente).
+- "CAMBIAR S10 S07": pasa lo cargado a S10 en esta visita a S07; si S07 tenía algo, los intercambia
+  (con su estado OK/No OK).
+- "S07 FALLA" / "S07 OK": marca el estado a mano.
+Dos técnicos pueden trabajar a la vez en la misma sucursal: cada uno tiene su propia "bolsa" de
+fotos, el código de uno no se lleva las fotos del otro.
+
+== ESTADOS Y COMENTARIOS ==
+- Equipo con fotos/audios/texto cargados en la visita pasa a OK solo.
+- Los audios se transcriben y una IA los deja como observación de informe; si el audio habla de
+  una falla, el equipo queda No OK (se corrige con "S07 OK").
+- Comentarios viejos (del último informe o de la visita anterior) se siguen viendo hasta que
+  llega el PRIMER comentario nuevo de la visita (audio o texto) a cualquier equipo del local:
+  ahí se borran todos los viejos de ese local. Mandar solo fotos NO borra comentarios.
+  Dentro de la misma visita los comentarios nuevos se suman, nunca se borran.
+- "Comentarios generales" (CG) es opcional: si no se carga, no cuenta como pendiente.
+
+== VISITAS POR PERÍODO ==
+- Cada local tiene sus meses de visita (ej. D24: Marzo y Setiembre). Cuando empieza el mes de la
+  visita siguiente, cada equipo queda limpio (sin fotos, Pendiente) y lo anterior se guarda en el
+  Historial del equipo (estado y comentario). Equipos cargados en los últimos 20 días no se
+  reinician (visita hecha unos días antes de su mes).
+- Fecha de la visita: la anota el bot cuando se carga el primer equipo; el export y el Excel usan
+  esa fecha (se puede cambiar a mano en la app).
+
+== APP ==
+- Plan de visitas por mes ("Este mes" / "Todos", Disco / Devoto).
+- Un local figura COMPLETO cuando se toca "Exportar fotos y audios por equipo" en su resumen.
+- Muestra solo equipos reales (los que existen en Supabase). Se actualiza sola cada 15 segundos.
+- Historial de cada equipo: visitas anteriores con estado y comentario.
+
+== ESPACIO DE FOTOS (Supabase 1 GB gratis) ==
+- El bot comprime las fotos (1600 px) antes de subirlas.
+- Desde el día 10 de cada mes se borran de Supabase las fotos/audios de meses anteriores SOLO de
+  los locales ya exportados (el ZIP ya está en la compu). Lo no exportado no se toca.
+- Todos los días se borran fotos que ya no usa ningún equipo. Nunca se borra lo subido en las
+  últimas 24 h. Comentarios, estados e historial no se borran nunca.
+- Por eso: EXPORTAR cada local apenas se termina su informe.
+
+== REGLAS PARA COWORK ==
+- NO escribir en la app de a muchos cambios (el control de seguridad lo bloquea). Para cargar
+  comentarios masivos, generar un archivo SQL para que Juan lo pegue en Supabase -> SQL Editor,
+  una línea por equipo:
+    select cargar_comentario('D 24', 'ac', 'Rooftop', 2, $c$TEXTO$c$);
+  (crea el equipo si no existe; el comentario queda marcado como "del informe anterior").
+  Tipos: S->ac/Split, R->ac/Rooftop, CH->ac/Chiller, M->ac/Manejadora, UE->ac/UE, UI->ac/UI,
+  GEN->gen/Generador, TAB->sub/Tablero, GAS->gas/Tramo, UPS->ups/UPS, CG->cg/General.
+  Sucursal con espacio ('D 01', 'DV 23'), número sin ceros (01->1). No usar updated_at.
+- En la app los aires aparecen como AC-001, AC-002...; en el informe usar la convención
+  S_XX / R_XX / CH_XX / M_XX / UE_XX / UI_XX (la misma que manda el bot).
+- Cambios de código del bot o la app se hacen con Claude Code (repos de GitHub), no desde Cowork.
+
+== PENDIENTES ==
+- Verificar que el token de WhatsApp del bot no venza (Meta, Access Token Debugger -> "Caduca: Nunca").
+- El número de WhatsApp es de prueba de Meta: máximo 5 destinatarios, no se puede cambiar la foto.
