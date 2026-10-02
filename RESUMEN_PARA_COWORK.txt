@@ -1,4 +1,4 @@
-RESUMEN DEL SISTEMA DE MANTENIMIENTO DISCO / DEVOTO (actualizado 02/10/2026)
+RESUMEN DEL SISTEMA DE MANTENIMIENTO Y HERRERÍA DISCO / DEVOTO (actualizado 02/10/2026)
 
 == PIEZAS ==
 1) Bot de WhatsApp "Disco Informes" (repo GitHub JuanChava81/wpp-mantenimiento, corre en Vercel).
@@ -82,3 +82,56 @@ fotos, el código de uno no se lleva las fotos del otro.
 == PENDIENTES ==
 - Verificar que el token de WhatsApp del bot no venza (Meta, Access Token Debugger -> "Caduca: Nunca").
 - El número de WhatsApp es de prueba de Meta: máximo 5 destinatarios, no se puede cambiar la foto.
+
+=====================================================================
+== HERRERÍA (auditoría anual de sistemas anticaída en cubierta) ==
+=====================================================================
+Sistema APARTE del de mantenimiento: otro número de WhatsApp, otra app en el celular
+("Herrería", dirección de la app + /herreria), tablas y bucket propios en el mismo Supabase.
+57 sitios (52 Disco/Devoto + D29 Libertad, depósitos Burgues CD80 / Pichincha CD81 /
+Perimetral CD82, Géant I G01), cada uno con su mes. Ciclo de mayo a abril ('2026-2027').
+
+== FLUJO DEL TÉCNICO EN WHATSAPP (número de herrería) ==
+1. Manda cualquier mensaje: el bot contesta una lista con los sitios del mes que faltan.
+   Elige uno, o "Otro sitio" y escribe el nombre o número (DV23, Cnel. Mora, Burgues).
+   Si otro técnico ya abrió ese sitio en los últimos 2 días, se suma a la misma auditoría.
+   No se muestra nada de la auditoría anterior.
+2. Por cada PUNTO: manda las fotos y después UN AUDIO contando qué es y cómo está
+   (o un texto). El audio cierra el punto. El bot contesta:
+   "✅ Punto 4 · 3 fotos · <descripción>" y, si hay algo para corregir,
+   "⚠️ Recomendación: <recomendación>".
+3. Un audio sin fotos nuevas se suma al último punto (se rehace el texto).
+4. Comandos: GENERAL <texto> (comentario general) · BORRAR (borra tu último punto, o las
+   fotos que todavía no tienen audio) · CORREGIR <texto> (reemplaza el texto del último
+   punto) · FIN (cierra tu parte; fotos sueltas quedan como punto sin texto) · FIN TODO ·
+   AYUDA. Al cerrar el último técnico le llega a Juan: "🔩 DV23 cerrada: 11 puntos,
+   3 con recomendación, 38 fotos." Sin actividad 3 h, se cierra sola al otro día.
+
+== TEXTOS (IA) ==
+- descripcion: UNA oración, tercera persona: elemento + ubicación + estado.
+- recomendacion: UNA oración que empieza con verbo en infinitivo (Instalar, Reparar,
+  Sustituir, Demarcar, Retirar, Reforzar, Canalizar, Verificar) + qué + dónde; vacía si
+  el elemento está bien (vacía = no va a la hoja Recomendaciones).
+- Todo se puede corregir en la app.
+
+== APP HERRERÍA ==
+Plan anual (este mes / todos, estado pendiente / en curso / cerrada / exportada),
+auditoría (fecha editable, comentario general, puntos con miniaturas: reordenar, borrar,
+agregar), punto (fotos de cámara o galería, audio, transcripción, descripción y
+recomendación editables, "Redactar de nuevo con IA") y EXPORTAR.
+
+== EXPORT (lo que lee la skill "informe-herreria") ==
+HER_<cod>_<AAAA-MM-DD>.zip (ej. HER_DV23_2026-09-14.zip):
+  herreria.json   {"version":1, "sitio":{"cod","nombre","rotulo","archivo"}, "fecha",
+                   "ciclo", "comentario_general",
+                   "puntos":[{"orden","descripcion","recomendacion","transcripcion","fotos":[...]}]}
+  herreria.txt    lo mismo, legible
+  fotos/P01_foto1.jpg, fotos/P01_foto2.jpg, fotos/P02_foto1.jpg ...  (siempre JPG)
+  audios/P01_audio1.<ext>  (opcional)
+Puntos en orden 1..n, incluidos los sin texto (descripcion vacía). Al exportar, la
+auditoría queda "exportada" y sale de la lista del mes.
+
+== ESPACIO ==
+El bucket "herreria" comparte el 1 GB gratis con mantenimiento. Las fotos y audios de
+una auditoría exportada se borran del Supabase 30 días después (el ZIP ya está en la
+compu). Los textos no se borran. EXPORTAR cada auditoría apenas se termina.

@@ -1,0 +1,30 @@
+GUÍA RÁPIDA · AUDITORÍA DE HERRERÍA POR WHATSAPP
+(número de WhatsApp de HERRERÍA, no el de mantenimiento)
+
+1. EMPEZAR
+   Mandá cualquier mensaje ("hola"). Te llega una lista con los sitios del mes:
+   tocá "Elegir sitio" y elegí el tuyo.
+   ¿No está? Elegí "Otro sitio" y escribí el número o el nombre (DV23, Cnel. Mora, Burgues).
+   Si tu compañero ya lo abrió, te sumás a la misma auditoría.
+
+2. CADA PUNTO = FOTOS + AUDIO
+   a) Mandá las fotos de ese punto (las que quieras).
+   b) Después mandá UN AUDIO diciendo qué es, dónde está y cómo está.
+      Ej.: "Plataforma de la manejadora 01, le falta el rodillero."
+   El bot te contesta con el número de punto, el texto y la recomendación si hay algo para corregir.
+   Primero las fotos, después el audio. Siempre en ese orden.
+
+3. SI TE OLVIDASTE ALGO
+   - Mandá otro audio sin fotos: se suma al último punto.
+   - CORREGIR y el texto bien escrito: reemplaza el texto del último punto.
+     Ej.: CORREGIR Escalera de acceso a cubierta en buen estado
+   - BORRAR: borra tu último punto (o las fotos que todavía no tienen audio).
+   - GENERAL y el texto: va al comentario general del sitio.
+
+4. TERMINAR
+   Mandá FIN. Si quedaron fotos sin audio, se guardan como un punto sin texto.
+   Si tu compañero sigue, la auditoría queda abierta para él.
+   FIN TODO la cierra para los dos.
+
+AYUDA: te manda este resumen corto.
+Si el bot avisa "No se pudieron subir N fotos", agregalas desde la app Herrería en ese punto.

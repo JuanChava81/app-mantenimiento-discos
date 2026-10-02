@@ -66,6 +66,45 @@ simple, hacer los cambios uno mismo y probarlos antes de subir).
    - Es un número de prueba de Meta: máx. 5 destinatarios permitidos, no se
      le puede cambiar la foto de perfil.
 
+## Herrería (sistema aparte, desde 10/2026)
+
+Auditoría anual de herrería en cubierta (sistemas anticaída) en 57 sitios
+(52 Disco/Devoto + D29 Libertad + depósitos CD80/CD81/CD82 + Géant G01).
+NO comparte nada con mantenimiento salvo el Supabase, el Redis y la clave
+de Groq. Regla: no tocar nada de mantenimiento al cambiar herrería.
+
+- **Supabase** (`supabase/herreria_v1.sql`): `herreria_sitios` (cod, nombre,
+  rotulo, archivo, direccion, mes), `herreria_auditorias` (ciclo mayo-abril
+  '2026-2027', fecha, estado abierta/cerrada/exportada, comentario_general,
+  actividad_at, archivos_borrados), `herreria_puntos` (orden, fotos, audios,
+  transcripcion, descripcion, recomendacion, remitente), función
+  `herreria_nuevo_punto` (orden sin repetir), bucket `herreria`.
+- **Bot** (repo wpp-mantenimiento): `api/webhook-herreria.js` + `lib/herreria/`.
+  Otro número/app de Meta: variables `HER_WPP_TOKEN`, `HER_PHONE_NUMBER_ID`,
+  `HER_VERIFY_TOKEN`, `HER_NOTIFY_TO`, `HER_GRAPH_VERSION`. Redis `her:*`.
+  Flujo: cualquier mensaje sin auditoría → lista interactiva de sitios del
+  mes (sin exportada en el ciclo) + "Otro sitio" (busca por cod/nombre/
+  rótulo); se suma a la auditoría abierta del sitio de los últimos 2 días.
+  Fotos → bolsa del técnico; el audio/texto siguiente arma el punto (IA:
+  descripción + recomendación, prompt propio en `lib/herreria/ia.js` y
+  `src/herreria/prompt.ts` — mantener iguales). Audio sin fotos se suma al
+  último punto (o al comentario general). Comandos: GENERAL, BORRAR,
+  CORREGIR <texto>, FIN, FIN TODO, AYUDA. Cron (keepalive, aislado):
+  cierra auditorías sin actividad en 3 h y borra fotos/audios de las
+  exportadas hace +30 días.
+- **App** `/herreria` (mismo repo y Vercel; manifest propio id/scope
+  `/herreria`, ícono escalera en gris pizarra): plan anual, auditoría,
+  punto, export. `/api/herreria/procesar` (Whisper + IA) necesita
+  `GROQ_API_KEY` en el Vercel de la app. Grabadora propia (AudioRecorder de
+  mantenimiento sube al bucket `audios`, por eso no se reusa).
+- **Export (contrato con la skill de Cowork `informe-herreria`, no cambiar)**:
+  `HER_<cod>_<AAAA-MM-DD>.zip` con `herreria.json` (version, sitio{cod,
+  nombre,rotulo,archivo}, fecha, ciclo, comentario_general, puntos[{orden,
+  descripcion, recomendacion, transcripcion, fotos}]), `herreria.txt`,
+  `fotos/PNN_fotoN.jpg` (siempre JPG), `audios/PNN_audioN.<ext>` opcional.
+  Puntos numerados 1..n por orden. Al exportar: estado exportada.
+- Guía de técnicos: `GUIA_TECNICOS_HERRERIA.txt`.
+
 ## Cosas que vencen o tienen límite
 
 - Token de WhatsApp (WPP_ACCESS_TOKEN): verificar que sea de usuario del
