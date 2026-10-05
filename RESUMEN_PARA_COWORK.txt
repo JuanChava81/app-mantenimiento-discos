@@ -1,4 +1,4 @@
-RESUMEN DEL SISTEMA DE MANTENIMIENTO Y HERRERÍA DISCO / DEVOTO (actualizado 02/10/2026)
+RESUMEN DEL SISTEMA DE MANTENIMIENTO Y HERRERÍA DISCO / DEVOTO (actualizado 05/10/2026)
 
 == PIEZAS ==
 1) Bot de WhatsApp "Disco Informes" (repo GitHub JuanChava81/wpp-mantenimiento, corre en Vercel).
@@ -86,13 +86,17 @@ fotos, el código de uno no se lleva las fotos del otro.
 =====================================================================
 == HERRERÍA (auditoría anual de sistemas anticaída en cubierta) ==
 =====================================================================
-Sistema APARTE del de mantenimiento: otro número de WhatsApp, otra app en el celular
-("Herrería", dirección de la app + /herreria), tablas y bucket propios en el mismo Supabase.
+Sistema APARTE del de mantenimiento: otra app en el celular ("Herrería", dirección de la
+app + /herreria), tablas y bucket propios en el mismo Supabase. Usa el MISMO número de
+WhatsApp ("Disco Informes"): por defecto todo es mantenimiento; "H" pasa a herrería y "CM"
+vuelve a mantenimiento (también FIN de herrería o 12 h sin mensajes). El bot avisa siempre
+en qué modo estás; los mensajes de herrería empiezan con 🔩 y los de mantenimiento con 🔧.
 57 sitios (52 Disco/Devoto + D29 Libertad, depósitos Burgues CD80 / Pichincha CD81 /
 Perimetral CD82, Géant I G01), cada uno con su mes. Ciclo de mayo a abril ('2026-2027').
 
-== FLUJO DEL TÉCNICO EN WHATSAPP (número de herrería) ==
-1. Manda cualquier mensaje: el bot contesta una lista con los sitios del mes que faltan.
+== FLUJO DEL TÉCNICO EN WHATSAPP (modo herrería) ==
+1. Manda "H": el bot avisa que está en HERRERÍA y contesta una lista con los sitios del mes
+   que faltan (en modo herrería, cualquier mensaje sin auditoría vuelve a mostrar la lista).
    Elige uno, o "Otro sitio" y escribe el nombre o número (DV23, Cnel. Mora, Burgues).
    Si otro técnico ya abrió ese sitio en los últimos 2 días, se suma a la misma auditoría.
    No se muestra nada de la auditoría anterior.

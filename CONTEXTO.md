@@ -79,9 +79,17 @@ de Groq. Regla: no tocar nada de mantenimiento al cambiar herrería.
   actividad_at, archivos_borrados), `herreria_puntos` (orden, fotos, audios,
   transcripcion, descripcion, recomendacion, remitente), función
   `herreria_nuevo_punto` (orden sin repetir), bucket `herreria`.
-- **Bot** (repo wpp-mantenimiento): `api/webhook-herreria.js` + `lib/herreria/`.
-  Otro número/app de Meta: variables `HER_WPP_TOKEN`, `HER_PHONE_NUMBER_ID`,
-  `HER_VERIFY_TOKEN`, `HER_NOTIFY_TO`, `HER_GRAPH_VERSION`. Redis `her:*`.
+- **Bot** (repo wpp-mantenimiento): `lib/herreria/`. **Mismo número que
+  mantenimiento** (Meta le dio a la app "Creative Herreria" el mismo número
+  de prueba y WABA): el webhook de mantenimiento llama primero a
+  `lib/herreria/modo.js`. Por defecto todo es mantenimiento; `H`/`HERRERIA`
+  pasa a herrería (`her:modo:<tel>`, 12 h), `CM`/`MANTENIMIENTO`, FIN de
+  herrería o 12 h sin mensajes vuelven; siempre avisa el modo (🔩 / 🔧).
+  En herrería, `D24`/`FIN D24` avisan "Estás en modo HERRERÍA". El webhook
+  propio `api/webhook-herreria.js` queda PAUSADO en Meta (si se activa,
+  cada mensaje se procesaría dos veces). Variables `HER_WPP_TOKEN`
+  (token de "Bot Herreria"), `HER_PHONE_NUMBER_ID`, `HER_NOTIFY_TO`,
+  `HER_GRAPH_VERSION`. Redis `her:*`.
   Flujo: cualquier mensaje sin auditoría → lista interactiva de sitios del
   mes (sin exportada en el ciclo) + "Otro sitio" (busca por cod/nombre/
   rótulo); se suma a la auditoría abierta del sitio de los últimos 2 días.
