@@ -89,7 +89,9 @@ fotos, el código de uno no se lleva las fotos del otro.
 Sistema APARTE del de mantenimiento: otra app en el celular ("Herrería", dirección de la
 app + /herreria), tablas y bucket propios en el mismo Supabase. Usa el MISMO número de
 WhatsApp ("Disco Informes"): por defecto todo es mantenimiento; "H" pasa a herrería y "CM"
-vuelve a mantenimiento (también FIN de herrería o 12 h sin mensajes). El bot avisa siempre
+vuelve a mantenimiento (también solo a las 12 h sin mensajes). "FIN" (en cualquier modo)
+cierra TODO lo que el técnico tenga abierto: su parte de herrería y de mantenimiento
+("FIN TODO": para todos) y lo deja en mantenimiento. El bot avisa siempre
 en qué modo estás; los mensajes de herrería empiezan con 🔩 y los de mantenimiento con 🔧.
 57 sitios (52 Disco/Devoto + D29 Libertad, depósitos Burgues CD80 / Pichincha CD81 /
 Perimetral CD82, Géant I G01), cada uno con su mes. Ciclo de mayo a abril ('2026-2027').
@@ -107,7 +109,7 @@ Perimetral CD82, Géant I G01), cada uno con su mes. Ciclo de mayo a abril ('202
 3. Un audio sin fotos nuevas se suma al último punto (se rehace el texto).
 4. Comandos: GENERAL <texto> (comentario general) · BORRAR (borra tu último punto, o las
    fotos que todavía no tienen audio) · CORREGIR <texto> (reemplaza el texto del último
-   punto) · FIN (cierra tu parte; fotos sueltas quedan como punto sin texto) · FIN TODO ·
+   punto) · FIN (cierra todo lo tuyo, también mantenimiento; fotos sueltas quedan como punto sin texto) · FIN TODO ·
    AYUDA. Al cerrar el último técnico le llega a Juan: "🔩 DV23 cerrada: 11 puntos,
    3 con recomendación, 38 fotos." Sin actividad 3 h, se cierra sola al otro día.
 

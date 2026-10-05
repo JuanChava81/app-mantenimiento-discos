@@ -83,8 +83,11 @@ de Groq. Regla: no tocar nada de mantenimiento al cambiar herrería.
   mantenimiento** (Meta le dio a la app "Creative Herreria" el mismo número
   de prueba y WABA): el webhook de mantenimiento llama primero a
   `lib/herreria/modo.js`. Por defecto todo es mantenimiento; `H`/`HERRERIA`
-  pasa a herrería (`her:modo:<tel>`, 12 h), `CM`/`MANTENIMIENTO`, FIN de
-  herrería o 12 h sin mensajes vuelven; siempre avisa el modo (🔩 / 🔧).
+  pasa a herrería (`her:modo:<tel>`, 12 h), `CM`/`MANTENIMIENTO` o 12 h sin
+  mensajes vuelven; siempre avisa el modo (🔩 / 🔧). `FIN` (en cualquier
+  modo) cierra TODO lo abierto del técnico: su parte de la auditoría de
+  herrería y de la visita de mantenimiento (`FIN TODO`: para todos) y lo
+  deja en mantenimiento; `FIN D24` además cierra la herrería.
   En herrería, `D24`/`FIN D24` avisan "Estás en modo HERRERÍA". El webhook
   propio `api/webhook-herreria.js` queda PAUSADO en Meta (si se activa,
   cada mensaje se procesaría dos veces). Variables `HER_WPP_TOKEN`
