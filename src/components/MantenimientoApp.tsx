@@ -694,7 +694,7 @@ function LocationScreen({
                   className="flex items-center justify-center"
                   style={{ width: 38, height: 38, background: "var(--color-accent-100)", color: "var(--color-accent-700)" }}
                 >
-                  {cat.prefix[0]}
+                  {cat.id === "cr" ? "CR" : cat.prefix[0]}
                 </span>
                 <h5>{cat.name}</h5>
                 <span style={{ fontSize: 12, opacity: 0.7 }}>

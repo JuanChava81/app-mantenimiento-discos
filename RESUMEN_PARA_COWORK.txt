@@ -18,7 +18,8 @@ según el calendario cargado en la app.
    Abrir la sucursal solo para leer NO borra ni cambia nada.
 2. Por cada equipo: manda las fotos y/o audios (o texto) y AL FINAL el código del equipo.
    Códigos: S (split), R (rooftop), CH (chiller), M (manejadora), UE (unidad exterior),
-   UI (unidad interior), GEN (generador), TAB (tablero), GAS, UPS, CG (comentarios generales)
+   UI (unidad interior), GEN (generador), TAB (tablero), GAS, UPS, CR (ciclo de refrigeración),
+   CG (comentarios generales)
    + número (R02, S10). Sin número vale 01.
    El bot contesta "✅ R_02 cargado (N fotos · M audios)" y avisa si alguna foto no se pudo subir.
 3. Al terminar: "FIN D24" cierra SOLO la parte de quien lo manda. Cuando cierra el último técnico,
@@ -73,7 +74,8 @@ fotos, el código de uno no se lleva las fotos del otro.
     select cargar_comentario('D 24', 'ac', 'Rooftop', 2, $c$TEXTO$c$);
   (crea el equipo si no existe; el comentario queda marcado como "del informe anterior").
   Tipos: S->ac/Split, R->ac/Rooftop, CH->ac/Chiller, M->ac/Manejadora, UE->ac/UE, UI->ac/UI,
-  GEN->gen/Generador, TAB->sub/Tablero, GAS->gas/Tramo, UPS->ups/UPS, CG->cg/General.
+  GEN->gen/Generador, TAB->sub/Tablero, GAS->gas/Tramo, UPS->ups/UPS, CR->cr/Ciclo,
+  CG->cg/General.
   Sucursal con espacio ('D 01', 'DV 23'), número sin ceros (01->1). No usar updated_at.
 - En la app los aires aparecen como AC-001, AC-002...; en el informe usar la convención
   S_XX / R_XX / CH_XX / M_XX / UE_XX / UI_XX (la misma que manda el bot).

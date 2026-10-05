@@ -70,6 +70,20 @@ export const CATEGORIES: CategoryDef[] = [
     fields: [{ id: "fp", label: "Factor de potencia", unit: "", placeholder: "0,95" }],
   },
   {
+    // Ciclos de refrigeración (centrales/circuitos de frío). En el bot: CR02.
+    id: "cr",
+    name: "Ciclos de refrigeración",
+    prefix: "CR",
+    subtypes: ["Ciclo"],
+    checks: [
+      { id: "compresores", label: "Compresores en funcionamiento", options: ["OK", "No OK"] },
+      { id: "condensadores", label: "Condensadores y ventiladores", options: ["OK", "No OK"] },
+      { id: "perdidas", label: "Pérdidas de refrigerante", options: ["OK", "No OK"] },
+      { id: "aislacion", label: "Aislación de cañerías", options: ["OK", "No OK"] },
+    ],
+    fields: [],
+  },
+  {
     id: "cg",
     name: "Comentarios generales",
     prefix: "CG",

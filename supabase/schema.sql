@@ -22,7 +22,7 @@ create table if not exists locations (
 create table if not exists equipment_state (
   id text primary key,               -- mismo id que usa la app, ej. "<location_uuid>-ac-1"
   location_id uuid references locations(id) on delete cascade,
-  category text not null,            -- ac | gas | ups | gen | sub
+  category text not null,            -- ac | gas | ups | gen | sub | cr | cg
   subtype text,
   number int not null,
   code text not null,                -- AC-001

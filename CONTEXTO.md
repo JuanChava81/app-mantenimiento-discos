@@ -8,7 +8,8 @@ simple, hacer los cambios uno mismo y probarlos antes de subir).
 1. **App web** — este repo (`JuanChava81/app-mantenimiento-discos`).
    Next.js (PWA) en Vercel, lee y escribe Supabase. Plan de visitas de las
    52 sucursales Disco/Devoto, equipos por categoría (AC con subtipos
-   Split/Rooftop/Chiller/Multi/UE/UI, gas, UPS, generador, tablero, CG),
+   Split/Rooftop/Chiller/Multi/UE/UI, gas, UPS, generador, tablero,
+   ciclos de refrigeración `cr`, CG),
    fotos, audios, checklist, export ZIP y informe Excel.
    Se trabaja en la rama `claude/fotos-proyecto-disco-p7u9rk` y después se
    pasa a `main` (fast-forward) para que Vercel publique.
@@ -19,7 +20,7 @@ simple, hacer los cambios uno mismo y probarlos antes de subir).
    `main`.
    Flujo del técnico: manda el código de sucursal (`D24`, `DV23`), después
    por cada equipo las fotos/audios y al final el código del equipo
-   (`S`, `R`, `CH`, `M`, `UE`, `UI`, `GEN`, `TAB`, `GAS`, `UPS`, `CG` +
+   (`S`, `R`, `CH`, `M`, `UE`, `UI`, `GEN`, `TAB`, `GAS`, `UPS`, `CR`, `CG` +
    número opcional, ej. `R02`). `Fin D24` cierra la visita. `codigos`
    devuelve la lista de códigos.
    - Lo pendiente (sin código todavía) se guarda en listas de Redis POR

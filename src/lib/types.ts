@@ -1,6 +1,6 @@
 export type Chain = "Disco" | "Devoto";
 
-export type CategoryId = "ac" | "gas" | "ups" | "gen" | "sub" | "cg";
+export type CategoryId = "ac" | "gas" | "ups" | "gen" | "sub" | "cr" | "cg";
 
 export type EquipmentStatus = "ok" | "falla" | "pendiente";
 
