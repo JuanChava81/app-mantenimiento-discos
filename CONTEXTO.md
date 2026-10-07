@@ -20,8 +20,12 @@ simple, hacer los cambios uno mismo y probarlos antes de subir).
    `main`.
    Flujo del técnico: manda el código de sucursal (`D24`, `DV23`), después
    por cada equipo las fotos/audios y al final el código del equipo
-   (`S`, `R`, `CH`, `M`, `UE`, `UI`, `GEN`, `TAB`, `GAS`, `UPS`, `CR`, `CG` +
-   número opcional, ej. `R02`). `Fin D24` cierra la visita. `codigos`
+   (`S`, `R`, `CH`, `M`, `UE`, `UI`, `GEN`, `TAB`, `GAS`, `UPS`, `CG` +
+   número opcional, ej. `R02`). Ciclos de refrigeración (categoría `cr`):
+   `UI MT`/`UI BT` (máquina de compresores), `UE MT`/`UE BT` (unidad
+   exterior), `MT C01`/`BT C01` (compresor), con o sin espacio (`UIMT`,
+   `BTC01`); en la app se ven como UIMT_01, BTC_01 (`crShortCode`). `CR`
+   (subtipo Ciclo) queda por compatibilidad. `Fin D24` cierra la visita. `codigos`
    devuelve la lista de códigos.
    - Lo pendiente (sin código todavía) se guarda en listas de Redis POR
      SUCURSAL Y POR TÉCNICO (`pendientes:<tipo>:<suc>:<remitente>`), así

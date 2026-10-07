@@ -1,6 +1,6 @@
 import JSZip from "jszip";
 import { categoryById } from "./categories";
-import { equipmentPhotoCode } from "./equipment-code";
+import { displayCode, equipmentPhotoCode } from "./equipment-code";
 import { Equipment, EquipmentData, Location } from "./types";
 
 const STATUS_LABEL: Record<string, string> = { ok: "OK", falla: "No OK", pendiente: "Pendiente" };
@@ -65,7 +65,7 @@ export async function exportVisitZip(
     const eqData = data[eq.id];
     if (!eqData) continue;
 
-    report += `${cat.name} · ${eq.code} (${eq.subtype})\n`;
+    report += `${cat.name} · ${displayCode(eq)} (${eq.subtype})\n`;
     report += `Estado: ${STATUS_LABEL[eqData.status] ?? eqData.status}\n`;
     for (const check of cat.checks) {
       report += `  ${check.label}: ${eqData.checks[check.id] ?? "—"}\n`;
@@ -84,7 +84,7 @@ export async function exportVisitZip(
     }
     for (let i = 0; i < eqData.audios.length; i++) {
       const url = eqData.audios[i].url;
-      descargas.push({ url, kind: "audio", path: (ext) => `${folder}/${eq.code}_nota${i + 1}.${ext}` });
+      descargas.push({ url, kind: "audio", path: (ext) => `${folder}/${displayCode(eq)}_nota${i + 1}.${ext}` });
     }
   }
 

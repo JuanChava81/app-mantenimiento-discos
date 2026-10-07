@@ -192,7 +192,8 @@ function renderChecklistTables(
     if (!eqData) continue;
 
     sheet.mergeCells(row, 2, row, 4);
-    sheet.getCell(row, 2).value = `${eq.code}${eqs.length > 1 ? ` — ${eq.subtype}` : ""}`;
+    sheet.getCell(row, 2).value =
+      eq.category === "cr" ? photoCode(eq) : `${eq.code}${eqs.length > 1 ? ` — ${eq.subtype}` : ""}`;
     sheet.getCell(row, 2).font = { bold: true, size: 10 };
     sheet.getCell(row, 5).value = "Estado";
     sheet.getCell(row, 5).font = { bold: true, size: 9 };
@@ -253,7 +254,7 @@ function renderComments(
   row++;
 
   for (const eq of withComments) {
-    const code = eq.category === "ac" ? acShortCode(eq) : eq.code;
+    const code = photoCode(eq);
     sheet.getCell(row, 2).value = code;
     sheet.getCell(row, 2).font = { bold: true, size: 10 };
     sheet.getCell(row, 2).fill = { type: "pattern", pattern: "solid", fgColor: { argb: COMMENTS_BG } };

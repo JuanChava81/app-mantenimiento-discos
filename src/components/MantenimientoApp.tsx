@@ -11,6 +11,7 @@ import { MONTH_NAMES } from "@/lib/real-locations";
 import { supabaseConfigured } from "@/lib/supabase";
 import { uploadToStorage } from "@/lib/storage";
 import { compressPhoto } from "@/lib/image";
+import { displayCode } from "@/lib/equipment-code";
 import { AudioNote, CategoryId, Chain, Equipment, EquipmentData, EquipmentStatus, Location } from "@/lib/types";
 import { StatusChip } from "./StatusChip";
 import { ProgressBar } from "./ProgressBar";
@@ -454,7 +455,7 @@ export default function MantenimientoApp({
       {historyFor && (
         <HistoryModal
           equipmentId={historyFor}
-          code={equipment.find((e) => e.id === historyFor)?.code ?? ""}
+          code={(() => { const e = equipment.find((x) => x.id === historyFor); return e ? displayCode(e) : ""; })()}
           onClose={() => setHistoryFor(null)}
         />
       )}
@@ -763,7 +764,7 @@ function CategoryScreen({
                     {eq.subtype}
                   </span>
                   <span style={{ fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: 16 }} className="block">
-                    {eq.code}
+                    {displayCode(eq)}
                   </span>
                   <span className="flex items-center gap-2" style={{ fontSize: 11, opacity: 0.6 }}>
                     <span>{eqData?.photos.length ?? 0} fotos</span>
@@ -860,7 +861,7 @@ function EquipmentScreen({
 
   return (
     <>
-      <TopBar title={equipmentItem.code} onBack={onBack} action={<button onClick={onOpenHistory}><ClockIcon size={18} /></button>} />
+      <TopBar title={displayCode(equipmentItem)} onBack={onBack} action={<button onClick={onOpenHistory}><ClockIcon size={18} /></button>} />
       <div className="p-4">
         <div className="card-reg p-4 flex flex-col gap-4">
           {category.id === "ac" && (
@@ -1136,7 +1137,7 @@ function SummaryScreen({
             <div className="flex flex-col gap-2 mt-2">
               {fallas.map((eq) => (
                 <button key={eq.id} className="card-reg text-left p-3" onClick={() => onOpenFalla(eq)}>
-                  <div style={{ fontFamily: "var(--font-heading)", fontWeight: 600 }}>{eq.code}</div>
+                  <div style={{ fontFamily: "var(--font-heading)", fontWeight: 600 }}>{displayCode(eq)}</div>
                   <div style={{ fontSize: 12, opacity: 0.7 }}>{categoryById(eq.category).name}</div>
                 </button>
               ))}

@@ -70,11 +70,13 @@ export const CATEGORIES: CategoryDef[] = [
     fields: [{ id: "fp", label: "Factor de potencia", unit: "", placeholder: "0,95" }],
   },
   {
-    // Ciclos de refrigeración (centrales/circuitos de frío). En el bot: CR02.
+    // Ciclos de refrigeración. En el bot: UI MT / UI BT (máquinas de
+    // compresores), UE MT / UE BT (unidades exteriores), MT C01 / BT C01
+    // (compresores). "Ciclo" (código CR) queda por compatibilidad.
     id: "cr",
     name: "Ciclos de refrigeración",
     prefix: "CR",
-    subtypes: ["Ciclo"],
+    subtypes: ["UI MT", "UI BT", "UE MT", "UE BT", "Compresor MT", "Compresor BT", "Ciclo"],
     checks: [
       { id: "compresores", label: "Compresores en funcionamiento", options: ["OK", "No OK"] },
       { id: "condensadores", label: "Condensadores y ventiladores", options: ["OK", "No OK"] },

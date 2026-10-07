@@ -19,6 +19,28 @@ export function acShortCode(eq: Equipment): string {
   return `${prefix}_${String(eq.number).padStart(2, "0")}`;
 }
 
+// Ciclos de refrigeración: mismo código que manda el bot (UIMT_01,
+// BTC_02...).
+const CR_SUBTYPE_PREFIX: Record<string, string> = {
+  "UI MT": "UIMT",
+  "UI BT": "UIBT",
+  "UE MT": "UEMT",
+  "UE BT": "UEBT",
+  "Compresor MT": "MTC",
+  "Compresor BT": "BTC",
+  Ciclo: "CR",
+};
+
+export function crShortCode(eq: Equipment): string {
+  const prefix = CR_SUBTYPE_PREFIX[eq.subtype] ?? "CR";
+  return `${prefix}_${String(eq.number).padStart(2, "0")}`;
+}
+
+/** Código que se ve en la app: el de siempre, salvo ciclos de refrigeración. */
+export function displayCode(eq: Equipment): string {
+  return eq.category === "cr" ? crShortCode(eq) : eq.code;
+}
+
 export function equipmentPhotoCode(eq: Equipment): string {
-  return eq.category === "ac" ? acShortCode(eq) : eq.code;
+  return eq.category === "ac" ? acShortCode(eq) : displayCode(eq);
 }
