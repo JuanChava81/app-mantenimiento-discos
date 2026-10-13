@@ -180,6 +180,23 @@ export default function HerreriaApp() {
                   avisar(`No se pudo exportar: ${(e as Error).message}`);
                 }
               }}
+              onBorrar={async () => {
+                const lista = puntos[a.id] ?? [];
+                const aviso =
+                  `¿Borrar la auditoría de ${sitio.rotulo} con sus ${lista.length} punto(s), fotos y audios?` +
+                  (a.estado === "exportada" ? " Ya está exportada: asegurate de tener el ZIP." : "") +
+                  " No se puede deshacer.";
+                if (!confirm(aviso)) return;
+                try {
+                  await datos.borrarAuditoria(a.id, lista);
+                  setAuditorias((l) => l.filter((x) => x.id !== a.id));
+                  setPuntos((x) => Object.fromEntries(Object.entries(x).filter(([id]) => id !== a.id)));
+                  setPantalla({ tipo: "plan" });
+                  avisar("Auditoría borrada");
+                } catch (e) {
+                  avisar(`No se pudo borrar: ${(e as Error).message}`);
+                }
+              }}
             />
           );
         })()}
@@ -332,6 +349,7 @@ function PantallaAuditoria({
   onAgregar,
   onMover,
   onExportar,
+  onBorrar,
 }: {
   auditoria: Auditoria;
   sitio: Sitio;
@@ -342,6 +360,7 @@ function PantallaAuditoria({
   onAgregar: () => Promise<void>;
   onMover: (p: Punto, dir: -1 | 1) => Promise<void>;
   onExportar: () => Promise<void>;
+  onBorrar: () => Promise<void>;
 }) {
   const [ocupado, setOcupado] = useState(false);
   const ordenados = [...puntos].sort((a, b) => a.orden - b.orden);
@@ -441,6 +460,9 @@ function PantallaAuditoria({
         </button>
         <button className="btn btn-primary btn-block" disabled={ocupado} onClick={ejecutar(onExportar)}>
           Exportar ZIP para el informe
+        </button>
+        <button className="btn btn-ghost btn-block" style={{ color: "var(--color-danger)" }} disabled={ocupado} onClick={ejecutar(onBorrar)}>
+          Borrar auditoría (ej. una de prueba)
         </button>
       </div>
     </>

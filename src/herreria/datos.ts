@@ -72,6 +72,13 @@ export async function borrarPunto(punto: Punto, todos: Punto[]) {
   await borrarArchivos([...punto.fotos, ...punto.audios.map((a) => a.url)]);
 }
 
+/** Borra la auditoría entera (sus puntos se borran solos) y sus fotos/audios. */
+export async function borrarAuditoria(auditoriaId: string, puntos: Punto[]) {
+  const { error } = await db().from("herreria_auditorias").delete().eq("id", auditoriaId);
+  if (error) throw error;
+  await borrarArchivos(puntos.flatMap((p) => [...p.fotos, ...p.audios.map((a) => a.url)]));
+}
+
 function rutaEnBucket(url: string) {
   const marca = `/object/public/${BUCKET}/`;
   const i = url.indexOf(marca);

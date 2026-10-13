@@ -84,23 +84,26 @@ de Groq. Regla: no tocar nada de mantenimiento al cambiar herrería.
   actividad_at, archivos_borrados), `herreria_puntos` (orden, fotos, audios,
   transcripcion, descripcion, recomendacion, remitente), función
   `herreria_nuevo_punto` (orden sin repetir), bucket `herreria`.
-- **Bot** (repo wpp-mantenimiento): `lib/herreria/`. **Mismo número que
-  mantenimiento** (Meta le dio a la app "Creative Herreria" el mismo número
-  de prueba y WABA): el webhook de mantenimiento llama primero a
-  `lib/herreria/modo.js`. Por defecto todo es mantenimiento; `H`/`HERRERIA`
-  pasa a herrería (`her:modo:<tel>`, 12 h), `CM`/`MANTENIMIENTO` o 12 h sin
-  mensajes vuelven; siempre avisa el modo (🔩 / 🔧). `FIN` (en cualquier
-  modo) cierra TODO lo abierto del técnico: su parte de la auditoría de
-  herrería y de la visita de mantenimiento (`FIN TODO`: para todos) y lo
-  deja en mantenimiento; `FIN D24` además cierra la herrería.
-  En herrería, `D24`/`FIN D24` avisan "Estás en modo HERRERÍA". El webhook
-  propio `api/webhook-herreria.js` queda PAUSADO en Meta (si se activa,
-  cada mensaje se procesaría dos veces). Variables `HER_WPP_TOKEN`
-  (token de "Bot Herreria"), `HER_PHONE_NUMBER_ID`, `HER_NOTIFY_TO`,
+- **Bot** (repo wpp-mantenimiento): `api/webhook-herreria.js` + `lib/herreria/`.
+  **Número PROPIO desde el 13/10/2026**: +1 555 659 8500 (número de prueba,
+  máx. 5 destinatarios), Phone Number ID 1348156265049221, WABA
+  1787073825950470, app de Meta "Herreria Creative" (1476280344358922) en el
+  portfolio "Creative Herrería", usuario del sistema "Bot Herreria" con token
+  "Nunca". La WABA se enganchó a la app con POST `<WABA>/subscribed_apps`
+  (sin eso Meta no manda los mensajes). Variables `HER_WPP_TOKEN`,
+  `HER_PHONE_NUMBER_ID`, `HER_VERIFY_TOKEN`, `HER_NOTIFY_TO`,
   `HER_GRAPH_VERSION`. Redis `her:*`.
+  `NUMERO_PROPIO` (config.js) se decide solo: si `HER_PHONE_NUMBER_ID` ≠
+  `WPP_PHONE_NUMBER_ID`, cada sistema usa su número; en "Disco Informes" `H`
+  avisa que herrería está en el otro número y `FIN` cierra solo la visita.
+  Si fueran iguales, vuelve el modo compartido `H`/`CM` (`lib/herreria/modo.js`)
+  y webhook-herreria ignora los mensajes para no procesarlos dos veces.
   Flujo: cualquier mensaje sin auditoría → lista interactiva de sitios del
   mes (sin exportada en el ciclo) + "Otro sitio" (busca por cod/nombre/
-  rótulo); se suma a la auditoría abierta del sitio de los últimos 2 días.
+  rótulo). UNA auditoría por sitio por ciclo: si ya hay una sin exportar se
+  usa esa (abierta → se suma; cerrada con FIN → se reabre y los puntos siguen
+  numerándose); exportada → se crea otra. En la app se puede borrar una
+  auditoría (ej. de prueba).
   Fotos → bolsa del técnico; el audio/texto siguiente arma el punto (IA:
   descripción + recomendación, prompt propio en `lib/herreria/ia.js` y
   `src/herreria/prompt.ts` — mantener iguales). Audio sin fotos se suma al

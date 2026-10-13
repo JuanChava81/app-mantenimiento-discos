@@ -91,20 +91,18 @@ fotos, el código de uno no se lleva las fotos del otro.
 == HERRERÍA (auditoría anual de sistemas anticaída en cubierta) ==
 =====================================================================
 Sistema APARTE del de mantenimiento: otra app en el celular ("Herrería", dirección de la
-app + /herreria), tablas y bucket propios en el mismo Supabase. Usa el MISMO número de
-WhatsApp ("Disco Informes"): por defecto todo es mantenimiento; "H" pasa a herrería y "CM"
-vuelve a mantenimiento (también solo a las 12 h sin mensajes). "FIN" (en cualquier modo)
-cierra TODO lo que el técnico tenga abierto: su parte de herrería y de mantenimiento
-("FIN TODO": para todos) y lo deja en mantenimiento. El bot avisa siempre
-en qué modo estás; los mensajes de herrería empiezan con 🔩 y los de mantenimiento con 🔧.
+app + /herreria), tablas y bucket propios en el mismo Supabase, y su PROPIO número de
+WhatsApp de herrería (+1 555 659 8500, número de prueba de Meta, máx. 5 destinatarios).
+"Disco Informes" queda solo para mantenimiento.
 57 sitios (52 Disco/Devoto + D29 Libertad, depósitos Burgues CD80 / Pichincha CD81 /
 Perimetral CD82, Géant I G01), cada uno con su mes. Ciclo de mayo a abril ('2026-2027').
 
-== FLUJO DEL TÉCNICO EN WHATSAPP (modo herrería) ==
-1. Manda "H": el bot avisa que está en HERRERÍA y contesta una lista con los sitios del mes
-   que faltan (en modo herrería, cualquier mensaje sin auditoría vuelve a mostrar la lista).
+== FLUJO DEL TÉCNICO EN WHATSAPP (número de herrería) ==
+1. Manda cualquier mensaje: el bot contesta una lista con los sitios del mes que faltan.
    Elige uno, o "Otro sitio" y escribe el nombre o número (DV23, Cnel. Mora, Burgues).
-   Si otro técnico ya abrió ese sitio en los últimos 2 días, se suma a la misma auditoría.
+   Hay UNA auditoría por sitio por año (ciclo): si otro técnico la tiene abierta se suma, y
+   si se cerró con FIN otro día, se retoma (los puntos siguen numerándose). Solo después
+   de exportarla se empieza una nueva.
    No se muestra nada de la auditoría anterior.
 2. Por cada PUNTO: manda las fotos y después UN AUDIO contando qué es y cómo está
    (o un texto). El audio cierra el punto. El bot contesta:
@@ -113,7 +111,7 @@ Perimetral CD82, Géant I G01), cada uno con su mes. Ciclo de mayo a abril ('202
 3. Un audio sin fotos nuevas se suma al último punto (se rehace el texto).
 4. Comandos: GENERAL <texto> (comentario general) · BORRAR (borra tu último punto, o las
    fotos que todavía no tienen audio) · CORREGIR <texto> (reemplaza el texto del último
-   punto) · FIN (cierra todo lo tuyo, también mantenimiento; fotos sueltas quedan como punto sin texto) · FIN TODO ·
+   punto) · FIN (cierra tu parte; fotos sueltas quedan como punto sin texto; se puede retomar otro día) · FIN TODO ·
    AYUDA. Al cerrar el último técnico le llega a Juan: "🔩 DV23 cerrada: 11 puntos,
    3 con recomendación, 38 fotos." Sin actividad 3 h, se cierra sola al otro día.
 
