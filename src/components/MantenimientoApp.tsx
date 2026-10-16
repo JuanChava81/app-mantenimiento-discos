@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { CATEGORIES, categoryById } from "@/lib/categories";
 import { fetchAllEquipmentState, fetchEquipmentHistory, HistoryVisit, saveEquipmentState } from "@/lib/equipment-state";
@@ -509,6 +510,9 @@ function LocationsScreen({
           <span>{monthLabel}</span>
           <span>{completedThisMonth}/{totalPlanificados} completados</span>
         </div>
+        <Link href="/recorrido" className="btn btn-ghost btn-block mt-3" style={{ color: "inherit", borderColor: "currentColor" }}>
+          🗺️ Recorrido del mes
+        </Link>
       </header>
 
       {dataSource === "mock" && (

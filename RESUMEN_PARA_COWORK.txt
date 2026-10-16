@@ -60,6 +60,17 @@ fotos, el código de uno no se lleva las fotos del otro.
 - Muestra solo equipos reales (los que existen en Supabase). Se actualiza sola cada 15 segundos.
 - Historial de cada equipo: visitas anteriores con estado y comentario.
 
+== RECORRIDO DEL MES (app, botón "🗺️ Recorrido del mes") ==
+- Mapa con los locales que tocan en el mes elegido y el orden sugerido para visitarlos,
+  saliendo de la Oficina Creative (José Fernández Medina 4921) y volviendo.
+- Color = tamaño del local según cantidad de equipos cargados: 🔴 grande (tercio con más
+  equipos), 🟡 mediano, 🟢 chico. 🔩 = ese mes también tiene auditoría de herrería.
+  Gris con ✓ = ya visitado (exportado).
+- Tarjeta "Siguiente" con botón Ir (navegación de Google Maps) y botón "Todo el recorrido
+  en Google Maps". "Reordenar" recalcula; ↑↓ cambian el orden a mano (queda guardado).
+- Ubicaciones: tabla ubicaciones_locales. Las que no están confirmadas tienen borde
+  punteado: mantener apretado el marcador, arrastrarlo y soltarlo la deja confirmada.
+
 == ESPACIO DE FOTOS (Supabase 1 GB gratis) ==
 - El bot comprime las fotos (1600 px) antes de subirlas.
 - Desde el día 10 de cada mes se borran de Supabase las fotos/audios de meses anteriores SOLO de
