@@ -1,5 +1,0 @@
-/* El resto de la app es todo cuadrado (globals.css: border-radius 0 !important);
-   los marcadores del recorrido van redondos. */
-.redondo {
-  border-radius: 50% !important;
-}

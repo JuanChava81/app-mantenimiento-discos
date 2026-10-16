@@ -166,20 +166,6 @@ confirmado el 26/09/2026).
 - La app se re-sincroniza con Supabase cada 15 s y al volver a la
   pestaña (sin pisar equipos editados localmente en los últimos 15 s).
 - Estilo: verde oscuro + rojo Disco (`src/app/globals.css`), logo del splash.
-- **Recorrido del mes** (`/recorrido`, botón "🗺️ Recorrido del mes" en el
-  plan; código en `src/recorrido/`): mapa Leaflet + OpenStreetMap (sin clave)
-  con los locales del mes (misma regla que el plan), orden de visita saliendo
-  de la oficina y volviendo (vecino más cercano + 2-opt, línea recta), tarjeta
-  "Siguiente" con botón Ir (Google Maps) y links del recorrido entero (máx. 9
-  paradas por link, si no se parte). Color por tamaño = tercios de los 52
-  locales según equipos activos en `equipment_state` (sin contar CG; empates
-  en el corte → grupo más grande; 0 equipos → verde). 🔩 = herrería ese mes
-  (`herreria_sitios.mes`, solo lectura). Visitado = "Completo" del plan.
-  Tablas (`supabase/recorrido_v1.sql`): `ubicaciones_locales` (cod sin
-  espacio "D01"/"DV23" + `OFICINA`, lat, lng, confirmada) y `recorrido_mes`
-  (mes '2026-10', orden text[]). 9 ubicaciones confirmadas por Juan; las
-  otras 44 son de OpenStreetMap sin confirmar (D10 y D05 aproximadas): se
-  corrigen manteniendo apretado el marcador y arrastrándolo.
 
 ## Informes
 
