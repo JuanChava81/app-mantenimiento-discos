@@ -16,7 +16,8 @@ Ya tengo funcionando con Claude un sistema para las auditorías de herrería en 
 (sistemas anticaída) de los supermercados Disco/Devoto: un WhatsApp donde los técnicos
 mandan fotos + un audio por cada punto, una IA que redacta el texto del informe, y una app
 para revisar, corregir y exportar. Quiero **el mismo sistema, de la misma forma**, para otro
-trabajo. Abajo van los datos del trabajo nuevo (PARTE A) y cómo está hecho el de herrería
+trabajo, con una diferencia importante: **el trabajo nuevo se hace en tres días distintos**
+(ver "Trabajo en varios días" en la PARTE B). Abajo van los datos del trabajo nuevo (PARTE A) y cómo está hecho el de herrería
 con todo lo que aprendimos (PARTE B). Usá la PARTE B como receta: copiá cómo funciona y
 evitá los errores que ya resolvimos.
 
@@ -31,6 +32,12 @@ evitá los errores que ya resolvimos.
   ______________________
 - Cada cuánto se audita cada sitio y cuándo arranca el ciclo (herrería: anual, de mayo a
   abril): ______________________
+- El trabajo se hace en **tres días distintos**. ¿Los tres días son en el mismo sitio o en
+  sitios distintos? ¿Los días son seguidos o puede pasar tiempo entre uno y otro? ¿Cada día
+  tiene un nombre o tema (ej. "Día 1: cubierta", "Día 2: sala de máquinas")?
+  ______________________
+- En el informe, ¿los puntos van separados por día (con la fecha de cada día) o todos
+  juntos con una sola numeración? ______________________
 - Cómo tiene que escribir la IA cada punto. Herrería usa dos textos:
   "descripción" (UNA oración: elemento + ubicación + estado) y "recomendación" (UNA
   oración que empieza con un verbo en infinitivo; vacía si está bien). ¿Igual o distinto?
@@ -52,16 +59,34 @@ evitá los errores que ya resolvimos.
 3. **Supabase** plan gratis: tablas propias + un bucket para fotos y audios.
 4. **Informe**: la app exporta un ZIP con formato fijo; con eso armo el informe final.
 
+### Trabajo en varios días (lo nuevo respecto a herrería)
+- Es UN solo trabajo (una auditoría) que se completa en tres días distintos. Cada día el
+  técnico elige el sitio y se **retoma** el mismo trabajo: "retomado · Día 2 · ya tiene 9
+  puntos; lo que mandes sigue desde el 10".
+- Cada punto guarda la **fecha** en que se cargó (y el número de día: 1, 2, 3). La numeración
+  de puntos sigue de corrido entre días (salvo que en la PARTE A diga que va por día).
+- `FIN` cierra **el día**, no el trabajo: resumen del día al técnico y al número de aviso
+  ("🔩 DV23 · Día 2 cerrado: 8 puntos, 2 con recomendación, 25 fotos · total 17 puntos").
+  El trabajo queda "en curso" hasta que se manda `FIN TRABAJO` (o se exporta desde la app).
+- El cron de inactividad cierra **el día** (no el trabajo).
+- La app muestra los puntos agrupados por día, con su fecha, y en la auditoría la lista de
+  días trabajados; la fecha de cada día se puede corregir.
+- El export lleva los días y la fecha de cada punto (ver abajo).
+- Si el trabajo terminó antes o necesita un cuarto día, no debe romperse: el número de días
+  sale de las fechas de los puntos, no es fijo.
+
 ### Tablas (Supabase)
 - `sitios`: id, cod (único, ej. 'DV23'), nombre (para la app y la lista de WhatsApp),
   rotulo (cómo va en el informe), archivo (cómo va en el nombre del informe), direccion,
   mes (mes de la auditoría), activo.
-- `auditorias`: id, sitio_id, ciclo (ej. '2026-2027'), fecha, estado
-  ('abierta' | 'cerrada' | 'exportada'), comentario_general, actividad_at (último mensaje),
+- `auditorias`: id, sitio_id, ciclo (ej. '2026-2027'), fecha (primer día), estado
+  ('abierta' = hay un día en curso | 'pausada' = día cerrado, falta seguir | 'cerrada' =
+  trabajo terminado | 'exportada'), comentario_general, actividad_at (último mensaje),
   cerrada_at, exportada_at, archivos_borrados, created_at.
 - `puntos`: id, auditoria_id (on delete cascade), orden (1, 2, 3…), fotos text[] (URLs del
   bucket), audios jsonb ([{url, durationSecs, recordedAt}]), transcripcion, descripcion,
-  recomendacion, remitente (teléfono del técnico o 'app'), created_at, updated_at.
+  recomendacion, fecha (día en que se cargó), dia (1, 2, 3…), remitente (teléfono del técnico
+  o 'app'), created_at, updated_at.
 - Función `nuevo_punto(...)` que inserta con el orden siguiente SIN repetir números aunque
   dos técnicos manden a la vez (lock con `pg_advisory_xact_lock`).
 - RLS con políticas públicas (la app usa la clave anon) y bucket público.
@@ -87,13 +112,15 @@ evitá los errores que ya resolvimos.
    - `BORRAR`: si hay fotos sin audio las descarta; si no, borra el último punto del técnico
      (y sus archivos).
    - `CORREGIR <texto>`: reemplaza el texto del último punto y lo vuelve a redactar.
-   - `FIN` (también `FIN D25`, `FIN TODO`): cierra la parte del técnico; las fotos sueltas
-     quedan como un punto sin texto. Cuando cierra el último (o con TODO), la auditoría queda
-     cerrada y llega el resumen al número de aviso: "🔩 DV23 cerrada: 11 puntos, 3 con
-     recomendación, 38 fotos."
+   - `FIN` (también `FIN D25`, `FIN TODO`): cierra **el día** para el técnico; las fotos
+     sueltas quedan como un punto sin texto. Cuando cierra el último (o con TODO), el día queda
+     cerrado y llega el resumen del día al número de aviso.
+   - `FIN TRABAJO`: cierra el trabajo completo (después de confirmar con el técnico que es el
+     último día), con el resumen total: "🔩 DV23 terminado: 3 días, 26 puntos, 7 con
+     recomendación, 80 fotos."
 6. **Varios técnicos**: si otro ya tiene abierta la auditoría del sitio, se suma a la misma.
-7. **Una auditoría por sitio por ciclo**: si se cerró con FIN y se vuelve otro día, al elegir
-   el sitio se retoma ("retomada · Ya tiene 3 puntos; lo que mandes sigue desde el 4"). Solo
+7. **Una auditoría por sitio por ciclo**: los días siguientes, al elegir el sitio se retoma la
+   misma ("retomado · Día 2 · ya tiene 9 puntos; lo que mandes sigue desde el 10"). Solo
    después de exportarla se crea otra.
 8. Todo lo que manda el bot empieza con el mismo emoji (en herrería 🔩).
 9. Mensajes que no son foto/audio/texto: los avisos internos de WhatsApp ("unsupported", al
@@ -127,16 +154,18 @@ evitá los errores que ya resolvimos.
 
 ### El export (contrato con quien arma el informe — una vez definido, no se cambia)
 `<PREFIJO>_<cod>_<AAAA-MM-DD>.zip` con:
-- `datos.json`: `{version, sitio:{cod, nombre, rotulo, archivo}, fecha, ciclo,
-  comentario_general, puntos:[{orden, descripcion, recomendacion, transcripcion, fotos:[…]}]}`
-  con los puntos numerados 1..n por su posición (sin huecos).
+- `datos.json`: `{version, sitio:{cod, nombre, rotulo, archivo}, fecha (primer día),
+  fecha_fin (último día), dias:[{dia, fecha}], ciclo, comentario_general,
+  puntos:[{orden, dia, fecha, descripcion, recomendacion, transcripcion, fotos:[…]}]}`
+  con los puntos numerados 1..n por su posición (sin huecos), en orden de día.
 - `datos.txt`: lo mismo legible, con la lista de recomendaciones al final.
 - `fotos/P01_foto1.jpg`… (siempre JPG, convertidas en el navegador si hace falta).
 - `audios/P01_audio1.<ext>` (opcional).
 Al exportar, la auditoría queda "exportada" y sale de la lista del mes del WhatsApp.
 
 ### Tareas automáticas (un cron diario, en Vercel Hobby máx. una vez por día)
-- Cerrar auditorías sin actividad hace más de 3 h (con el resumen al número de aviso).
+- Cerrar el día de las auditorías sin actividad hace más de 3 h (con el resumen del día al
+  número de aviso); el trabajo sigue en curso.
 - Borrar del bucket las fotos/audios de auditorías exportadas hace más de 30 días (los textos
   quedan; marcar `archivos_borrados`).
 - Keepalive de Supabase (el plan gratis se pausa si no hay actividad).
@@ -188,8 +217,8 @@ Al exportar, la auditoría queda "exportada" y sale de la lista del mes del What
   esperá mi OK. Si hay una decisión que es mía, preguntame con opciones.
 - Probá todo antes de subir: lint y build de la app; para el bot, simulaciones en node con
   mocks de Redis, Supabase y WhatsApp (carpeta temporal fuera del repo) corriendo el webhook
-  real con mensajes de prueba (fotos, audio, lista, comandos, dos técnicos, FIN, retomar,
-  cron); para la app, un celular simulado con Playwright y una captura. Si algo falla, no lo
+  real con mensajes de prueba (fotos, audio, lista, comandos, dos técnicos, tres días con
+  FIN y retomar, FIN TRABAJO, cron); para la app, un celular simulado con Playwright y una captura. Si algo falla, no lo
   subas.
 - Mantené al día un `CONTEXTO.md` (todo para retomar en una sesión nueva: piezas, IDs no
   secretos, variables, cosas que vencen) y una guía corta para los técnicos en un .txt.
@@ -205,6 +234,7 @@ Al exportar, la auditoría queda "exportada" y sale de la lista del mes del What
    c. Bot de WhatsApp: código y simulaciones; después la configuración de Meta conmigo paso a
       paso (portfolio nuevo, app, número de prueba, destinatarios, usuario del sistema y
       token, variables en Vercel, webhook, `subscribed_apps`) y una prueba real de punta a
-      punta (hola → sitio → fotos + audio → ver el punto en la app → FIN → exportar).
+      punta (hola → sitio → fotos + audio → ver el punto en la app → FIN → otro día retomar →
+   FIN TRABAJO → exportar).
    d. Cron diario (cierre por inactividad, limpieza a los 30 días, keepalive).
    e. Guía para los técnicos (.txt) y CONTEXTO.md completo.
