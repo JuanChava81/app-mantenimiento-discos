@@ -1,9 +1,9 @@
-# Prompt para armar el sistema completo (app + WhatsApp) para un trabajo nuevo
+# Prompt para armar un sistema como el de HERRERÍA (WhatsApp + app) para otro trabajo
 
-> Cómo usarlo: completá la PARTE A con los datos del trabajo nuevo (lo que no sepas,
-> dejalo en blanco: Claude te lo va a preguntar). Después copiá TODO desde la línea
-> "--- COPIAR DESDE ACÁ ---" y pegalo como primer mensaje en una sesión nueva de
-> Claude Code, idealmente con un repo nuevo y vacío en GitHub ya creado.
+> Cómo usarlo: creá un repo nuevo y vacío en GitHub y abrí una sesión nueva de Claude
+> Code sobre ese repo. Completá la PARTE A con los datos del trabajo nuevo (lo que no
+> sepas, dejalo en blanco: Claude te lo va a preguntar). Después copiá TODO desde la
+> línea "--- COPIAR DESDE ACÁ ---" y pegalo como primer mensaje.
 
 --- COPIAR DESDE ACÁ ---
 
@@ -12,159 +12,199 @@ simple y en español, hacé vos los cambios, probalos antes de subir y decime ex
 tengo que hacer yo, paso a paso. Cuando el paso sea en Meta, Vercel o Supabase, dame UN paso
 por vez y esperá mi captura antes del siguiente.
 
-Ya armé con Claude un sistema igual para el mantenimiento de supermercados Disco/Devoto, y
-funciona muy bien. Quiero el mismo sistema para otro trabajo. Abajo te paso los datos del
-trabajo nuevo (PARTE A) y cómo está hecho el sistema que ya funciona, con todo lo que
-aprendimos (PARTE B). Usá la PARTE B como receta: copiá las decisiones que funcionaron y
+Ya tengo funcionando con Claude un sistema para las auditorías de herrería en cubierta
+(sistemas anticaída) de los supermercados Disco/Devoto: un WhatsApp donde los técnicos
+mandan fotos + un audio por cada punto, una IA que redacta el texto del informe, y una app
+para revisar, corregir y exportar. Quiero **el mismo sistema, de la misma forma**, para otro
+trabajo. Abajo van los datos del trabajo nuevo (PARTE A) y cómo está hecho el de herrería
+con todo lo que aprendimos (PARTE B). Usá la PARTE B como receta: copiá cómo funciona y
 evitá los errores que ya resolvimos.
 
 ## PARTE A — El trabajo nuevo (completar)
 
-- Nombre del trabajo / cliente: ______________________ (ej. "Mantenimiento de farmacias X")
-- Qué se hace en cada visita: ______________________
-- Lista de sitios: (pegá una tabla o adjuntá un Excel/CSV con: código, nombre, dirección,
-  meses de visita) ______________________
-- Cada cuánto se visita cada sitio (ej. 2 veces por año, mensual): __________
-- Tipos de equipo / elementos que se revisan, y qué se chequea en cada uno
-  (ej. "Aire acondicionado: filtro OK/No OK, desagüe OK/No OK"): ______________________
-- Códigos cortos que van a mandar los técnicos por WhatsApp para cada equipo
-  (ej. S = split, R = rooftop, GEN = generador) — si no sé, proponelos vos: __________
-- ¿Es por equipos (como mantenimiento) o por "puntos" sin código (como herrería: fotos +
-  audio = un punto)? __________
-- Cómo es el informe final (adjuntar un informe viejo de ejemplo si hay): __________
-- Cuántos técnicos van a mandar mensajes (Meta permite máx. 5 con número de prueba): ____
-- A qué número llega el resumen cuando se cierra una visita: (me lo pedís cuando haga falta)
-- Colores / logo de la app: __________
+- Nombre del trabajo / cliente: ______________________
+  (ej. "Auditoría de extintores en locales de la cadena X")
+- Qué se revisa en cada visita y qué es un "punto" (un elemento revisado con sus fotos):
+  ______________________
+- Lista de sitios: pegá una tabla o adjuntá un Excel/CSV con código, nombre, rótulo
+  (cómo va en el informe), nombre de archivo del informe, dirección y mes de visita.
+  ______________________
+- Cada cuánto se audita cada sitio y cuándo arranca el ciclo (herrería: anual, de mayo a
+  abril): ______________________
+- Cómo tiene que escribir la IA cada punto. Herrería usa dos textos:
+  "descripción" (UNA oración: elemento + ubicación + estado) y "recomendación" (UNA
+  oración que empieza con un verbo en infinitivo; vacía si está bien). ¿Igual o distinto?
+  Pegá 5 ejemplos reales de cómo se escriben en tus informes: ______________________
+- Cómo es el informe final (adjuntá uno viejo si hay) y con qué lo armo (herrería: skill de
+  Claude Cowork que lee el ZIP que exporta la app): ______________________
+- Cuántos técnicos van a mandar mensajes (número de prueba de Meta: máx. 5): ____
+- Nombre de la app en el celular, color e ícono: ______________________
 
-## PARTE B — Cómo está hecho el sistema que ya funciona (la receta)
+## PARTE B — Cómo está hecho el sistema de herrería (la receta)
 
 ### Las piezas
-1. **Bot de WhatsApp** (repo propio, se sube directo a `main`): Vercel serverless (Node ESM,
-   una función `api/webhook.js`) + WhatsApp Cloud API de Meta + @vercel/kv (Upstash Redis)
-   para el estado de las visitas + Supabase (base de datos y archivos) + Groq (Whisper para
-   transcribir audios y un modelo de texto para prolijar las observaciones).
-2. **App web PWA** (otro repo): Next.js en Vercel, se instala en el celular como app. Lee y
-   escribe Supabase. Se trabaja en una rama y se pasa a `main` con fast-forward para que
-   Vercel publique.
-3. **Supabase** plan gratis: tablas + Storage (buckets de fotos y audios).
-4. **Informes**: la app exporta un ZIP (fotos/audios por equipo + texto) y un Excel; con eso
-   armo el informe final en Claude Cowork (con una skill propia). El formato del export es un
-   contrato con esa skill: una vez definido, no se cambia sin avisarme.
+1. **Bot de WhatsApp**: Vercel serverless (Node ESM, función `api/webhook.js`) + WhatsApp
+   Cloud API de Meta (número PROPIO para este trabajo) + @vercel/kv (Upstash Redis) para el
+   estado de cada técnico + Supabase (tablas y bucket de archivos) + Groq: Whisper para
+   transcribir audios y un modelo de texto para redactar descripción + recomendación.
+2. **App web PWA** (Next.js en Vercel, se instala en el celular con ícono propio): plan del
+   año, auditoría, punto y exportar.
+3. **Supabase** plan gratis: tablas propias + un bucket para fotos y audios.
+4. **Informe**: la app exporta un ZIP con formato fijo; con eso armo el informe final.
 
-### Flujo del técnico en WhatsApp (modo "por equipos")
-1. Manda el código del sitio (ej. `D24`). El bot contesta "🔓 Se abrió la visita de D24" y le
-   muestra los comentarios guardados de la visita anterior de cada equipo.
-2. Por cada equipo: manda las fotos y/o audios (o texto) y AL FINAL el código del equipo
-   (ej. `R02`; sin número vale 01). El bot confirma "✅ R_02 cargado (N fotos · M audios)" y
-   avisa si alguna foto no se pudo subir.
-3. `FIN D24` cierra SU parte; cuando cierra el último técnico se cierra la visita y llega un
-   resumen al número de aviso. `FIN D24 TODO` la cierra para todos. Si nadie la cierra, un
-   cron la cierra por inactividad (3 h).
-4. Comandos: `codigos` (lista de códigos), `BORRAR` (descarta lo mandado sin código),
-   `BORRAR S07`, `CAMBIAR S10 S07` (pasa lo cargado de un equipo a otro, o los intercambia),
-   `S07 FALLA` / `S07 OK` (estado a mano). Aceptar mayúsculas/minúsculas, con o sin tilde,
-   con o sin espacio ("R 02", "r02"), y variantes ("Fin d25").
-5. Equipo con material pasa a OK solo; si el audio (pasado por la IA) habla de una falla,
-   queda No OK.
+### Tablas (Supabase)
+- `sitios`: id, cod (único, ej. 'DV23'), nombre (para la app y la lista de WhatsApp),
+  rotulo (cómo va en el informe), archivo (cómo va en el nombre del informe), direccion,
+  mes (mes de la auditoría), activo.
+- `auditorias`: id, sitio_id, ciclo (ej. '2026-2027'), fecha, estado
+  ('abierta' | 'cerrada' | 'exportada'), comentario_general, actividad_at (último mensaje),
+  cerrada_at, exportada_at, archivos_borrados, created_at.
+- `puntos`: id, auditoria_id (on delete cascade), orden (1, 2, 3…), fotos text[] (URLs del
+  bucket), audios jsonb ([{url, durationSecs, recordedAt}]), transcripcion, descripcion,
+  recomendacion, remitente (teléfono del técnico o 'app'), created_at, updated_at.
+- Función `nuevo_punto(...)` que inserta con el orden siguiente SIN repetir números aunque
+  dos técnicos manden a la vez (lock con `pg_advisory_xact_lock`).
+- RLS con políticas públicas (la app usa la clave anon) y bucket público.
 
-### Flujo alternativo "por puntos" (lo usamos para auditorías de herrería)
-- Cualquier mensaje sin visita abierta → lista interactiva de WhatsApp con los sitios del mes
-  (máx. 10 filas, títulos de 24 caracteres) + "Otro sitio" (busca por código o nombre).
-- Fotos de un punto → después UN audio (o texto) contando qué es y cómo está → el bot arma el
-  punto con IA (descripción + recomendación) y confirma "✅ Punto 4 · 3 fotos · …".
-- Audio sin fotos nuevas se suma al último punto. Comandos: GENERAL, BORRAR, CORREGIR, FIN,
-  FIN TODO, AYUDA (y "codigos"/"comandos" también muestran la ayuda).
-- UNA auditoría por sitio por ciclo: si se cerró con FIN y se vuelve otro día, se retoma la
-  misma (los puntos siguen numerándose); solo después de exportarla se crea otra.
-- En la app se puede borrar una auditoría (para las de prueba).
+### Flujo del técnico en WhatsApp
+1. **Cualquier mensaje sin auditoría abierta** → lista interactiva de WhatsApp con los sitios
+   del mes que faltan (sin exportar en el ciclo), máx. 10 filas (títulos de 24 caracteres,
+   descripciones de 72), + "Otro sitio" → escribe código o parte del nombre y se busca (si
+   hay varios, otra lista para elegir). Una sola lista por ráfaga de mensajes. Un saludo
+   suelto no se guarda; fotos/audios mandados antes de elegir el sitio NO se pierden: van al
+   primer punto.
+2. Al elegir el sitio: "🔩 Auditoría abierta: DV23 (Cnel. Mora) · 14/10/26. Mandá las fotos
+   de cada punto y después el audio contando qué es y cómo está."
+3. **Por cada punto**: fotos (se juntan en una "bolsa" por técnico en Redis) y después UN
+   audio (o texto) → transcripción + IA → punto nuevo. Contesta
+   "✅ Punto 4 · 3 fotos · <descripción>" y, si hay, "⚠️ Recomendación: …". Antes de armar el
+   punto espera ~1,5 s por si la última foto todavía está entrando.
+4. Un audio/texto **sin fotos nuevas** se suma al último punto del técnico (se rehace el
+   texto); si todavía no tiene puntos, va al comentario general.
+5. **Comandos** (mayúsculas/minúsculas y tildes dan igual):
+   - `AYUDA` (también `CODIGOS`, `COMANDOS`): cómo se usa.
+   - `GENERAL <texto>`: agrega al comentario general.
+   - `BORRAR`: si hay fotos sin audio las descarta; si no, borra el último punto del técnico
+     (y sus archivos).
+   - `CORREGIR <texto>`: reemplaza el texto del último punto y lo vuelve a redactar.
+   - `FIN` (también `FIN D25`, `FIN TODO`): cierra la parte del técnico; las fotos sueltas
+     quedan como un punto sin texto. Cuando cierra el último (o con TODO), la auditoría queda
+     cerrada y llega el resumen al número de aviso: "🔩 DV23 cerrada: 11 puntos, 3 con
+     recomendación, 38 fotos."
+6. **Varios técnicos**: si otro ya tiene abierta la auditoría del sitio, se suma a la misma.
+7. **Una auditoría por sitio por ciclo**: si se cerró con FIN y se vuelve otro día, al elegir
+   el sitio se retoma ("retomada · Ya tiene 3 puntos; lo que mandes sigue desde el 4"). Solo
+   después de exportarla se crea otra.
+8. Todo lo que manda el bot empieza con el mismo emoji (en herrería 🔩).
+9. Mensajes que no son foto/audio/texto: los avisos internos de WhatsApp ("unsupported", al
+   mandar varias fotos juntas), reacciones y stickers se ignoran en silencio; videos,
+   ubicaciones o contactos avisan "no se guarda" como mucho una vez cada 10 minutos. Una
+   foto mandada como archivo (document con mime image/*) cuenta como foto. Un código de otro
+   sistema mandado por error (ej. de mantenimiento) avisa que va al otro WhatsApp.
+
+### La IA
+- Whisper (Groq) transcribe; el modelo de texto devuelve JSON
+  `{"descripcion": "...", "recomendacion": "..."}` con temperatura baja.
+- El prompt tiene: quién redacta y para qué informe; las reglas de cada campo; "no inventes
+  elementos, medidas ni defectos que el técnico no dijo; mantené los nombres que usó";
+  español de Uruguay sin adornos; y 5 ejemplos reales de cada campo (los de la PARTE A).
+- El mismo prompt está en el bot y en la app (dos archivos): si se cambia uno, cambiar el otro.
+- Siempre con respaldo: si Groq falla o tarda (timeout ~15 s), se guarda la transcripción
+  como descripción y la recomendación vacía. Nunca se pierde lo que dijo el técnico.
+
+### La app
+- **Plan del año**: "Este mes" / "Todos", buscador, estado de cada sitio en el ciclo
+  (pendiente / en curso / cerrada / exportada) y cuántos van hechos en el mes.
+- **Auditoría**: fecha editable, comentario general, puntos con miniatura, descripción y
+  recomendación; reordenar con ↑↓; "+ Agregar punto"; "Exportar ZIP para el informe";
+  "Borrar auditoría" (con confirmación, para las de prueba).
+- **Punto**: fotos de cámara o galería (comprimidas), grabadora de audio propia (sube al
+  bucket y manda a transcribir/redactar a una ruta `/api/procesar` de la app, que necesita
+  `GROQ_API_KEY` en Vercel), transcripción, descripción y recomendación editables,
+  "Redactar de nuevo con IA" y borrar punto.
+- Se re-sincroniza con Supabase cada 15 s y al volver a la pestaña, sin pisar lo que se está
+  editando. PWA con manifest e íconos propios; el service worker cachea solo lo estático.
+
+### El export (contrato con quien arma el informe — una vez definido, no se cambia)
+`<PREFIJO>_<cod>_<AAAA-MM-DD>.zip` con:
+- `datos.json`: `{version, sitio:{cod, nombre, rotulo, archivo}, fecha, ciclo,
+  comentario_general, puntos:[{orden, descripcion, recomendacion, transcripcion, fotos:[…]}]}`
+  con los puntos numerados 1..n por su posición (sin huecos).
+- `datos.txt`: lo mismo legible, con la lista de recomendaciones al final.
+- `fotos/P01_foto1.jpg`… (siempre JPG, convertidas en el navegador si hace falta).
+- `audios/P01_audio1.<ext>` (opcional).
+Al exportar, la auditoría queda "exportada" y sale de la lista del mes del WhatsApp.
+
+### Tareas automáticas (un cron diario, en Vercel Hobby máx. una vez por día)
+- Cerrar auditorías sin actividad hace más de 3 h (con el resumen al número de aviso).
+- Borrar del bucket las fotos/audios de auditorías exportadas hace más de 30 días (los textos
+  quedan; marcar `archivos_borrados`).
+- Keepalive de Supabase (el plan gratis se pausa si no hay actividad).
 
 ### Reglas técnicas que aprendimos (NO repetir estos errores)
-**WhatsApp / Meta**
-- El número de prueba de Meta permite máx. 5 destinatarios y no deja cambiar la foto.
-  Cada técnico se agrega en "Paso 1. Pruébalo → Destinatario → Administrar lista" y tiene
-  que pasar el código que le llega por WhatsApp.
-- Si el trabajo nuevo necesita su PROPIO número, crear un **portfolio comercial nuevo** en
-  Meta y la app adentro de ese portfolio. Si la app se crea en el mismo portfolio, Meta
-  reusa el mismo número de prueba y los dos bots reciben los mismos mensajes. Con el mismo
-  número para dos sistemas (modo H/CM) funcionó, pero confundía: mejor números separados.
-- Token permanente: usuario del sistema en el portfolio (Admin si deja, si no Empleado),
-  asignarle la app ("Administrar app") y la cuenta de WhatsApp (acceso total), generar
-  token con caducidad **"Nunca"** y permisos `whatsapp_business_messaging` +
-  `whatsapp_business_management`. Va directo a Vercel como variable Secret: NUNCA pegarlo
-  en el chat ni subirlo al repo.
-- Webhook: verificación GET con `hub.verify_token` (la palabra que pongo en Vercel, no el
-  nombre de la variable); suscribir el campo `messages`.
-- **Si el webhook verifica pero no llegan mensajes** (en los Logs de Vercel solo aparecen GET
-  y ningún POST): enganchar la cuenta de WhatsApp a la app con el Explorador de la API Graph,
-  `POST <ID de la cuenta de WhatsApp Business>/subscribed_apps`, con la app NUEVA elegida y
-  generando el token DESPUÉS de elegirla. Verificar con GET que aparezca el id de la app.
-- Un número de prueba a veces sale como "Invitar" en WhatsApp: abrir el chat con
-  `https://wa.me/<número sin +>` o mandar el mensaje "Hello World" desde el panel de Meta.
-- WhatsApp puede reenviar el mismo mensaje: deduplicar por `message.id` en Redis (set nx).
-- Procesar TODOS los mensajes de cada llamada, en orden; si alguno falla, responder 500
-  para que WhatsApp reintente solo lo que falló.
-- Al mandar varias fotos juntas WhatsApp manda además un mensaje de tipo "unsupported":
-  ignorarlo en silencio (no contestar "solo se guardan fotos" en cada foto). Una foto
-  mandada "como archivo" (document con mime image/*) cuenta como foto.
-- Lo pendiente sin código se guarda en Redis POR SITIO Y POR TÉCNICO, así el código de un
-  técnico no se lleva las fotos del otro. Lock por sitio para escribir la sesión, pero la
-  subida a Supabase va FUERA del lock.
-- Vercel corta la función a los 60 s: límite de 38 s por tanda de subidas y avisar lo que
-  no se subió. Comprimir fotos (sharp, JPG 1600 px, calidad ~72).
-- Versión de la API de Meta y modelos de Groq en variables (`..._GRAPH_VERSION`,
-  `GROQ_WHISPER_MODEL`, `GROQ_CHAT_MODEL`) para cambiarlos sin tocar código.
-- La IA siempre con respaldo: si Groq falla o tarda, se guarda la transcripción tal cual.
+**Meta / WhatsApp**
+- Número propio desde el principio: crear un **portfolio comercial nuevo** en Meta y la app
+  adentro de ese portfolio. Si se crea en un portfolio que ya tiene otra app con número de
+  prueba, Meta reusa el MISMO número y dos bots reciben los mismos mensajes.
+- Número de prueba: máx. 5 destinatarios; cada uno se agrega en "Paso 1. Pruébalo →
+  Destinatario → Administrar lista" con el código que le llega por WhatsApp. Si en WhatsApp
+  sale "Invitar", abrir el chat con `https://wa.me/<número sin +>` o mandar el "Hello World"
+  desde el panel (necesita "Generar token" temporal ahí, que no reemplaza al permanente).
+- Token permanente: usuario del sistema en el portfolio nuevo (Admin), asignarle la app
+  ("Administrar app") y la cuenta de WhatsApp (acceso total), generar token con caducidad
+  **"Nunca"** y permisos `whatsapp_business_messaging` + `whatsapp_business_management`. Va
+  directo a Vercel como variable Secret: NUNCA pegarlo en el chat ni subirlo al repo.
+- Variables del bot: token, Phone Number ID, verify token (la palabra, no el nombre de la
+  variable), número de aviso, versión de la API de Meta, modelos de Groq. Después de cambiar
+  una variable en Vercel hay que hacer Redeploy.
+- Webhook: página Webhooks de la app → producto "Whatsapp Business Account" → URL + verify
+  token → "Verificar y guardar" → suscribir `messages`.
+- **Si verifica pero no llegan los mensajes** (en Vercel → Logs solo hay GET, ningún POST):
+  en el Explorador de la API Graph (abrirlo con el ID de la app nueva en la URL,
+  `/tools/explorer/<APP_ID>/`), generar token con los dos permisos y hacer
+  `POST <ID de la cuenta de WhatsApp Business>/subscribed_apps`. Verificar con GET que en la
+  lista aparezca el id de la app NUEVA.
+- WhatsApp reenvía mensajes: deduplicar por `message.id` en Redis (set nx, 24 h). Procesar
+  TODOS los mensajes de cada llamada, en orden; si alguno falla, responder 500 para que
+  WhatsApp reintente solo lo que falló.
+- Vercel corta a los 60 s: límite de ~38 s por tanda de subidas y avisar lo que no se subió.
+  Fotos a JPG 1600 px calidad ~72 (sharp).
 
 **Supabase (plan gratis)**
-- Se pausa si no hay actividad: cron diario de keepalive.
-- 1 GB de Storage: limpieza automática diaria (borrar fotos/audios de visitas ya exportadas
-  pasado un tiempo, archivos huérfanos, nunca lo subido en las últimas 24 h).
-- Supabase devuelve máx. 1000 filas por consulta: paginar con `range` cuando pueda haber más.
-- Claude no tiene acceso directo: las migraciones me las das como archivo SQL en
-  `supabase/` para pegar en el SQL Editor, que se pueda correr más de una vez sin romper
-  nada (`if not exists`, `drop policy if exists`, `on conflict`). Probalo en un Postgres
-  local antes de dármelo.
-- RLS con políticas públicas (la app usa la clave anon).
-- Visitas por período: al empezar el mes de la visita siguiente, archivar la visita en una
-  tabla de historial y dejar el equipo limpio; los comentarios viejos se ven hasta que llega
-  el primer comentario nuevo de la visita.
+- 1 GB de Storage (por eso la limpieza a los 30 días) y pausa por inactividad (keepalive).
+- Máx. 1000 filas por consulta: paginar con `range` donde pueda haber más.
+- Claude no tiene acceso directo: el SQL me lo das como archivo en `supabase/` para pegar en
+  el SQL Editor, que se pueda correr más de una vez (`if not exists`, `drop policy if exists`,
+  `on conflict`), con los sitios cargados adentro y un `select count(*)` al final para
+  comprobar. Probalo en un Postgres local antes de dármelo.
 
 **App (Next.js / Vercel)**
 - Next.js puede tener cambios respecto a lo que conocés: leé `node_modules/next/dist/docs/`
   antes de escribir código de Next.
-- PWA con manifest e íconos propios; si hay dos apps en el mismo dominio, cada una con su
-  manifest (`id`/`scope` distintos). El service worker cachea solo lo estático (JS/CSS/
-  íconos), nunca el HTML ni los datos.
-- La app se re-sincroniza con Supabase cada 15 s y al volver a la pestaña, sin pisar lo que
-  se está editando.
-- Un sitio figura "Completo" cuando se exporta después del inicio de su mes de visita.
-- Vercel Hobby: crons como mucho una vez por día. Variables Secret no se pueden ver después
-  de guardadas; después de cambiar una variable hay que hacer Redeploy.
-- Para ver errores: Vercel → proyecto → Logs.
+- Vercel → proyecto → Logs para ver errores. Variables Secret no se pueden ver después.
 
 **Cómo trabajar conmigo**
-- Antes de escribir código, mostrame un plan corto (qué archivos, qué reusás, qué tengo que
-  hacer yo) y esperá mi OK. Si hay una decisión que es mía, preguntame con opciones.
+- Antes de escribir código, mostrame un plan corto (qué archivos, qué tengo que hacer yo) y
+  esperá mi OK. Si hay una decisión que es mía, preguntame con opciones.
 - Probá todo antes de subir: lint y build de la app; para el bot, simulaciones en node con
-  mocks de Redis, Supabase y WhatsApp (en una carpeta temporal, fuera del repo) corriendo el
-  webhook real con mensajes de prueba; para pantallas, un celular simulado con Playwright y
-  una captura. Si algo falla, no lo subas.
-- Mantené al día un `CONTEXTO.md` en el repo de la app (todo lo necesario para retomar en una
-  sesión nueva) y un `RESUMEN_PARA_COWORK.txt` (lo que necesita Cowork para los informes).
+  mocks de Redis, Supabase y WhatsApp (carpeta temporal fuera del repo) corriendo el webhook
+  real con mensajes de prueba (fotos, audio, lista, comandos, dos técnicos, FIN, retomar,
+  cron); para la app, un celular simulado con Playwright y una captura. Si algo falla, no lo
+  subas.
+- Mantené al día un `CONTEXTO.md` (todo para retomar en una sesión nueva: piezas, IDs no
+  secretos, variables, cosas que vencen) y una guía corta para los técnicos en un .txt.
 - Commits claros en español. Si te pido volver atrás, revertí sin reescribir la historia.
-- Cosas que vencen: token de Meta (verificar "Nunca vence"), versión de la API de Meta
-  (~2 años), modelos de Groq, pausa y espacio de Supabase. Anotalas en CONTEXTO.md.
 
 ## Qué te pido ahora
 1. Leé la PARTE A. Si falta algo importante, preguntame (de a pocas preguntas, con opciones).
-2. Proponé el diseño adaptado al trabajo nuevo: tablas de Supabase, categorías y checklist,
-   códigos de WhatsApp, pantallas de la app y formato del export. Esperá mi OK.
+2. Proponé el diseño adaptado: tablas, prompt de la IA, textos del bot, pantallas y formato
+   del export. Esperá mi OK.
 3. Armá todo en este orden, probando cada parte:
-   a. SQL de Supabase (te lo pego yo).
+   a. SQL de Supabase con los sitios (te lo pego yo).
    b. App (PWA) y su publicación en Vercel.
-   c. Bot de WhatsApp: código, después la configuración de Meta conmigo paso a paso
-      (portfolio, app, número de prueba, destinatarios, usuario del sistema y token,
-      variables en Vercel, webhook, `subscribed_apps`), y una prueba real de punta a punta.
-   d. Crons (cierre por inactividad, keepalive, limpieza de Storage).
-   e. Guía corta para los técnicos (cómo se usa el WhatsApp), en un .txt.
-4. Al final, dejame CONTEXTO.md y RESUMEN_PARA_COWORK.txt completos.
+   c. Bot de WhatsApp: código y simulaciones; después la configuración de Meta conmigo paso a
+      paso (portfolio nuevo, app, número de prueba, destinatarios, usuario del sistema y
+      token, variables en Vercel, webhook, `subscribed_apps`) y una prueba real de punta a
+      punta (hola → sitio → fotos + audio → ver el punto en la app → FIN → exportar).
+   d. Cron diario (cierre por inactividad, limpieza a los 30 días, keepalive).
+   e. Guía para los técnicos (.txt) y CONTEXTO.md completo.
